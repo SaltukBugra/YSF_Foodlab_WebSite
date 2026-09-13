@@ -57,6 +57,14 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.1.2 =
+* Mobil menu duzeltildi. Baslikta kullanilan backdrop-filter, icindeki
+  position:fixed menuye kapsayici blok olusturuyordu; bu nedenle acilan menu
+  ekran yuksekligi yerine basligin yuksekligine sikisiyor, baglantilar yarim
+  gorunuyor ve menunun icinde elle kaydirma gerekiyordu. Dar ekranda
+  backdrop-filter kapatildi, menuye ekran yuksekligi (100dvh) verildi ve ust
+  bosluk baslik yuksekligine gore ayarlandi.
+
 = 1.1.1 =
 * Ust menu artik Ingilizce'ye ceviriliyor. Menu ogesinin etiketi, bagli
   sayfanin Turkce basligiyla ayniysa sayfanin _ysf_title_en degeri kullanilir;
