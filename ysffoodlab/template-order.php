@@ -15,6 +15,16 @@ $ysf_areas     = array_filter( array_map( 'trim', explode( ',', (string) ysf_get
 $ysf_note      = ysf_option_i18n( 'ysf_order_note', '' );
 $ysf_min       = (float) ysf_get_option( 'ysf_min_order', 0 );
 $ysf_free_over = (float) ysf_get_option( 'ysf_free_delivery_over', 0 );
+$ysf_me        = ysf_current_user_prefill();
+$ysf_acc_url   = ysf_account_url();
+
+// Üyenin ilk kayıtlı adresi teslimat alanına hazır gelir.
+$ysf_default_addr = '';
+
+if ( ! empty( $ysf_me['addresses'] ) ) {
+	$ysf_first_saved  = reset( $ysf_me['addresses'] );
+	$ysf_default_addr = $ysf_first_saved['line'];
+}
 ?>
 
 <section class="ysf-page-hero">
@@ -55,6 +65,15 @@ $ysf_free_over = (float) ysf_get_option( 'ysf_free_delivery_over', 0 );
 						</p>
 					<?php endif; ?>
 
+					<?php if ( $ysf_me ) : ?>
+						<p class="ysf-alert ysf-alert--info"><?php ysf_e( 'acc_prefilled' ); ?></p>
+					<?php elseif ( $ysf_acc_url ) : ?>
+						<p class="ysf-alert ysf-alert--info">
+							<?php ysf_e( 'acc_lead' ); ?>
+							<a href="<?php echo esc_url( $ysf_acc_url ); ?>"><?php ysf_e( 'acc_login_cta' ); ?></a>
+						</p>
+					<?php endif; ?>
+
 					<form class="ysf-form ysf-form--2col" data-ysf-form="order" novalidate>
 						<div class="ysf-field ysf-field--full">
 							<span><?php ysf_e( 'order_type' ); ?> <span class="ysf-req">*</span></span>
@@ -70,12 +89,15 @@ $ysf_free_over = (float) ysf_get_option( 'ysf_free_delivery_over', 0 );
 
 						<div class="ysf-field">
 							<label for="ysf-order-name"><?php ysf_e( 'form_name' ); ?> <span class="ysf-req">*</span></label>
-							<input type="text" id="ysf-order-name" name="name" required autocomplete="name">
+							<input type="text" id="ysf-order-name" name="name" required autocomplete="name"
+								value="<?php echo esc_attr( isset( $ysf_me['name'] ) ? $ysf_me['name'] : '' ); ?>">
 						</div>
 
 						<div class="ysf-field">
 							<label for="ysf-order-phone"><?php ysf_e( 'form_phone' ); ?> <span class="ysf-req">*</span></label>
-							<input type="tel" id="ysf-order-phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="05xx xxx xx xx">
+							<input type="tel" id="ysf-order-phone" name="phone" required autocomplete="tel" inputmode="tel"
+								placeholder="05xx xxx xx xx"
+								value="<?php echo esc_attr( isset( $ysf_me['phone'] ) ? $ysf_me['phone'] : '' ); ?>">
 						</div>
 
 						<?php if ( $ysf_areas ) : ?>
@@ -96,9 +118,31 @@ $ysf_free_over = (float) ysf_get_option( 'ysf_free_delivery_over', 0 );
 							<small><?php esc_html_e( 'Boş bırakırsanız en kısa sürede hazırlarız.', 'ysffoodlab' ); ?></small>
 						</div>
 
+						<?php if ( ! empty( $ysf_me['addresses'] ) ) : ?>
+							<div class="ysf-field ysf-field--full" data-ysf-when="delivery">
+								<span><?php ysf_e( 'addr_saved_choose' ); ?></span>
+								<div class="ysf-choice-row" data-ysf-saved-address>
+									<?php $ysf_first = true; ?>
+									<?php foreach ( $ysf_me['addresses'] as $ysf_type => $ysf_saved ) : ?>
+										<label class="ysf-choice">
+											<input type="radio" name="saved_address" value="<?php echo esc_attr( $ysf_type ); ?>"
+												data-ysf-address-line="<?php echo esc_attr( $ysf_saved['line'] ); ?>"
+												<?php checked( true, $ysf_first ); ?>>
+											<span><?php echo esc_html( $ysf_saved['label'] ); ?></span>
+										</label>
+										<?php $ysf_first = false; ?>
+									<?php endforeach; ?>
+									<label class="ysf-choice">
+										<input type="radio" name="saved_address" value="" data-ysf-address-line="">
+										<span><?php ysf_e( 'addr_new' ); ?></span>
+									</label>
+								</div>
+							</div>
+						<?php endif; ?>
+
 						<div class="ysf-field ysf-field--full" data-ysf-when="delivery">
 							<label for="ysf-order-address"><?php ysf_e( 'form_address' ); ?> <span class="ysf-req">*</span></label>
-							<textarea id="ysf-order-address" name="address" autocomplete="street-address"></textarea>
+							<textarea id="ysf-order-address" name="address" autocomplete="street-address"><?php echo esc_textarea( $ysf_default_addr ); ?></textarea>
 						</div>
 
 						<div class="ysf-field" data-ysf-when="table" hidden>

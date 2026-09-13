@@ -2,8 +2,8 @@
 Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
-Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.1.3
+Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
+Version: 1.2.0
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -1544,6 +1544,206 @@ body.ysf-no-scroll {
 	animation: ysf-spin 0.7s linear infinite;
 }
 
+/* --- Uyelik: giris, kayit, profil ve adres defteri ----------------------- */
+
+.ysf-muted {
+	color: var(--ysf-muted);
+	font-size: 0.9rem;
+}
+
+.ysf-link-btn {
+	border: 0;
+	padding: 0;
+	background: none;
+	color: var(--ysf-accent-dark);
+	font-family: inherit;
+	font-size: 0.88rem;
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.ysf-link-btn:hover {
+	color: var(--ysf-ink);
+}
+
+.ysf-link-btn--danger {
+	color: var(--ysf-berry);
+}
+
+.ysf-details {
+	border-top: 1px solid var(--ysf-line);
+	margin-top: 4px;
+	padding-top: 14px;
+}
+
+.ysf-details > summary {
+	cursor: pointer;
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: var(--ysf-accent-dark);
+	list-style: none;
+}
+
+.ysf-details > summary::-webkit-details-marker {
+	display: none;
+}
+
+.ysf-details > summary::before {
+	content: "+";
+	display: inline-block;
+	width: 1em;
+	font-weight: 700;
+}
+
+.ysf-details[open] > summary::before {
+	content: "–";
+}
+
+.ysf-details > summary:focus-visible {
+	outline: 3px solid var(--ysf-accent);
+	outline-offset: 3px;
+}
+
+.ysf-details > *:not(summary) {
+	margin-top: 16px;
+}
+
+.ysf-auth {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: var(--ysf-gap);
+	align-items: start;
+}
+
+.ysf-auth__card,
+.ysf-card-panel {
+	padding: clamp(20px, 3vw, 32px);
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius-lg);
+	background: #fff;
+	box-shadow: var(--ysf-shadow);
+}
+
+.ysf-auth__title,
+.ysf-card-panel__title {
+	margin: 0 0 18px;
+	font-size: clamp(1.2rem, 2vw, 1.5rem);
+}
+
+.ysf-account__head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--ysf-gap);
+}
+
+.ysf-account__head h2 {
+	margin: 4px 0 0;
+}
+
+.ysf-account__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: var(--ysf-gap);
+	align-items: start;
+	margin-bottom: var(--ysf-gap);
+}
+
+.ysf-addr-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 16px;
+}
+
+.ysf-addr-card {
+	margin-top: 18px;
+	padding: 18px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+	background: var(--ysf-cream);
+}
+
+.ysf-addr-card__head {
+	display: flex;
+	gap: 12px;
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+.ysf-addr-card__head h4 {
+	margin: 0;
+	font-family: var(--ysf-font-body);
+	font-size: 0.95rem;
+	font-weight: 700;
+}
+
+.ysf-addr-card__line {
+	margin: 8px 0 0;
+	color: var(--ysf-muted);
+	font-size: 0.9rem;
+	line-height: 1.5;
+}
+
+.ysf-addr-card__form {
+	margin-top: 16px;
+}
+
+.ysf-addr-card__form[hidden] {
+	display: none;
+}
+
+.ysf-addr-card__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+}
+
+.ysf-record-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ysf-record-list li {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--ysf-line);
+	font-size: 0.92rem;
+}
+
+.ysf-record-list li:last-child {
+	border-bottom: 0;
+}
+
+.ysf-record-list__date {
+	color: var(--ysf-muted);
+	font-variant-numeric: tabular-nums;
+	min-width: 96px;
+}
+
+.ysf-topbar__account {
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+}
+
+.ysf-topbar__account svg {
+	width: 15px;
+	height: 15px;
+	fill: currentColor;
+}
+
+.ysf-nav__account {
+	display: none;
+}
+
 @keyframes ysf-spin {
 	to {
 		transform: rotate(360deg);
@@ -2116,6 +2316,37 @@ body.ysf-no-scroll {
 
 	.ysf-topbar__inner {
 		gap: 12px;
+	}
+
+	/* Hesap bağlantısı dar ekranda yalnızca simge olarak durur; tam yazısı
+	   açılır menünün altındaki bağlantıda görünür. */
+	.ysf-topbar__account span {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+}
+
+@media (max-width: 1024px) {
+	.ysf-nav__account {
+		display: inline-flex;
+		gap: 8px;
+		align-items: center;
+		margin-top: 20px;
+		padding-top: 20px;
+		border-top: 1px solid var(--ysf-line);
+		font-weight: 600;
+		color: var(--ysf-ink);
+		text-decoration: none;
+	}
+
+	.ysf-nav__account svg {
+		width: 18px;
+		height: 18px;
+		fill: var(--ysf-accent-dark);
 	}
 }
 

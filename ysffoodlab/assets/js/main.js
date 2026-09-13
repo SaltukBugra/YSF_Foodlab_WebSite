@@ -766,10 +766,11 @@
 		box.appendChild( link );
 	}
 
-	function submitForm( form, action, data, onSuccess ) {
+	function submitForm( form, action, data, onSuccess, options ) {
 		var button = qs( '[data-ysf-submit]', form );
 		var result = qs( '[data-ysf-result]', form );
 		var label = button ? button.textContent : '';
+		var keepValues = !! ( options && options.keepValues );
 
 		if ( button ) {
 			button.disabled = true;
@@ -779,7 +780,10 @@
 		request( action, data ).then( function ( response ) {
 			if ( response.ok ) {
 				showResult( result, response.payload.message || t( 'form_submit', 'Gönderildi' ), true );
-				form.reset();
+
+				if ( ! keepValues ) {
+					form.reset();
+				}
 
 				if ( 'function' === typeof onSuccess ) {
 					onSuccess( response.payload );
@@ -822,6 +826,264 @@
 				}
 
 				submitForm( form, map[ name ], collectForm( form ) );
+			} );
+		} );
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Üyelik: giriş, kayıt, profil ve adres defteri
+	 * ------------------------------------------------------------------ */
+
+	var geoCache = null;
+
+	/**
+	 * İl/ilçe listesini bir kez indirir.
+	 */
+	function loadGeo() {
+		if ( geoCache ) {
+			return Promise.resolve( geoCache );
+		}
+
+		if ( ! settings.geoUrl ) {
+			return Promise.resolve( {} );
+		}
+
+		return fetch( settings.geoUrl, { credentials: 'same-origin' } ).then( function ( response ) {
+			return response.json();
+		} ).then( function ( json ) {
+			geoCache = json || {};
+
+			return geoCache;
+		} ).catch( function () {
+			return {};
+		} );
+	}
+
+	/**
+	 * İl seçimine göre ilçe listesini kurar, zorunlu alanları işaretler.
+	 */
+	function initAddressFields() {
+		var grids = qsa( '[data-ysf-addr]' );
+
+		if ( ! grids.length ) {
+			return;
+		}
+
+		var requiredNames = [ 'addr_il', 'addr_ilce', 'addr_mahalle', 'addr_sokak', 'addr_bina' ];
+
+		grids.forEach( function ( grid ) {
+			var province = qs( '[data-ysf-province]', grid );
+			var district = qs( '[data-ysf-district]', grid );
+
+			if ( ! province || ! district ) {
+				return;
+			}
+
+			function fillDistricts( selected ) {
+				loadGeo().then( function ( geo ) {
+					var list = geo[ province.value ] || [];
+					var placeholder = document.createElement( 'option' );
+
+					district.innerHTML = '';
+					placeholder.value = '';
+					placeholder.textContent = province.value
+						? t( 'addr_select', 'Seçiniz' )
+						: t( 'addr_select_first', 'Önce il seçin' );
+					district.appendChild( placeholder );
+
+					list.forEach( function ( name ) {
+						var option = document.createElement( 'option' );
+
+						option.value = name;
+						option.textContent = name;
+						option.selected = ( name === selected );
+						district.appendChild( option );
+					} );
+				} );
+			}
+
+			// Adres kısmen doldurulduysa zorunlu alanlar devreye girer; tamamen
+			// boş bırakılan adres geçerlidir.
+			function syncRequired() {
+				var fields = qsa( 'input, select, textarea', grid );
+				var filled = fields.some( function ( field ) {
+					return '' !== String( field.value ).trim();
+				} );
+
+				fields.forEach( function ( field ) {
+					if ( -1 !== requiredNames.indexOf( field.name ) ) {
+						field.required = filled;
+					}
+				} );
+			}
+
+			province.addEventListener( 'change', function () {
+				fillDistricts( '' );
+				syncRequired();
+			} );
+
+			grid.addEventListener( 'input', syncRequired );
+			grid.addEventListener( 'change', syncRequired );
+
+			if ( province.value ) {
+				fillDistricts( district.value );
+			}
+
+			syncRequired();
+		} );
+	}
+
+	function clearPasswordFields( form ) {
+		qsa( 'input[type="password"]', form ).forEach( function ( field ) {
+			field.value = '';
+		} );
+	}
+
+	function initAccountForms() {
+		var map = {
+			login: 'ysf_login',
+			register: 'ysf_register',
+			lostpass: 'ysf_lost_password',
+			profile: 'ysf_save_profile'
+		};
+
+		Object.keys( map ).forEach( function ( name ) {
+			var form = qs( '[data-ysf-form="' + name + '"]' );
+
+			if ( ! form ) {
+				return;
+			}
+
+			form.addEventListener( 'submit', function ( event ) {
+				event.preventDefault();
+
+				var result = qs( '[data-ysf-result]', form );
+
+				if ( ! form.checkValidity() ) {
+					showResult( result, t( 'form_required', 'Zorunlu alanları doldurun.' ), false );
+					form.reportValidity();
+					return;
+				}
+
+				submitForm( form, map[ name ], collectForm( form ), function ( payload ) {
+					if ( 'profile' === name ) {
+						clearPasswordFields( form );
+					}
+
+					if ( payload.redirect ) {
+						window.setTimeout( function () {
+							window.location.href = payload.redirect;
+						}, 800 );
+					}
+				}, { keepValues: 'profile' === name } );
+			} );
+		} );
+	}
+
+	function initAddressCards() {
+		qsa( '[data-ysf-addr-card]' ).forEach( function ( card ) {
+			var form = qs( '[data-ysf-form="address"]', card );
+
+			if ( ! form ) {
+				return;
+			}
+
+			var toggle = qs( '[data-ysf-addr-toggle]', card );
+			var cancel = qs( '[data-ysf-addr-cancel]', card );
+			var remove = qs( '[data-ysf-addr-delete]', card );
+			var line = qs( '[data-ysf-addr-line]', card );
+
+			function setOpen( open ) {
+				form.hidden = ! open;
+
+				if ( toggle ) {
+					toggle.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+				}
+			}
+
+			function paintLine( text ) {
+				if ( line ) {
+					line.textContent = text || t( 'acc_addr_empty', '' );
+				}
+			}
+
+			if ( toggle ) {
+				toggle.setAttribute( 'aria-expanded', 'false' );
+				toggle.addEventListener( 'click', function () {
+					setOpen( form.hidden );
+				} );
+			}
+
+			if ( cancel ) {
+				cancel.addEventListener( 'click', function () {
+					setOpen( false );
+				} );
+			}
+
+			form.addEventListener( 'submit', function ( event ) {
+				event.preventDefault();
+
+				var result = qs( '[data-ysf-result]', form );
+
+				if ( ! form.checkValidity() ) {
+					showResult( result, t( 'form_required', 'Zorunlu alanları doldurun.' ), false );
+					form.reportValidity();
+					return;
+				}
+
+				submitForm( form, 'ysf_save_address', collectForm( form ), function ( payload ) {
+					paintLine( payload.line );
+				}, { keepValues: true } );
+			} );
+
+			if ( remove ) {
+				remove.addEventListener( 'click', function () {
+					if ( ! window.confirm( t( 'acc_addr_del_ask', 'Adresi silmek istiyor musunuz?' ) ) ) {
+						return;
+					}
+
+					var data = collectForm( form );
+
+					data.remove = '1';
+
+					submitForm( form, 'ysf_save_address', data, function () {
+						qsa( 'input[name^="addr_"], textarea[name^="addr_"], select[name^="addr_"]', form ).forEach( function ( field ) {
+							field.value = '';
+						} );
+
+						paintLine( '' );
+						setOpen( false );
+					}, { keepValues: true } );
+				} );
+			}
+		} );
+	}
+
+	/**
+	 * Sipariş formunda kayıtlı adresi tek dokunuşla doldurur.
+	 */
+	function initSavedAddressPicker() {
+		var picker = qs( '[data-ysf-saved-address]' );
+		var target = qs( '#ysf-order-address' );
+
+		if ( ! picker || ! target ) {
+			return;
+		}
+
+		qsa( 'input[type="radio"]', picker ).forEach( function ( radio ) {
+			radio.addEventListener( 'change', function () {
+				if ( ! radio.checked ) {
+					return;
+				}
+
+				var line = radio.getAttribute( 'data-ysf-address-line' ) || '';
+
+				if ( line ) {
+					target.value = line;
+				} else {
+					target.value = '';
+					target.focus();
+				}
 			} );
 		} );
 	}
@@ -1117,6 +1379,10 @@
 		initCart();
 		initOrderForm();
 		initSimpleForms();
+		initAccountForms();
+		initAddressFields();
+		initAddressCards();
+		initSavedAddressPicker();
 		initMenuFilters();
 		initHeroSlider();
 		initReveal();

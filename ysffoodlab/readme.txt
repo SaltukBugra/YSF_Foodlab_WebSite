@@ -57,6 +57,26 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.2.0 =
+* Uye hesaplari eklendi. Hesabim sayfasindan giris, kayit, sifre sifirlama,
+  profil guncelleme ve adres defteri yonetilir. Kayitta ad soyad, e-posta,
+  telefon ve sifre alinir; e-posta ile telefon numarasi birden fazla uyede
+  kullanilamaz. Girise e-posta ya da telefon numarasiyla izin verilir.
+* Ev ve is olmak uzere iki adres kaydedilebilir. Adres girmek zorunlu degildir,
+  fakat doldurulursa il, ilce, mahalle, cadde/sokak ve bina no zorunlu olur.
+  Il ve ilce, temayla gelen 81 il / 972 ilce listesinden secilir; ilce listesi
+  secilen ile gore kurulur ve sunucu tarafinda da dogrulanir. Posta kodu
+  istege bagli, girildiginde 5 hane olmak zorundadir.
+* Telefon numaralari +90XXXXXXXXXX bicimine cevrilerek saklanir; 0552...,
+  +90 552..., 90552... ve 0090... gibi yazimlarin hepsi kabul edilir.
+* Siparis ve rezervasyon formlari uyenin ad, telefon ve e-postasiyla otomatik
+  dolar; teslimat adresi kayitli adreslerden tek dokunusla secilebilir. Uye
+  olmayan ziyaretciler eskisi gibi form doldurmaya devam eder.
+* Uyeler kendi siparis ve rezervasyon kayitlarini Hesabim sayfasinda gorur.
+* Musteri hesaplari yonetim paneline giremez, yonetim cubugu gosterilmez;
+  panele yonelen istekler Hesabim sayfasina dondurulur.
+* Yeni uye kaydi Ozelestir > Gelismis bolumunden kapatilabilir.
+
 = 1.1.3 =
 * Cerez uyarisinin her sayfada yeniden cikmasi giderildi. Cookie Admin Pro
   eklentisi onayi yalnizca admin-ajax kaydi basarili donerse tarayiciya

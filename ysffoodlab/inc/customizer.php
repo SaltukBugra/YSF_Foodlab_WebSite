@@ -422,6 +422,19 @@ function ysf_customize_register( $wp_customize ) {
 		ysf_add_setting( $wp_customize, $id, $args + array( 'section' => 'ysf_reservation' ) );
 	}
 
+	// --- Üyelik -----------------------------------------------------------
+	ysf_add_setting(
+		$wp_customize,
+		'ysf_acc_enabled',
+		array(
+			'label'       => __( 'Yeni üye kaydını aç', 'ysffoodlab' ),
+			'section'     => 'ysf_advanced',
+			'type'        => 'checkbox',
+			'default'     => true,
+			'description' => __( 'Kapatırsanız Hesabım sayfasında yalnızca giriş formu görünür, yeni kayıt alınmaz.', 'ysffoodlab' ),
+		)
+	);
+
 	// --- Sosyal medya -----------------------------------------------------
 	$social = array(
 		'ysf_social_instagram'   => __( 'Instagram', 'ysffoodlab' ),

@@ -16,6 +16,8 @@ $ysf_note     = ysf_option_i18n( 'ysf_res_note', '' );
 $ysf_min_date = current_time( 'Y-m-d' );
 $ysf_hours    = ysf_get_hours();
 $ysf_today    = ysf_today_key();
+$ysf_me       = ysf_current_user_prefill();
+$ysf_acc_url  = ysf_account_url();
 ?>
 
 <section class="ysf-page-hero">
@@ -41,20 +43,33 @@ $ysf_today    = ysf_today_key();
 
 			<div class="ysf-content-layout has-sidebar">
 				<div>
+					<?php if ( $ysf_me ) : ?>
+						<p class="ysf-alert ysf-alert--info"><?php ysf_e( 'acc_prefilled' ); ?></p>
+					<?php elseif ( $ysf_acc_url ) : ?>
+						<p class="ysf-alert ysf-alert--info">
+							<?php ysf_e( 'acc_lead' ); ?>
+							<a href="<?php echo esc_url( $ysf_acc_url ); ?>"><?php ysf_e( 'acc_login_cta' ); ?></a>
+						</p>
+					<?php endif; ?>
+
 					<form class="ysf-form ysf-form--2col" data-ysf-form="reservation" novalidate>
 						<div class="ysf-field">
 							<label for="ysf-res-name"><?php ysf_e( 'form_name' ); ?> <span class="ysf-req">*</span></label>
-							<input type="text" id="ysf-res-name" name="name" required autocomplete="name">
+							<input type="text" id="ysf-res-name" name="name" required autocomplete="name"
+								value="<?php echo esc_attr( isset( $ysf_me['name'] ) ? $ysf_me['name'] : '' ); ?>">
 						</div>
 
 						<div class="ysf-field">
 							<label for="ysf-res-phone"><?php ysf_e( 'form_phone' ); ?> <span class="ysf-req">*</span></label>
-							<input type="tel" id="ysf-res-phone" name="phone" required autocomplete="tel" inputmode="tel" placeholder="05xx xxx xx xx">
+							<input type="tel" id="ysf-res-phone" name="phone" required autocomplete="tel" inputmode="tel"
+								placeholder="05xx xxx xx xx"
+								value="<?php echo esc_attr( isset( $ysf_me['phone'] ) ? $ysf_me['phone'] : '' ); ?>">
 						</div>
 
 						<div class="ysf-field">
 							<label for="ysf-res-email"><?php ysf_e( 'form_email' ); ?></label>
-							<input type="email" id="ysf-res-email" name="email" autocomplete="email">
+							<input type="email" id="ysf-res-email" name="email" autocomplete="email"
+								value="<?php echo esc_attr( isset( $ysf_me['email'] ) ? $ysf_me['email'] : '' ); ?>">
 							<small><?php esc_html_e( 'Girerseniz onay bilgisini e-posta ile de gönderiyoruz.', 'ysffoodlab' ); ?></small>
 						</div>
 

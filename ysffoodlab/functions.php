@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.1.3' );
+define( 'YSF_VERSION', '1.2.0' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 
@@ -20,6 +20,7 @@ require_once YSF_DIR . '/inc/customizer.php';
 require_once YSF_DIR . '/inc/template-tags.php';
 require_once YSF_DIR . '/inc/orders.php';
 require_once YSF_DIR . '/inc/reservations.php';
+require_once YSF_DIR . '/inc/accounts.php';
 require_once YSF_DIR . '/inc/seo.php';
 require_once YSF_DIR . '/inc/setup-wizard.php';
 
@@ -121,6 +122,7 @@ function ysf_enqueue_assets() {
 			'lang'         => ysf_lang(),
 			'currency'     => ysf_get_option( 'ysf_currency', '₺' ),
 			'orderPageUrl' => ysf_get_page_url_by_template( 'template-order.php' ),
+			'geoUrl'       => ysf_geo_url(),
 			'whatsapp'     => ysf_digits( ysf_get_option( 'ysf_whatsapp', '' ) ),
 			'minOrder'     => (float) ysf_get_option( 'ysf_min_order', 0 ),
 			'deliveryFee'  => (float) ysf_get_option( 'ysf_delivery_fee', 0 ),
@@ -275,7 +277,7 @@ add_filter( 'body_class', 'ysf_body_classes' );
  * iletişim sayfaları her zaman taze sunulur.
  */
 function ysf_no_cache_form_pages() {
-	$templates = array( 'template-order.php', 'template-reservation.php', 'template-contact.php' );
+	$templates = array( 'template-order.php', 'template-reservation.php', 'template-contact.php', 'template-account.php' );
 	$is_form   = false;
 
 	foreach ( $templates as $template ) {

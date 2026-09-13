@@ -168,6 +168,8 @@ function ysf_ajax_submit_reservation() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 500 );
 	}
 
+	ysf_attach_user_to_record( $reservation_id );
+
 	$occasion_label = isset( $occasions[ $occasion ] ) ? $occasions[ $occasion ] : '';
 
 	$meta = array(

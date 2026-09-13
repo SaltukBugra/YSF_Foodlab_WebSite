@@ -235,6 +235,8 @@ function ysf_ajax_submit_order() {
 		update_post_meta( $order_id, $key, $value );
 	}
 
+	ysf_attach_user_to_record( $order_id );
+
 	// Bildirim e-postası.
 	$item_lines = array();
 	foreach ( $lines as $line ) {

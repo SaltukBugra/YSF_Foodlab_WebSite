@@ -10,6 +10,8 @@ $ysf_res_url   = ysf_localize_url( ysf_get_page_url_by_template( 'template-reser
 $ysf_menu_url  = ysf_localize_url( ysf_get_page_url_by_template( 'template-menu.php' ) );
 $ysf_phone     = ysf_get_option( 'ysf_phone', '' );
 $ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( array( 'bar_only' => true, 'limit' => 4 ) ) : array();
+$ysf_acc_url   = ysf_account_url();
+$ysf_acc_label = is_user_logged_in() ? ysf_t( 'acc_nav' ) : ysf_t( 'acc_login_cta' );
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -25,7 +27,7 @@ $ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( arr
 
 <a class="ysf-visually-hidden ysf-skip-link" href="#ysf-content"><?php ysf_e( 'skip_to_content' ); ?></a>
 
-<?php if ( $ysf_bar_items || $ysf_phone || ysf_get_option( 'ysf_show_langswitch', true ) ) : ?>
+<?php if ( $ysf_bar_items || $ysf_phone || $ysf_acc_url || ysf_get_option( 'ysf_show_langswitch', true ) ) : ?>
 <div class="ysf-topbar">
 	<div class="ysf-wrap ysf-topbar__inner">
 		<?php if ( $ysf_bar_items ) : ?>
@@ -51,6 +53,13 @@ $ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( arr
 		<?php endif; ?>
 
 		<div class="ysf-topbar__meta">
+			<?php if ( $ysf_acc_url ) : ?>
+				<a class="ysf-topbar__account" href="<?php echo esc_url( $ysf_acc_url ); ?>">
+					<?php echo ysf_icon( 'user' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span><?php echo esc_html( $ysf_acc_label ); ?></span>
+				</a>
+			<?php endif; ?>
+
 			<?php if ( $ysf_phone ) : ?>
 				<a class="ysf-topbar__phone" href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>">
 					<?php echo esc_html( $ysf_phone ); ?>
@@ -127,6 +136,13 @@ $ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( arr
 				echo '</ul>';
 			}
 			?>
+
+			<?php if ( $ysf_acc_url ) : ?>
+				<a class="ysf-nav__account" href="<?php echo esc_url( $ysf_acc_url ); ?>">
+					<?php echo ysf_icon( 'user' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<span><?php echo esc_html( $ysf_acc_label ); ?></span>
+				</a>
+			<?php endif; ?>
 		</nav>
 
 		<div class="ysf-header__actions">

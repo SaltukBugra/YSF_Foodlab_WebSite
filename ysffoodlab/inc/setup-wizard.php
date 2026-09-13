@@ -63,6 +63,12 @@ function ysf_wizard_pages() {
 			'posts'    => true,
 			'content'  => '',
 		),
+		'hesabim'        => array(
+			'title'    => 'Hesabım',
+			'title_en' => 'My Account',
+			'template' => 'template-account.php',
+			'content'  => '',
+		),
 	);
 }
 

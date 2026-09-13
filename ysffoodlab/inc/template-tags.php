@@ -646,6 +646,7 @@ function ysf_icon( $name ) {
 		'clock'    => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 11h-5v-2h3V6h2v7z"/></svg>',
 		'mail'     => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3V5zm2 2v.4l7 4.4 7-4.4V7H5zm0 2.8V17h14V9.8l-7 4.4-7-4.4z"/></svg>',
 		'cart'     => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h-3v2h2l3 8h9l3-7H7.5L7 4zm2 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>',
+		'user'     => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10c-4 0-7 2-7 4.5V21h14v-3.5c0-2.5-3-4.5-7-4.5z"/></svg>',
 	);
 
 	return isset( $icons[ $name ] ) ? $icons[ $name ] : '';
