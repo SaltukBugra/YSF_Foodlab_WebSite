@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.2.2
+Version: 1.2.3
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -1759,6 +1759,13 @@ body.ysf-no-scroll {
 	display: inline-flex;
 	gap: 6px;
 	align-items: center;
+	max-width: 16em;
+}
+
+.ysf-topbar__account span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .ysf-topbar__account .ysf-icon {

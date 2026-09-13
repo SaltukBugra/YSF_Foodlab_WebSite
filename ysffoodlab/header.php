@@ -11,7 +11,12 @@ $ysf_menu_url  = ysf_localize_url( ysf_get_page_url_by_template( 'template-menu.
 $ysf_phone     = ysf_get_option( 'ysf_phone', '' );
 $ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( array( 'bar_only' => true, 'limit' => 4 ) ) : array();
 $ysf_acc_url   = ysf_account_url();
-$ysf_acc_label = is_user_logged_in() ? ysf_t( 'acc_nav' ) : ysf_t( 'acc_login_cta' );
+$ysf_acc_label = ysf_t( 'acc_login_cta' );
+
+if ( is_user_logged_in() ) {
+	$ysf_me_name = wp_get_current_user()->display_name;
+	$ysf_acc_label = $ysf_me_name ? $ysf_me_name : ysf_t( 'acc_nav' );
+}
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -54,7 +59,7 @@ $ysf_acc_label = is_user_logged_in() ? ysf_t( 'acc_nav' ) : ysf_t( 'acc_login_ct
 
 		<div class="ysf-topbar__meta">
 			<?php if ( $ysf_acc_url ) : ?>
-				<a class="ysf-topbar__account" href="<?php echo esc_url( $ysf_acc_url ); ?>">
+				<a class="ysf-topbar__account" href="<?php echo esc_url( $ysf_acc_url ); ?>" title="<?php echo esc_attr( ysf_t( 'acc_nav' ) ); ?>">
 					<?php echo ysf_icon( 'user' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<span><?php echo esc_html( $ysf_acc_label ); ?></span>
 				</a>
@@ -138,7 +143,7 @@ $ysf_acc_label = is_user_logged_in() ? ysf_t( 'acc_nav' ) : ysf_t( 'acc_login_ct
 			?>
 
 			<?php if ( $ysf_acc_url ) : ?>
-				<a class="ysf-nav__account" href="<?php echo esc_url( $ysf_acc_url ); ?>">
+				<a class="ysf-nav__account" href="<?php echo esc_url( $ysf_acc_url ); ?>" title="<?php echo esc_attr( ysf_t( 'acc_nav' ) ); ?>">
 					<?php echo ysf_icon( 'user' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 					<span><?php echo esc_html( $ysf_acc_label ); ?></span>
 				</a>

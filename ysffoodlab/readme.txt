@@ -57,6 +57,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.2.3 =
+* Giris yapmis uyede ust seritte Hesabim yerine uyenin adi yazilir.
+
 = 1.2.2 =
 * Hesabim kisi simgesi masaustu menude header'i dolduran dev bir siluete
   donusuyordu. Simge artik kucuk kalir; masaustunde yalnizca ust seritte,
