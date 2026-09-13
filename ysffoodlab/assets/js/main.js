@@ -1150,6 +1150,52 @@
 			}
 		}
 
+		function parseTags( raw ) {
+			try {
+				var parsed = JSON.parse( raw || '[]' );
+				return Array.isArray( parsed ) ? parsed : [];
+			} catch ( e ) {
+				return [];
+			}
+		}
+
+		function currentTags() {
+			var hidden = field( 'tags' );
+
+			return hidden ? parseTags( hidden.value ) : [];
+		}
+
+		function setTags( tags ) {
+			var hidden = field( 'tags' );
+			var list = qs( '[data-ysf-tag-list]', form );
+
+			if ( hidden ) {
+				hidden.value = JSON.stringify( tags );
+			}
+
+			if ( ! list ) {
+				return;
+			}
+
+			list.innerHTML = '';
+
+			tags.forEach( function ( tag, index ) {
+				var item = document.createElement( 'li' );
+				var mark = document.createElement( 'span' );
+				var remove = document.createElement( 'button' );
+
+				item.className = 'ysf-tag ysf-tag--' + ( tag.type || 'info' );
+				mark.textContent = tag.label || '';
+				remove.type = 'button';
+				remove.setAttribute( 'data-ysf-tag-remove', String( index ) );
+				remove.setAttribute( 'aria-label', t( 'acc_cancel', 'Kaldır' ) );
+				remove.textContent = '×';
+				item.appendChild( mark );
+				item.appendChild( remove );
+				list.appendChild( item );
+			} );
+		}
+
 		function fillForm( row ) {
 			if ( ! form ) {
 				return;
@@ -1163,6 +1209,7 @@
 			var sold = field( 'sold_out' );
 			var orderable = field( 'orderable' );
 			var photo = field( 'photo' );
+			var flags = [ 'vegetarian', 'vegan', 'glutenfree', 'spicy' ];
 
 			if ( id ) {
 				id.value = row ? ( row.getAttribute( 'data-id' ) || '0' ) : '0';
@@ -1191,6 +1238,16 @@
 			if ( orderable ) {
 				orderable.checked = ! row || '1' === row.getAttribute( 'data-orderable' );
 			}
+
+			flags.forEach( function ( name ) {
+				var box = field( name );
+
+				if ( box ) {
+					box.checked = ! ! ( row && '1' === row.getAttribute( 'data-' + name ) );
+				}
+			} );
+
+			setTags( row ? parseTags( row.getAttribute( 'data-tags' ) ) : [] );
 
 			if ( photo ) {
 				photo.value = '';
@@ -1237,6 +1294,74 @@
 				fillForm( null );
 			} );
 		} );
+
+		( function initTagComposer() {
+			var add = qs( '[data-ysf-tag-add]', form );
+			var input = qs( '[data-ysf-tag-label]', form );
+			var type = qs( '[data-ysf-tag-type]', form );
+			var list = qs( '[data-ysf-tag-list]', form );
+
+			function pushTag() {
+				var label = input ? String( input.value ).trim() : '';
+
+				if ( ! label ) {
+					if ( input ) {
+						input.focus();
+					}
+					return;
+				}
+
+				var tags = currentTags();
+
+				if ( tags.length >= 8 ) {
+					return;
+				}
+
+				tags.push( {
+					label: label,
+					label_en: '',
+					type: type ? type.value : 'info'
+				} );
+
+				setTags( tags );
+
+				if ( input ) {
+					input.value = '';
+					input.focus();
+				}
+			}
+
+			if ( add ) {
+				add.addEventListener( 'click', pushTag );
+			}
+
+			if ( input ) {
+				input.addEventListener( 'keydown', function ( event ) {
+					if ( 'Enter' === event.key ) {
+						event.preventDefault();
+						pushTag();
+					}
+				} );
+			}
+
+			if ( list ) {
+				list.addEventListener( 'click', function ( event ) {
+					var button = event.target.closest( '[data-ysf-tag-remove]' );
+
+					if ( ! button ) {
+						return;
+					}
+
+					var tags = currentTags();
+					var index = parseInt( button.getAttribute( 'data-ysf-tag-remove' ), 10 );
+
+					if ( ! isNaN( index ) ) {
+						tags.splice( index, 1 );
+						setTags( tags );
+					}
+				} );
+			}
+		}() );
 
 		qsa( '[data-ysf-kit-cancel]', root ).forEach( function ( button ) {
 			button.addEventListener( 'click', function () {

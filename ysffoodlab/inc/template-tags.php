@@ -409,45 +409,220 @@ function ysf_get_menu_items( $args = array() ) {
 }
 
 /**
- * Ürünün diyet / özellik etiketlerini döndürür.
+ * İsim yanı etiket türleri.
+ *
+ * @return array
+ */
+function ysf_tag_types() {
+	return array(
+		'info'     => array(
+			'label' => ysf_t( 'tag_info' ),
+			'class' => 'ysf-tag--info',
+		),
+		'good'     => array(
+			'label' => ysf_t( 'tag_good' ),
+			'class' => 'ysf-tag--good',
+		),
+		'bad'      => array(
+			'label' => ysf_t( 'tag_bad' ),
+			'class' => 'ysf-tag--bad',
+		),
+		'campaign' => array(
+			'label' => ysf_t( 'tag_campaign' ),
+			'class' => 'ysf-tag--campaign',
+		),
+	);
+}
+
+/**
+ * Etiket listesini temizler.
+ *
+ * @param mixed $raw Ham liste.
+ * @return array
+ */
+function ysf_sanitize_tags( $raw ) {
+	$clean = array();
+	$types = array_keys( ysf_tag_types() );
+
+	if ( is_string( $raw ) ) {
+		$decoded = json_decode( $raw, true );
+		$raw     = is_array( $decoded ) ? $decoded : array();
+	}
+
+	if ( ! is_array( $raw ) ) {
+		return $clean;
+	}
+
+	foreach ( $raw as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+
+		$label = isset( $row['label'] ) ? ysf_clip( sanitize_text_field( $row['label'] ), 40 ) : '';
+
+		if ( ! $label ) {
+			continue;
+		}
+
+		$type = isset( $row['type'] ) ? sanitize_key( $row['type'] ) : 'info';
+
+		if ( ! in_array( $type, $types, true ) ) {
+			$type = 'info';
+		}
+
+		$clean[] = array(
+			'label'    => $label,
+			'label_en' => isset( $row['label_en'] ) ? ysf_clip( sanitize_text_field( $row['label_en'] ), 40 ) : '',
+			'type'     => $type,
+		);
+
+		if ( count( $clean ) >= 8 ) {
+			break;
+		}
+	}
+
+	return $clean;
+}
+
+/**
+ * Ürüne kayıtlı özel etiketler. Eski tek rozet alanı yoksa bilgi etiketi olarak okunur.
+ *
+ * @param int $post_id Ürün.
+ * @return array
+ */
+function ysf_get_item_tags( $post_id ) {
+	$post_id = (int) $post_id;
+	$stored  = get_post_meta( $post_id, '_ysf_tags', true );
+
+	if ( is_array( $stored ) ) {
+		return ysf_sanitize_tags( $stored );
+	}
+
+	$label    = (string) get_post_meta( $post_id, '_ysf_badge', true );
+	$label_en = (string) get_post_meta( $post_id, '_ysf_badge_en', true );
+
+	if ( ! $label ) {
+		return array();
+	}
+
+	return ysf_sanitize_tags(
+		array(
+			array(
+				'label'    => $label,
+				'label_en' => $label_en,
+				'type'     => 'info',
+			),
+		)
+	);
+}
+
+/**
+ * Etiketleri kaydeder ve eski rozet alanını ilk bilgi/kampanya ile senkron tutar.
+ *
+ * @param int   $post_id Ürün.
+ * @param array $tags    Temizlenmiş liste.
+ */
+function ysf_save_item_tags( $post_id, $tags ) {
+	$post_id = (int) $post_id;
+	$tags    = ysf_sanitize_tags( $tags );
+
+	update_post_meta( $post_id, '_ysf_tags', $tags );
+
+	$badge    = '';
+	$badge_en = '';
+
+	foreach ( $tags as $tag ) {
+		if ( in_array( $tag['type'], array( 'info', 'campaign' ), true ) ) {
+			$badge    = $tag['label'];
+			$badge_en = $tag['label_en'];
+			break;
+		}
+	}
+
+	if ( $badge ) {
+		update_post_meta( $post_id, '_ysf_badge', $badge );
+		update_post_meta( $post_id, '_ysf_badge_en', $badge_en );
+	} else {
+		delete_post_meta( $post_id, '_ysf_badge' );
+		delete_post_meta( $post_id, '_ysf_badge_en' );
+	}
+}
+
+/**
+ * Ürünün isim yanı etiketlerini döndürür.
  *
  * @param int $post_id Ürün kimliği.
  * @return array
  */
 function ysf_item_badges( $post_id ) {
 	$badges = array();
+	$types  = ysf_tag_types();
+	$lang   = ysf_lang();
+
+	foreach ( ysf_get_item_tags( $post_id ) as $tag ) {
+		$type  = $tag['type'];
+		$label = ( 'en' === $lang && $tag['label_en'] ) ? $tag['label_en'] : $tag['label'];
+
+		$badges[] = array(
+			'label' => $label,
+			'type'  => $type,
+			'class' => isset( $types[ $type ] ) ? $types[ $type ]['class'] : 'ysf-tag--info',
+		);
+	}
 
 	$flags = array(
-		'_ysf_vegan'      => array( 'vegan', 'ysf-tag--vegan' ),
-		'_ysf_vegetarian' => array( 'vegetarian', 'ysf-tag--vegan' ),
-		'_ysf_glutenfree' => array( 'glutenfree', '' ),
-		'_ysf_spicy'      => array( 'spicy', 'ysf-tag--spicy' ),
+		'_ysf_vegan'      => array( 'vegan', 'good' ),
+		'_ysf_vegetarian' => array( 'vegetarian', 'good' ),
+		'_ysf_glutenfree' => array( 'glutenfree', 'good' ),
+		'_ysf_spicy'      => array( 'spicy', 'bad' ),
 	);
 
 	foreach ( $flags as $meta_key => $info ) {
-		if ( get_post_meta( $post_id, $meta_key, true ) ) {
-			$badges[] = array(
-				'label' => ysf_t( $info[0] ),
-				'class' => $info[1],
-			);
+		if ( ! get_post_meta( $post_id, $meta_key, true ) ) {
+			continue;
 		}
-	}
 
-	$custom = 'en' === ysf_lang()
-		? ( get_post_meta( $post_id, '_ysf_badge_en', true ) ? get_post_meta( $post_id, '_ysf_badge_en', true ) : get_post_meta( $post_id, '_ysf_badge', true ) )
-		: get_post_meta( $post_id, '_ysf_badge', true );
+		$type = $info[1];
 
-	if ( $custom ) {
-		array_unshift(
-			$badges,
-			array(
-				'label' => $custom,
-				'class' => 'ysf-tag--new',
-			)
+		$badges[] = array(
+			'label' => ysf_t( $info[0] ),
+			'type'  => $type,
+			'class' => $types[ $type ]['class'],
 		);
 	}
 
 	return $badges;
+}
+
+/**
+ * Kart görseli üzerinde gösterilecek kampanya veya bilgi rozeti.
+ *
+ * @param int $post_id Ürün.
+ * @return array|null
+ */
+function ysf_item_cover_badge( $post_id ) {
+	foreach ( ysf_item_badges( $post_id ) as $badge ) {
+		if ( in_array( $badge['type'], array( 'campaign', 'info' ), true ) ) {
+			return $badge;
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Etiketleri basar.
+ *
+ * @param int $post_id Ürün.
+ */
+function ysf_the_item_tags( $post_id ) {
+	foreach ( ysf_item_badges( $post_id ) as $badge ) {
+		printf(
+			'<span class="ysf-tag %1$s">%2$s</span>',
+			esc_attr( $badge['class'] ),
+			esc_html( $badge['label'] )
+		);
+	}
 }
 
 /**
@@ -501,7 +676,7 @@ function ysf_the_price( $post_id ) {
 function ysf_add_to_cart_button( $post_id ) {
 	if ( ! ysf_is_orderable( $post_id ) ) {
 		if ( get_post_meta( $post_id, '_ysf_sold_out', true ) ) {
-			printf( '<span class="ysf-tag ysf-tag--spicy">%s</span>', esc_html( ysf_t( 'sold_out' ) ) );
+			printf( '<span class="ysf-tag ysf-tag--bad">%s</span>', esc_html( ysf_t( 'sold_out' ) ) );
 		}
 		return;
 	}

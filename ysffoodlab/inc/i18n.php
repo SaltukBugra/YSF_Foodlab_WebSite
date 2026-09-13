@@ -401,6 +401,15 @@ function ysf_dictionary() {
 		'kit_price_invalid'   => array( 'Fiyat geçersiz.', 'The price is not valid.' ),
 		'kit_cat_invalid'     => array( 'Kategori geçersiz.', 'That category is not valid.' ),
 		'kit_welcome_mail'    => array( 'Mutfak sorumlusu hesabınız açıldı. Hesabım sayfasından menüyü yönetebilirsiniz.', 'Your kitchen account is ready. You can manage the menu from My Account.' ),
+		'kit_flags'           => array( 'Hazır özellikler', 'Preset traits' ),
+		'kit_tags'            => array( 'İsim yanı etiketler', 'Name tags' ),
+		'kit_tags_hint'        => array( 'Bilgi koyu, olumlu yeşil, olumsuz kırmızı, kampanya sarı görünür. Birkaç etiket ekleyebilirsiniz.', 'Info is dark, positive is green, negative is red, campaign is yellow. You can add several tags.' ),
+		'kit_tag_add'         => array( 'Ekle', 'Add' ),
+		'kit_tag_ph'          => array( 'Örn: Hafta sonu favorisi', 'e.g. Weekend favourite' ),
+		'tag_info'            => array( 'Bilgi', 'Info' ),
+		'tag_good'            => array( 'Olumlu', 'Positive' ),
+		'tag_bad'             => array( 'Olumsuz', 'Negative' ),
+		'tag_campaign'        => array( 'Kampanya', 'Campaign' ),
 
 		'addr_province'       => array( 'İl', 'Province' ),
 		'addr_district'       => array( 'İlçe', 'District' ),
@@ -500,6 +509,11 @@ function ysf_js_strings() {
 		'kit_remove_ask',
 		'kit_sold_out',
 		'kit_in_stock',
+		'kit_tag_add',
+		'tag_info',
+		'tag_good',
+		'tag_bad',
+		'tag_campaign',
 	);
 
 	$out = array();

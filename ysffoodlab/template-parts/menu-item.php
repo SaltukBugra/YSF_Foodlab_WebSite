@@ -5,9 +5,8 @@
  * @package ysffoodlab
  */
 
-$ysf_id     = get_the_ID();
-$ysf_badges = ysf_item_badges( $ysf_id );
-$ysf_thumb  = get_the_post_thumbnail_url( $ysf_id, 'ysf-thumb' );
+$ysf_id    = get_the_ID();
+$ysf_thumb = get_the_post_thumbnail_url( $ysf_id, 'ysf-thumb' );
 $ysf_thumb  = $ysf_thumb ? $ysf_thumb : ysf_placeholder_image();
 $ysf_desc   = ysf_field( $ysf_id, 'excerpt' );
 $ysf_cal    = (int) get_post_meta( $ysf_id, '_ysf_calories', true );
@@ -37,9 +36,7 @@ $ysf_search = strtolower( ysf_field( $ysf_id, 'title' ) . ' ' . wp_strip_all_tag
 	<div class="ysf-item__body">
 		<h3 class="ysf-item__title">
 			<?php echo esc_html( ysf_field( $ysf_id, 'title' ) ); ?>
-			<?php foreach ( $ysf_badges as $ysf_badge ) : ?>
-				<span class="ysf-tag <?php echo esc_attr( $ysf_badge['class'] ); ?>"><?php echo esc_html( $ysf_badge['label'] ); ?></span>
-			<?php endforeach; ?>
+			<?php ysf_the_item_tags( $ysf_id ); ?>
 		</h3>
 
 		<?php if ( $ysf_desc ) : ?>

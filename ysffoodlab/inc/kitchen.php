@@ -316,6 +316,13 @@ function ysf_ajax_kitchen_save() {
 	update_post_meta( $post_id, '_ysf_price', $price );
 	update_post_meta( $post_id, '_ysf_sold_out', $sold ? 1 : 0 );
 	update_post_meta( $post_id, '_ysf_orderable', $order ? 1 : 0 );
+	update_post_meta( $post_id, '_ysf_vegetarian', ! empty( $_POST['vegetarian'] ) ? 1 : 0 );
+	update_post_meta( $post_id, '_ysf_vegan', ! empty( $_POST['vegan'] ) ? 1 : 0 );
+	update_post_meta( $post_id, '_ysf_glutenfree', ! empty( $_POST['glutenfree'] ) ? 1 : 0 );
+	update_post_meta( $post_id, '_ysf_spicy', ! empty( $_POST['spicy'] ) ? 1 : 0 );
+
+	$tags = isset( $_POST['tags'] ) ? wp_unslash( $_POST['tags'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	ysf_save_item_tags( $post_id, $tags );
 
 	if ( $cat ) {
 		wp_set_object_terms( $post_id, array( $cat ), 'ysf_menu_cat' );

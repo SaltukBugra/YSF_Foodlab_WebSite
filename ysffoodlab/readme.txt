@@ -57,6 +57,10 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.2.6 =
+* Urun adi yanindaki etiketler siniflandi: bilgi (koyu), olumlu (yesil),
+  olumsuz (kirmizi), kampanya (sari). Sef ve yonetici birden fazla etiket ekler.
+
 = 1.2.5 =
 * Giris, kayit ve profil sifre alanlarinda Goster / Gizle dugmesi.
 

@@ -81,6 +81,46 @@ foreach ( $ysf_items as $ysf_item ) {
 			<small><?php ysf_e( 'kit_photo_hint' ); ?></small>
 		</div>
 
+		<div class="ysf-field ysf-field--full">
+			<span><?php ysf_e( 'kit_flags' ); ?></span>
+			<div class="ysf-kit-flags">
+				<label class="ysf-check">
+					<input type="checkbox" name="vegetarian" value="1">
+					<span><?php ysf_e( 'vegetarian' ); ?></span>
+				</label>
+				<label class="ysf-check">
+					<input type="checkbox" name="vegan" value="1">
+					<span><?php ysf_e( 'vegan' ); ?></span>
+				</label>
+				<label class="ysf-check">
+					<input type="checkbox" name="glutenfree" value="1">
+					<span><?php ysf_e( 'glutenfree' ); ?></span>
+				</label>
+				<label class="ysf-check">
+					<input type="checkbox" name="spicy" value="1">
+					<span><?php ysf_e( 'spicy' ); ?></span>
+				</label>
+			</div>
+		</div>
+
+		<div class="ysf-field ysf-field--full" data-ysf-kit-tags>
+			<label><?php ysf_e( 'kit_tags' ); ?></label>
+			<p class="ysf-muted"><?php ysf_e( 'kit_tags_hint' ); ?></p>
+			<div class="ysf-kit-tags__composer">
+				<select data-ysf-tag-type>
+					<?php foreach ( ysf_tag_types() as $ysf_tag_key => $ysf_tag_meta ) : ?>
+						<option value="<?php echo esc_attr( $ysf_tag_key ); ?>">
+							<?php echo esc_html( $ysf_tag_meta['label'] ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<input type="text" data-ysf-tag-label maxlength="40" placeholder="<?php echo esc_attr( ysf_t( 'kit_tag_ph' ) ); ?>">
+				<button type="button" class="ysf-btn ysf-btn--sm" data-ysf-tag-add><?php ysf_e( 'kit_tag_add' ); ?></button>
+			</div>
+			<ul class="ysf-kit-tags__list" data-ysf-tag-list></ul>
+			<input type="hidden" name="tags" value="[]">
+		</div>
+
 		<label class="ysf-check">
 			<input type="checkbox" name="sold_out" value="1">
 			<span><?php ysf_e( 'kit_sold_out' ); ?></span>
@@ -129,6 +169,11 @@ foreach ( $ysf_items as $ysf_item ) {
 			$ysf_desc   = wp_strip_all_tags( $ysf_item->post_excerpt ? $ysf_item->post_excerpt : $ysf_item->post_content );
 			$ysf_thumb  = get_the_post_thumbnail_url( $ysf_id, 'ysf-thumb' );
 			$ysf_thumb  = $ysf_thumb ? $ysf_thumb : ysf_placeholder_image();
+			$ysf_vegan  = (bool) get_post_meta( $ysf_id, '_ysf_vegan', true );
+			$ysf_veg    = (bool) get_post_meta( $ysf_id, '_ysf_vegetarian', true );
+			$ysf_gf     = (bool) get_post_meta( $ysf_id, '_ysf_glutenfree', true );
+			$ysf_spicy  = (bool) get_post_meta( $ysf_id, '_ysf_spicy', true );
+			$ysf_tags   = ysf_get_item_tags( $ysf_id );
 			?>
 			<article
 				class="ysf-kitchen__row<?php echo $ysf_sold ? ' is-soldout' : ''; ?>"
@@ -140,6 +185,11 @@ foreach ( $ysf_items as $ysf_item ) {
 				data-excerpt="<?php echo esc_attr( $ysf_desc ); ?>"
 				data-sold="<?php echo $ysf_sold ? '1' : '0'; ?>"
 				data-orderable="<?php echo $ysf_canbuy ? '1' : '0'; ?>"
+				data-vegan="<?php echo $ysf_vegan ? '1' : '0'; ?>"
+				data-vegetarian="<?php echo $ysf_veg ? '1' : '0'; ?>"
+				data-glutenfree="<?php echo $ysf_gf ? '1' : '0'; ?>"
+				data-spicy="<?php echo $ysf_spicy ? '1' : '0'; ?>"
+				data-tags="<?php echo esc_attr( wp_json_encode( $ysf_tags ) ); ?>"
 				data-search="<?php echo esc_attr( strtolower( $ysf_item->post_title . ' ' . $ysf_desc ) ); ?>"
 			>
 				<?php if ( $ysf_thumb ) : ?>

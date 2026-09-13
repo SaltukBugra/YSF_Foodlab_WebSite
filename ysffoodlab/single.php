@@ -64,9 +64,7 @@ while ( have_posts() ) :
 							<div class="ysf-item__body">
 								<h2 class="ysf-item__title" style="margin:0">
 									<?php echo esc_html( ysf_field( $ysf_id, 'title' ) ); ?>
-									<?php foreach ( ysf_item_badges( $ysf_id ) as $ysf_badge ) : ?>
-										<span class="ysf-tag <?php echo esc_attr( $ysf_badge['class'] ); ?>"><?php echo esc_html( $ysf_badge['label'] ); ?></span>
-									<?php endforeach; ?>
+									<?php ysf_the_item_tags( $ysf_id ); ?>
 								</h2>
 							</div>
 							<div class="ysf-item__side">

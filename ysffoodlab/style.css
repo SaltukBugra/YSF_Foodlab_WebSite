@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.2.5
+Version: 1.2.6
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -388,19 +388,27 @@ pre {
 	white-space: nowrap;
 }
 
+.ysf-tag--info,
+.ysf-tag--new {
+	background: var(--ysf-ink);
+	color: var(--ysf-cream);
+}
+
+.ysf-tag--good,
 .ysf-tag--vegan {
 	background: #e6f1e8;
 	color: var(--ysf-green);
 }
 
+.ysf-tag--bad,
 .ysf-tag--spicy {
 	background: #fbe8e8;
 	color: var(--ysf-berry);
 }
 
-.ysf-tag--new {
-	background: var(--ysf-ink);
-	color: var(--ysf-cream);
+.ysf-tag--campaign {
+	background: #ffe58a;
+	color: #6b5200;
 }
 
 /* ==========================================================================
@@ -1023,6 +1031,26 @@ body.ysf-no-scroll {
 	text-transform: uppercase;
 }
 
+.ysf-card__badge.ysf-tag--info {
+	background: var(--ysf-ink);
+	color: var(--ysf-cream);
+}
+
+.ysf-card__badge.ysf-tag--good {
+	background: #e6f1e8;
+	color: var(--ysf-green);
+}
+
+.ysf-card__badge.ysf-tag--bad {
+	background: #fbe8e8;
+	color: var(--ysf-berry);
+}
+
+.ysf-card__badge.ysf-tag--campaign {
+	background: #ffe58a;
+	color: #6b5200;
+}
+
 .ysf-card__body {
 	display: flex;
 	flex: 1 1 auto;
@@ -1032,6 +1060,10 @@ body.ysf-no-scroll {
 }
 
 .ysf-card__title {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
 	margin: 0;
 	font-size: 1.22rem;
 }
@@ -1819,6 +1851,50 @@ body.ysf-no-scroll {
 
 .ysf-kitchen__form[hidden] {
 	display: none;
+}
+
+.ysf-kit-flags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px 18px;
+	margin-top: 8px;
+}
+
+.ysf-kit-tags__composer {
+	display: grid;
+	grid-template-columns: minmax(140px, 180px) 1fr auto;
+	gap: 8px;
+	align-items: center;
+}
+
+.ysf-kit-tags__list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ysf-kit-tags__list li {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.ysf-kit-tags__list button {
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+@media (max-width: 640px) {
+	.ysf-kit-tags__composer {
+		grid-template-columns: 1fr;
+	}
 }
 
 .ysf-kitchen__toolbar {

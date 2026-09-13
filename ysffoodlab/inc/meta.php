@@ -42,17 +42,6 @@ function ysf_menu_item_fields() {
 			'rest'  => 'string',
 			'full'  => true,
 		),
-		'_ysf_badge'       => array(
-			'label' => __( 'Rozet metni', 'ysffoodlab' ),
-			'type'  => 'text',
-			'rest'  => 'string',
-			'help'  => __( 'Örn: Şefin seçimi, Yeni', 'ysffoodlab' ),
-		),
-		'_ysf_badge_en'    => array(
-			'label' => __( 'Rozet metni (EN)', 'ysffoodlab' ),
-			'type'  => 'text',
-			'rest'  => 'string',
-		),
 		'_ysf_allergens'   => array(
 			'label' => __( 'Alerjenler', 'ysffoodlab' ),
 			'type'  => 'text',
@@ -230,6 +219,33 @@ function ysf_register_meta() {
 			);
 		}
 	}
+
+	register_post_meta(
+		'ysf_menu_item',
+		'_ysf_tags',
+		array(
+			'type'              => 'array',
+			'single'            => true,
+			'show_in_rest'      => array(
+				'schema' => array(
+					'type'  => 'array',
+					'items' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'label'    => array( 'type' => 'string' ),
+							'label_en' => array( 'type' => 'string' ),
+							'type'     => array( 'type' => 'string' ),
+						),
+					),
+				),
+			),
+			'default'           => array(),
+			'sanitize_callback' => 'ysf_sanitize_tags',
+			'auth_callback'     => function () {
+				return current_user_can( 'edit_posts' ) || current_user_can( 'ysf_manage_menu' );
+			},
+		)
+	);
 }
 add_action( 'init', 'ysf_register_meta' );
 
@@ -353,6 +369,15 @@ function ysf_add_meta_boxes() {
 		'normal',
 		'high',
 		array( 'fields' => 'menu_item' )
+	);
+
+	add_meta_box(
+		'ysf_menu_tags_box',
+		__( 'İsim yanı etiketler', 'ysffoodlab' ),
+		'ysf_render_tags_box',
+		'ysf_menu_item',
+		'normal',
+		'high'
 	);
 
 	add_meta_box(
@@ -501,6 +526,102 @@ function ysf_render_meta_box( $post, $meta_box ) {
 }
 
 /**
+ * İsim yanı etiket kutusunu çizer.
+ *
+ * @param WP_Post $post Ürün.
+ */
+function ysf_render_tags_box( $post ) {
+	$tags  = ysf_get_item_tags( $post->ID );
+	$types = ysf_tag_types();
+
+	wp_nonce_field( 'ysf_save_meta', 'ysf_meta_nonce' );
+	echo '<input type="hidden" name="ysf_tags_ready" value="1">';
+	echo '<p>' . esc_html__( 'Ürün adının yanında görünen etiketler. Bilgi koyu, olumlu yeşil, olumsuz kırmızı, kampanya sarıdır. Birden fazla ekleyebilirsiniz.', 'ysffoodlab' ) . '</p>';
+	echo '<table class="widefat striped" id="ysf-tags-table"><thead><tr>';
+	echo '<th>' . esc_html__( 'Metin', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'İngilizce', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'Tür', 'ysffoodlab' ) . '</th>';
+	echo '<th></th></tr></thead><tbody>';
+
+	if ( ! $tags ) {
+		$tags[] = array(
+			'label'    => '',
+			'label_en' => '',
+			'type'     => 'info',
+		);
+	}
+
+	foreach ( $tags as $tag ) {
+		ysf_render_tag_row( $tag, $types );
+	}
+
+	echo '</tbody></table>';
+	echo '<p><button type="button" class="button" id="ysf-tag-add">' . esc_html__( 'Etiket ekle', 'ysffoodlab' ) . '</button></p>';
+	echo '<template id="ysf-tag-row-tpl">';
+	ysf_render_tag_row(
+		array(
+			'label'    => '',
+			'label_en' => '',
+			'type'     => 'info',
+		),
+		$types
+	);
+	echo '</template>';
+	?>
+	<script>
+	(function () {
+		var add = document.getElementById('ysf-tag-add');
+		var table = document.getElementById('ysf-tags-table');
+		var tpl = document.getElementById('ysf-tag-row-tpl');
+		if (!add || !table || !tpl) return;
+		add.addEventListener('click', function () {
+			var body = table.querySelector('tbody');
+			body.insertAdjacentHTML('beforeend', tpl.innerHTML);
+		});
+		table.addEventListener('click', function (event) {
+			if (!event.target.closest('[data-ysf-tag-remove]')) return;
+			var row = event.target.closest('tr');
+			if (row && table.querySelectorAll('tbody tr').length > 1) row.remove();
+			else if (row) {
+				row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+			}
+		});
+	})();
+	</script>
+	<?php
+}
+
+/**
+ * Yönetim paneli etiket satırı.
+ *
+ * @param array $tag   Etiket.
+ * @param array $types Türler.
+ */
+function ysf_render_tag_row( $tag, $types ) {
+	echo '<tr>';
+	printf(
+		'<td><input type="text" name="ysf_tag_label[]" value="%s" class="widefat" maxlength="40"></td>',
+		esc_attr( isset( $tag['label'] ) ? $tag['label'] : '' )
+	);
+	printf(
+		'<td><input type="text" name="ysf_tag_label_en[]" value="%s" class="widefat" maxlength="40"></td>',
+		esc_attr( isset( $tag['label_en'] ) ? $tag['label_en'] : '' )
+	);
+	echo '<td><select name="ysf_tag_type[]">';
+	foreach ( $types as $key => $meta ) {
+		printf(
+			'<option value="%1$s" %2$s>%3$s</option>',
+			esc_attr( $key ),
+			selected( isset( $tag['type'] ) ? $tag['type'] : 'info', $key, false ),
+			esc_html( $meta['label'] )
+		);
+	}
+	echo '</select></td>';
+	echo '<td><button type="button" class="button-link" data-ysf-tag-remove>' . esc_html__( 'Sil', 'ysffoodlab' ) . '</button></td>';
+	echo '</tr>';
+}
+
+/**
  * Meta değerlerini kaydeder.
  *
  * @param int     $post_id Gönderi kimliği.
@@ -523,6 +644,23 @@ function ysf_save_meta( $post_id, $post ) {
 
 	if ( 'ysf_menu_item' === $post->post_type ) {
 		$groups[] = ysf_menu_item_fields();
+
+		if ( isset( $_POST['ysf_tags_ready'] ) ) {
+			$labels = isset( $_POST['ysf_tag_label'] ) ? wp_unslash( $_POST['ysf_tag_label'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$ens    = isset( $_POST['ysf_tag_label_en'] ) ? wp_unslash( $_POST['ysf_tag_label_en'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$kinds  = isset( $_POST['ysf_tag_type'] ) ? wp_unslash( $_POST['ysf_tag_type'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$rows   = array();
+
+			foreach ( (array) $labels as $index => $label ) {
+				$rows[] = array(
+					'label'    => $label,
+					'label_en' => isset( $ens[ $index ] ) ? $ens[ $index ] : '',
+					'type'     => isset( $kinds[ $index ] ) ? $kinds[ $index ] : 'info',
+				);
+			}
+
+			ysf_save_item_tags( $post_id, $rows );
+		}
 	} elseif ( 'ysf_campaign' === $post->post_type ) {
 		$groups[] = ysf_campaign_fields();
 	} elseif ( in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
