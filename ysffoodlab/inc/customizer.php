@@ -216,7 +216,20 @@ function ysf_customize_register( $wp_customize ) {
 	// --- Ana sayfa --------------------------------------------------------
 	$home = array(
 		'ysf_hero_image'     => array(
-			'label' => __( 'Kapak görseli', 'ysffoodlab' ),
+			'label'       => __( 'Kapak görseli 1', 'ysffoodlab' ),
+			'type'        => 'image',
+			'description' => __( 'Boş bırakırsanız temayla gelen görseller slayt olarak gösterilir.', 'ysffoodlab' ),
+		),
+		'ysf_hero_image_2'   => array(
+			'label' => __( 'Kapak görseli 2', 'ysffoodlab' ),
+			'type'  => 'image',
+		),
+		'ysf_hero_image_3'   => array(
+			'label' => __( 'Kapak görseli 3', 'ysffoodlab' ),
+			'type'  => 'image',
+		),
+		'ysf_hero_image_4'   => array(
+			'label' => __( 'Kapak görseli 4', 'ysffoodlab' ),
 			'type'  => 'image',
 		),
 		'ysf_hero_title'     => array(
@@ -228,12 +241,14 @@ function ysf_customize_register( $wp_customize ) {
 			'default' => 'Fresh ingredients, great coffee, a warm table',
 		),
 		'ysf_hero_text'      => array(
-			'label' => __( 'Kapak açıklaması', 'ysffoodlab' ),
-			'type'  => 'textarea',
+			'label'   => __( 'Kapak açıklaması', 'ysffoodlab' ),
+			'type'    => 'textarea',
+			'default' => 'Her tabağı günlük hazırlıyor, kahvemizi taze çekiyoruz. Gel, otur, acele etme.',
 		),
 		'ysf_hero_text_en'   => array(
-			'label' => __( 'Kapak açıklaması (EN)', 'ysffoodlab' ),
-			'type'  => 'textarea',
+			'label'   => __( 'Kapak açıklaması (EN)', 'ysffoodlab' ),
+			'type'    => 'textarea',
+			'default' => 'Every plate is prepared daily and our coffee is ground fresh. Come in, sit down, take your time.',
 		),
 		'ysf_show_bar'       => array(
 			'label'   => __( 'Üst duyuru şeridini göster', 'ysffoodlab' ),
@@ -249,16 +264,19 @@ function ysf_customize_register( $wp_customize ) {
 			'default' => 'The story behind our kitchen',
 		),
 		'ysf_about_text'     => array(
-			'label' => __( 'Hakkımızda metni', 'ysffoodlab' ),
-			'type'  => 'textarea',
+			'label'   => __( 'Hakkımızda metni', 'ysffoodlab' ),
+			'type'    => 'textarea',
+			'default' => "Mutfağımızda gün, pazardan gelen malzemenin ayıklanmasıyla başlar. Sosları, hamurları ve tatlıları kendimiz hazırlar; menüyü mevsime göre tazeleriz.\n\nKahve tarafında tek kaynak çekirdeklerle çalışıyor, her demlemeyi gramına kadar ölçüyoruz. Amacımız basit: iyi bir tabak, dürüst bir fiyat ve kendinizi evinizde hissettiğiniz bir masa.",
 		),
 		'ysf_about_text_en'  => array(
-			'label' => __( 'Hakkımızda metni (EN)', 'ysffoodlab' ),
-			'type'  => 'textarea',
+			'label'   => __( 'Hakkımızda metni (EN)', 'ysffoodlab' ),
+			'type'    => 'textarea',
+			'default' => "Our day begins with sorting the produce that arrives from the market. We make our own sauces, doughs and desserts, and refresh the menu with every season.\n\nOn the coffee side we work with single origin beans and weigh every brew to the gram. Our goal is simple: a good plate, an honest price and a table where you feel at home.",
 		),
 		'ysf_about_image'    => array(
-			'label' => __( 'Hakkımızda görseli', 'ysffoodlab' ),
-			'type'  => 'image',
+			'label'       => __( 'Hakkımızda görseli', 'ysffoodlab' ),
+			'type'        => 'image',
+			'description' => __( 'Boş bırakırsanız temayla gelen mutfak görseli kullanılır.', 'ysffoodlab' ),
 		),
 	);
 

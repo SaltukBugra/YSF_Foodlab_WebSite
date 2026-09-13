@@ -2,8 +2,8 @@
 Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
-Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.0.0
+Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
+Version: 1.1.0
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -827,11 +827,56 @@ body.ysf-no-scroll {
 	z-index: 0;
 }
 
+/* Kapak slaytlari: birbirine yumusak gecis + yavas yakinlasma */
+.ysf-hero__slide {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	transition: opacity 1.4s ease-in-out;
+}
+
+.ysf-hero__slide.is-active {
+	opacity: 1;
+}
+
 .ysf-hero__media img {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
-	opacity: 0.5;
+	opacity: 0.52;
+	transform: scale(1.04);
+	transition: transform 9s ease-out;
+}
+
+.ysf-hero__slide.is-active img {
+	transform: scale(1.13);
+}
+
+.ysf-hero__dots {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 22px;
+	z-index: 3;
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+}
+
+.ysf-hero__dot {
+	width: 26px;
+	height: 4px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--ysf-radius-pill);
+	background: rgba(255, 255, 255, 0.32);
+	cursor: pointer;
+	transition: background-color 0.3s ease, width 0.3s ease;
+}
+
+.ysf-hero__dot.is-active {
+	width: 42px;
+	background: var(--ysf-accent);
 }
 
 .ysf-hero::after {
@@ -1933,6 +1978,173 @@ body.ysf-no-scroll {
 	border-color: var(--ysf-accent);
 }
 
+/* ==========================================================================
+   13. Hareket: sayfa gecisleri, kaydirma animasyonlari, menu filtreleri
+   ========================================================================== */
+
+/* Sayfa yuklenirken icerigin yumusak girisi. Animasyon desteklenmeyen
+   tarayicilarda ozellikler yok sayilir ve icerik dogrudan gorunur. */
+@media (prefers-reduced-motion: no-preference) {
+	#ysf-content {
+		animation: ysf-page-in 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+	}
+
+	.ysf-hero__inner > * {
+		animation: ysf-rise 0.75s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+	}
+
+	.ysf-hero__inner > *:nth-child(1) {
+		animation-delay: 0.05s;
+	}
+
+	.ysf-hero__inner > *:nth-child(2) {
+		animation-delay: 0.15s;
+	}
+
+	.ysf-hero__inner > *:nth-child(3) {
+		animation-delay: 0.25s;
+	}
+
+	.ysf-hero__inner > *:nth-child(4) {
+		animation-delay: 0.35s;
+	}
+
+	.ysf-hero__inner > *:nth-child(5) {
+		animation-delay: 0.45s;
+	}
+}
+
+@keyframes ysf-page-in {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes ysf-rise {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* Kaydirdikca ortaya cikan bolumler. Sinif yalnizca JS tarafindan eklenir,
+   boylece JavaScript kapaliysa hicbir icerik gizli kalmaz. */
+.ysf-reveal {
+	opacity: 0;
+	transform: translateY(26px);
+	transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.ysf-reveal.is-visible {
+	opacity: 1;
+	transform: none;
+}
+
+/* Menu kategorileri arasi yumusak gecis */
+.ysf-item,
+.ysf-card {
+	transition: opacity 0.34s ease, transform 0.34s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+[data-ysf-item].is-hiding,
+.ysf-menu-group.is-hiding {
+	opacity: 0;
+	transform: translateY(10px) scale(0.985);
+}
+
+.ysf-menu-group {
+	transition: opacity 0.34s ease, transform 0.34s ease;
+}
+
+.ysf-filters {
+	scroll-behavior: smooth;
+}
+
+.ysf-filter {
+	position: relative;
+	overflow: hidden;
+}
+
+.ysf-filter::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: var(--ysf-ink);
+	transform: scaleX(0);
+	transform-origin: left;
+	transition: transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+	z-index: -1;
+}
+
+.ysf-filter.is-active::before {
+	transform: scaleX(1);
+}
+
+/* Kartlarin ve butonlarin uzerine gelindiginde canlanmasi */
+.ysf-card__media,
+.ysf-item__thumb {
+	background-image: linear-gradient(120deg, var(--ysf-cream-2), #e6ded2);
+	background-size: cover;
+	background-position: center;
+}
+
+/* Sayfalar arasi gecis (Chromium tabanli tarayicilar).
+   Ust bar, baslik ve alt bilgi yerinde kalir, yalnizca icerik kayarak degisir. */
+@view-transition {
+	navigation: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.ysf-topbar {
+		view-transition-name: ysf-topbar;
+	}
+
+	.ysf-header {
+		view-transition-name: ysf-header;
+	}
+
+	.ysf-footer {
+		view-transition-name: ysf-footer;
+	}
+
+	.ysf-mobilebar {
+		view-transition-name: ysf-mobilebar;
+	}
+
+	::view-transition-old(root) {
+		animation: ysf-vt-out 0.34s cubic-bezier(0.4, 0, 0.2, 1) both;
+	}
+
+	::view-transition-new(root) {
+		animation: ysf-vt-in 0.46s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+	}
+}
+
+@keyframes ysf-vt-out {
+	to {
+		opacity: 0;
+		transform: translateX(-2.5%) scale(0.988);
+	}
+}
+
+@keyframes ysf-vt-in {
+	from {
+		opacity: 0;
+		transform: translateX(2.5%) scale(1.012);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -1940,6 +2152,16 @@ body.ysf-no-scroll {
 		animation-duration: 0.001ms !important;
 		transition-duration: 0.001ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	.ysf-reveal {
+		opacity: 1;
+		transform: none;
+	}
+
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none !important;
 	}
 }
 

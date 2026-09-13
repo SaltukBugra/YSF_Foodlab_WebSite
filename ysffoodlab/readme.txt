@@ -57,5 +57,19 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.1.0 =
+* Ana sayfaya kapak slayti eklendi: gorseller yumusak gecisle degisir ve
+  yavasca yakinlasir. Ozelestir bolumunden 4 gorsele kadar secilebilir.
+* Sayfalar arasi gecis eklendi (View Transitions): ust bar, baslik ve alt
+  bilgi yerinde kalirken icerik kayarak degisir.
+* Bolumler ve kartlar sayfa kaydirildikca sirayla belirir.
+* Menu kategorileri arasinda gecis yumusatildi; urunler sirayla gorunur.
+* Temayla birlikte 20 hazir yemek fotografi gelir; kurulum sihirbazi bu
+  fotograflari medya kutuphanesine aktarip ornek urunlere baglar.
+* Fotografi olmayan urunler icin yedek gorsel eklendi.
+* Ornek menu kahvalti, aperatif, hamur isleri, pizza, makarna, fast food,
+  tatli ve kahve kategorileriyle yeniden duzenlendi.
+* Tum hareketler "azaltilmis hareket" tercihine saygi duyar.
+
 = 1.0.0 =
 * Ilk surum.

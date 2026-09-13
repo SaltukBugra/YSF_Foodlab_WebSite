@@ -10,7 +10,7 @@ get_header();
 $ysf_order_url = ysf_localize_url( ysf_get_page_url_by_template( 'template-order.php' ) );
 $ysf_res_url   = ysf_localize_url( ysf_get_page_url_by_template( 'template-reservation.php' ) );
 $ysf_menu_url  = ysf_localize_url( ysf_get_page_url_by_template( 'template-menu.php' ) );
-$ysf_hero_img  = ysf_get_option( 'ysf_hero_image', '' );
+$ysf_slides    = ysf_hero_slides();
 $ysf_open      = ysf_is_open_now();
 $ysf_hours     = ysf_get_hours();
 $ysf_today     = ysf_today_key();
@@ -18,10 +18,36 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 ?>
 
 <section class="ysf-hero">
-	<?php if ( $ysf_hero_img ) : ?>
-		<div class="ysf-hero__media">
-			<img src="<?php echo esc_url( $ysf_hero_img ); ?>" alt="" fetchpriority="high" decoding="async">
+	<?php if ( $ysf_slides ) : ?>
+		<div class="ysf-hero__media" data-ysf-slider>
+			<?php foreach ( $ysf_slides as $ysf_slide_index => $ysf_slide ) : ?>
+				<div class="ysf-hero__slide <?php echo 0 === $ysf_slide_index ? 'is-active' : ''; ?>" data-ysf-slide>
+					<img
+						src="<?php echo esc_url( $ysf_slide ); ?>"
+						alt=""
+						<?php if ( 0 === $ysf_slide_index ) : ?>
+							fetchpriority="high"
+						<?php else : ?>
+							loading="lazy"
+						<?php endif; ?>
+						decoding="async"
+					>
+				</div>
+			<?php endforeach; ?>
 		</div>
+
+		<?php if ( count( $ysf_slides ) > 1 ) : ?>
+			<div class="ysf-hero__dots" data-ysf-slider-dots role="group" aria-label="<?php echo esc_attr( ysf_t( 'announcements' ) ); ?>">
+				<?php foreach ( $ysf_slides as $ysf_dot_index => $ysf_dot ) : ?>
+					<button
+						type="button"
+						class="ysf-hero__dot <?php echo 0 === $ysf_dot_index ? 'is-active' : ''; ?>"
+						data-ysf-slide-to="<?php echo esc_attr( $ysf_dot_index ); ?>"
+						aria-label="<?php echo esc_attr( sprintf( /* translators: %d: slayt sırası. */ __( '%d. görsel', 'ysffoodlab' ), $ysf_dot_index + 1 ) ); ?>"
+					></button>
+				<?php endforeach; ?>
+			</div>
+		<?php endif; ?>
 	<?php endif; ?>
 
 	<div class="ysf-wrap ysf-hero__inner">
@@ -192,7 +218,7 @@ endif;
 $ysf_about_text = ysf_option_i18n( 'ysf_about_text', '' );
 
 if ( $ysf_about_text ) :
-	$ysf_about_img = ysf_get_option( 'ysf_about_image', '' );
+	$ysf_about_img = ysf_about_image();
 	?>
 	<section class="ysf-section ysf-section--soft">
 		<div class="ysf-wrap ysf-split ysf-split--media-right">

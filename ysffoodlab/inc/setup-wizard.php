@@ -73,12 +73,14 @@ function ysf_wizard_pages() {
  */
 function ysf_wizard_categories() {
 	return array(
-		'baslangiclar'   => array( 'Başlangıçlar', 'Starters' ),
-		'ana-yemekler'   => array( 'Ana Yemekler', 'Main Courses' ),
-		'burger-sandvic' => array( 'Burger & Sandviç', 'Burgers & Sandwiches' ),
-		'salatalar'      => array( 'Salatalar', 'Salads' ),
-		'tatlilar'       => array( 'Tatlılar', 'Desserts' ),
-		'kahve-icecek'   => array( 'Kahve & İçecek', 'Coffee & Drinks' ),
+		'kahvalti'      => array( 'Kahvaltı', 'Breakfast' ),
+		'aperatif'      => array( 'Aperatif & Başlangıç', 'Appetisers & Starters' ),
+		'hamur-isleri'  => array( 'Hamur İşleri', 'Turkish Pastries' ),
+		'pizza'         => array( 'Pizza', 'Pizza' ),
+		'makarna'       => array( 'Makarna', 'Pasta' ),
+		'fast-food'     => array( 'Burger & Fast Food', 'Burgers & Fast Food' ),
+		'tatlilar'      => array( 'Tatlılar', 'Desserts' ),
+		'kahve-icecek'  => array( 'Kahve & İçecek', 'Coffee & Drinks' ),
 	);
 }
 
@@ -89,159 +91,221 @@ function ysf_wizard_categories() {
  */
 function ysf_wizard_menu_items() {
 	return array(
+		// --- Kahvaltı -----------------------------------------------------
 		array(
-			'title'    => 'Ev Yapımı Humus',
-			'title_en' => 'House Hummus',
-			'excerpt'  => 'Nohut, tahin, limon ve zeytinyağı; yanında sıcak lavaş.',
+			'title'      => 'Serpme Kahvaltı (kişi başı)',
+			'title_en'   => 'Turkish Breakfast (per person)',
+			'excerpt'    => 'Köy peyniri, zeytin, bal-kaymak, ev reçelleri, sucuklu yumurta, sıcak simit ve sınırsız çay.',
+			'excerpt_en' => 'Village cheeses, olives, honey with clotted cream, house jams, eggs with sucuk, warm simit and unlimited tea.',
+			'price'      => 295,
+			'cat'        => 'kahvalti',
+			'image'      => 'dish-kahvalti.jpg',
+			'badge'      => 'Hafta sonu favorisi',
+			'badge_en'   => 'Weekend favourite',
+			'featured'   => 1,
+		),
+		array(
+			'title'      => 'Simit Tabağı',
+			'title_en'   => 'Simit Plate',
+			'excerpt'    => 'Susamı bol taze simit, beyaz peynir, tereyağı ve mevsim reçeli.',
+			'excerpt_en' => 'Fresh sesame simit with white cheese, butter and seasonal jam.',
+			'price'      => 110,
+			'cat'        => 'kahvalti',
+			'image'      => 'dish-simit.jpg',
+			'flags'      => array( '_ysf_vegetarian' => 1 ),
+		),
+
+		// --- Aperatif & Başlangıç ----------------------------------------
+		array(
+			'title'      => 'Aperatif Tabağı (2-3 kişilik)',
+			'title_en'   => 'Aperitif Board (serves 2-3)',
+			'excerpt'    => 'Haydari, ezme, muhammara, beyaz peynir, sucuk, sigara böreği, ceviz ve sıcak ekmek.',
+			'excerpt_en' => 'Haydari, ezme, muhammara, white cheese, sucuk, cheese rolls, walnuts and warm bread.',
+			'price'      => 385,
+			'cat'        => 'aperatif',
+			'image'      => 'dish-aperatif.jpg',
+			'badge'      => 'Paylaşmalık',
+			'badge_en'   => 'To share',
+			'featured'   => 1,
+		),
+		array(
+			'title'      => 'Ev Yapımı Humus',
+			'title_en'   => 'House Hummus',
+			'excerpt'    => 'Nohut, tahin, limon ve zeytinyağı; yanında sıcak lavaş.',
 			'excerpt_en' => 'Chickpeas, tahini, lemon and olive oil, served with warm flatbread.',
-			'price'    => 145,
-			'cat'      => 'baslangiclar',
-			'flags'    => array( '_ysf_vegan' => 1 ),
+			'price'      => 155,
+			'cat'        => 'aperatif',
+			'image'      => 'dish-humus.jpg',
+			'flags'      => array( '_ysf_vegan' => 1 ),
 		),
 		array(
-			'title'    => 'Fırınlanmış Karnabahar',
-			'title_en' => 'Roasted Cauliflower',
-			'excerpt'  => 'Tahin sos, nar ekşisi, kavrulmuş badem.',
-			'excerpt_en' => 'Tahini sauce, pomegranate molasses and toasted almonds.',
-			'price'    => 165,
-			'cat'      => 'baslangiclar',
-			'flags'    => array( '_ysf_vegetarian' => 1, '_ysf_glutenfree' => 1 ),
-		),
-		array(
-			'title'    => 'Acılı Karides Güveç',
-			'title_en' => 'Spicy Shrimp Casserole',
-			'excerpt'  => 'Tereyağı, sarımsak, kiraz domates ve pul biber.',
-			'excerpt_en' => 'Butter, garlic, cherry tomatoes and chilli flakes.',
-			'price'    => 285,
-			'cat'      => 'baslangiclar',
-			'flags'    => array( '_ysf_spicy' => 1 ),
-		),
-		array(
-			'title'    => 'Kuzu İncik',
-			'title_en' => 'Slow-Cooked Lamb Shank',
-			'excerpt'  => '6 saat ağır ateşte pişmiş incik, kereviz püresi ve kendi suyu.',
-			'excerpt_en' => 'Six-hour braised shank with celeriac purée and its own jus.',
-			'price'    => 585,
-			'cat'      => 'ana-yemekler',
-			'badge'    => 'Şefin seçimi',
-			'badge_en' => 'Chef’s pick',
-			'featured' => 1,
-		),
-		array(
-			'title'    => 'Antrikot (300 gr)',
-			'title_en' => 'Ribeye Steak (300 g)',
-			'excerpt'  => 'Dinlendirilmiş dana antrikot, kemikli patates, biberiyeli tereyağı.',
-			'excerpt_en' => 'Aged ribeye with wedge potatoes and rosemary butter.',
-			'price'    => 720,
-			'cat'      => 'ana-yemekler',
-			'featured' => 1,
-		),
-		array(
-			'title'    => 'Tereyağlı Levrek',
-			'title_en' => 'Sea Bass in Brown Butter',
-			'excerpt'  => 'Fırında levrek fileto, kapari, limon ve mevsim yeşillikleri.',
-			'excerpt_en' => 'Oven-baked sea bass fillet with capers, lemon and seasonal greens.',
-			'price'    => 465,
-			'cat'      => 'ana-yemekler',
-			'flags'    => array( '_ysf_glutenfree' => 1 ),
-		),
-		array(
-			'title'    => 'Mantarlı Kremalı Tagliatelle',
-			'title_en' => 'Creamy Mushroom Tagliatelle',
-			'excerpt'  => 'Ev yapımı makarna, istiridye mantarı, parmesan.',
-			'excerpt_en' => 'House-made pasta with oyster mushrooms and parmesan.',
-			'price'    => 325,
-			'cat'      => 'ana-yemekler',
-			'flags'    => array( '_ysf_vegetarian' => 1 ),
-		),
-		array(
-			'title'    => 'YSF Signature Burger',
-			'title_en' => 'YSF Signature Burger',
-			'excerpt'  => '180 gr dana köfte, cheddar, karamelize soğan, özel sos.',
-			'excerpt_en' => '180 g beef patty, cheddar, caramelised onion and our house sauce.',
-			'price'    => 295,
-			'cat'      => 'burger-sandvic',
-			'badge'    => 'En çok satan',
-			'badge_en' => 'Best seller',
-			'featured' => 1,
-		),
-		array(
-			'title'    => 'Acılı Tavuk Burger',
-			'title_en' => 'Hot Chicken Burger',
-			'excerpt'  => 'Çıtır tavuk göğsü, acı bal, turşu, brioche ekmek.',
-			'excerpt_en' => 'Crispy chicken breast, hot honey, pickles, brioche bun.',
-			'price'    => 265,
-			'cat'      => 'burger-sandvic',
-			'flags'    => array( '_ysf_spicy' => 1 ),
-		),
-		array(
-			'title'    => 'Falafel Dürüm',
-			'title_en' => 'Falafel Wrap',
-			'excerpt'  => 'Nohut falafel, tahin sos, turşu ve taze otlar.',
-			'excerpt_en' => 'Chickpea falafel with tahini, pickles and fresh herbs.',
-			'price'    => 215,
-			'cat'      => 'burger-sandvic',
-			'flags'    => array( '_ysf_vegan' => 1 ),
-		),
-		array(
-			'title'    => 'Sezar Salata',
-			'title_en' => 'Caesar Salad',
-			'excerpt'  => 'Marul, ızgara tavuk, parmesan, ev yapımı kruton.',
-			'excerpt_en' => 'Romaine, grilled chicken, parmesan and house croutons.',
-			'price'    => 245,
-			'cat'      => 'salatalar',
-		),
-		array(
-			'title'    => 'Kinoa & Avokado',
-			'title_en' => 'Quinoa & Avocado Bowl',
-			'excerpt'  => 'Kinoa, avokado, nar, ceviz ve limonlu sos.',
+			'title'      => 'Kinoa & Avokado Salata',
+			'title_en'   => 'Quinoa & Avocado Salad',
+			'excerpt'    => 'Kinoa, avokado, nar, ceviz ve limonlu sos.',
 			'excerpt_en' => 'Quinoa, avocado, pomegranate, walnuts and lemon dressing.',
-			'price'    => 235,
-			'cat'      => 'salatalar',
-			'flags'    => array( '_ysf_vegan' => 1, '_ysf_glutenfree' => 1 ),
+			'price'      => 245,
+			'cat'        => 'aperatif',
+			'image'      => 'dish-salad.jpg',
+			'flags'      => array( '_ysf_vegan' => 1, '_ysf_glutenfree' => 1 ),
+		),
+
+		// --- Hamur İşleri -------------------------------------------------
+		array(
+			'title'      => 'Su Böreği (Peynirli)',
+			'title_en'   => 'Su Böreği with Cheese',
+			'excerpt'    => 'El açması yufka, bol beyaz peynir ve maydanoz; tepside günlük pişiyor.',
+			'excerpt_en' => 'Hand-rolled layers filled with white cheese and parsley, baked fresh daily.',
+			'price'      => 175,
+			'cat'        => 'hamur-isleri',
+			'image'      => 'dish-suborek-peynir.jpg',
+			'badge'      => 'Günlük açma',
+			'badge_en'   => 'Made this morning',
+			'flags'      => array( '_ysf_vegetarian' => 1 ),
+			'featured'   => 1,
 		),
 		array(
-			'title'    => 'San Sebastian Cheesecake',
-			'title_en' => 'San Sebastian Cheesecake',
-			'excerpt'  => 'Yanık yüzeyli, akışkan dokulu klasik.',
+			'title'      => 'Su Böreği (Kıymalı)',
+			'title_en'   => 'Su Böreği with Minced Beef',
+			'excerpt'    => 'Baharatlı dana kıyma ve soğan harcı, tereyağlı katmerli yufka.',
+			'excerpt_en' => 'Spiced minced beef and onion between buttery layers of pastry.',
+			'price'      => 195,
+			'cat'        => 'hamur-isleri',
+			'image'      => 'dish-suborek-kiyma.jpg',
+		),
+
+		// --- Pizza --------------------------------------------------------
+		array(
+			'title'      => 'Margherita Pizza',
+			'title_en'   => 'Margherita Pizza',
+			'excerpt'    => 'Taş fırında, ince hamur, San Marzano domates sosu, mozzarella ve taze fesleğen.',
+			'excerpt_en' => 'Stone-baked thin crust with San Marzano tomato sauce, mozzarella and fresh basil.',
+			'price'      => 265,
+			'cat'        => 'pizza',
+			'image'      => 'dish-pizza.jpg',
+			'flags'      => array( '_ysf_vegetarian' => 1 ),
+			'featured'   => 1,
+		),
+		array(
+			'title'      => 'Sucuklu Pizza',
+			'title_en'   => 'Pizza with Sucuk',
+			'excerpt'    => 'Mozzarella, acılı sucuk dilimleri, yeşil biber ve kekik.',
+			'excerpt_en' => 'Mozzarella, spicy sucuk slices, green pepper and oregano.',
+			'price'      => 295,
+			'cat'        => 'pizza',
+			'flags'      => array( '_ysf_spicy' => 1 ),
+		),
+
+		// --- Makarna ------------------------------------------------------
+		array(
+			'title'      => 'Kremalı Fettuccine',
+			'title_en'   => 'Creamy Fettuccine',
+			'excerpt'    => 'Ev yapımı fettuccine, parmesan, karabiber ve tereyağı sos.',
+			'excerpt_en' => 'House-made fettuccine with parmesan, black pepper and butter sauce.',
+			'price'      => 275,
+			'cat'        => 'makarna',
+			'image'      => 'dish-pasta.jpg',
+			'flags'      => array( '_ysf_vegetarian' => 1 ),
+		),
+		array(
+			'title'      => 'Domates Soslu Penne',
+			'title_en'   => 'Penne in Tomato Sauce',
+			'excerpt'    => 'Günlük hazırlanan domates sos, sarımsak, zeytinyağı ve fesleğen.',
+			'excerpt_en' => 'Daily-made tomato sauce with garlic, olive oil and basil.',
+			'price'      => 235,
+			'cat'        => 'makarna',
+			'flags'      => array( '_ysf_vegan' => 1 ),
+		),
+
+		// --- Burger & Fast Food -------------------------------------------
+		array(
+			'title'      => 'YSF Signature Burger',
+			'title_en'   => 'YSF Signature Burger',
+			'excerpt'    => '180 gr dana köfte, cheddar, karamelize soğan, özel sos ve brioche ekmek.',
+			'excerpt_en' => '180 g beef patty, cheddar, caramelised onion, house sauce and brioche bun.',
+			'price'      => 315,
+			'cat'        => 'fast-food',
+			'image'      => 'dish-burger.jpg',
+			'badge'      => 'En çok satan',
+			'badge_en'   => 'Best seller',
+			'featured'   => 1,
+		),
+		array(
+			'title'      => 'Çıtır Tavuk Kanat & Patates',
+			'title_en'   => 'Crispy Wings & Fries',
+			'excerpt'    => 'Baharatlı çıtır kanat, kalın kesim patates ve ranch sos.',
+			'excerpt_en' => 'Spiced crispy wings with thick-cut fries and ranch dip.',
+			'price'      => 245,
+			'cat'        => 'fast-food',
+			'image'      => 'dish-kanat.jpg',
+			'flags'      => array( '_ysf_spicy' => 1 ),
+		),
+
+		// --- Tatlılar -----------------------------------------------------
+		array(
+			'title'      => 'San Sebastian Cheesecake',
+			'title_en'   => 'San Sebastian Cheesecake',
+			'excerpt'    => 'Yanık yüzeyli, akışkan dokulu klasik.',
 			'excerpt_en' => 'The classic burnt-top, molten-centre cheesecake.',
-			'price'    => 155,
-			'cat'      => 'tatlilar',
-			'featured' => 1,
+			'price'      => 165,
+			'cat'        => 'tatlilar',
+			'image'      => 'dish-cheesecake.jpg',
+			'featured'   => 1,
 		),
 		array(
-			'title'    => 'Fındıklı Brownie',
-			'title_en' => 'Hazelnut Brownie',
-			'excerpt'  => 'Sıcak brownie, vanilyalı dondurma.',
-			'excerpt_en' => 'Warm brownie with vanilla ice cream.',
-			'price'    => 145,
-			'cat'      => 'tatlilar',
-			'allergens' => 'gluten, süt, fındık',
+			'title'      => 'Fıstık Rüyası',
+			'title_en'   => 'Pistachio Dream',
+			'excerpt'    => 'Antep fıstığı kreması, pandispanya ve bol çekilmiş fıstık.',
+			'excerpt_en' => 'Pistachio cream, sponge cake and a generous pistachio topping.',
+			'price'      => 175,
+			'cat'        => 'tatlilar',
+			'image'      => 'dish-fistik-ruyasi.jpg',
+			'allergens'  => 'gluten, süt, fıstık',
 		),
 		array(
-			'title'    => 'Filtre Kahve',
-			'title_en' => 'Filter Coffee',
-			'excerpt'  => 'Haftanın tek origin çekirdeği, V60.',
-			'excerpt_en' => 'Single origin of the week, brewed on V60.',
-			'price'    => 85,
-			'cat'      => 'kahve-icecek',
+			'title'      => 'Donuk Pasta',
+			'title_en'   => 'Chilled Icebox Cake',
+			'excerpt'    => 'Bisküvi katları, soğuk vanilya-kakao kreması ve çikolata ganaj.',
+			'excerpt_en' => 'Layers of biscuit, cold vanilla-cocoa cream and chocolate ganache.',
+			'price'      => 145,
+			'cat'        => 'tatlilar',
+			'image'      => 'dish-donuk-pasta.jpg',
+			'allergens'  => 'gluten, süt',
 		),
+
+		// --- Kahve & İçecek -----------------------------------------------
 		array(
-			'title'    => 'Flat White',
-			'title_en' => 'Flat White',
-			'excerpt'  => 'Çift shot espresso, kadifemsi süt.',
+			'title'      => 'Flat White',
+			'title_en'   => 'Flat White',
+			'excerpt'    => 'Çift shot espresso, kadifemsi süt.',
 			'excerpt_en' => 'Double espresso with velvety milk.',
-			'price'    => 95,
-			'cat'      => 'kahve-icecek',
+			'price'      => 105,
+			'cat'        => 'kahve-icecek',
+			'image'      => 'dish-coffee.jpg',
 		),
 		array(
-			'title'    => 'Ev Yapımı Limonata',
-			'title_en' => 'Homemade Lemonade',
-			'excerpt'  => 'Limon, nane, az şeker.',
+			'title'      => 'Filtre Kahve',
+			'title_en'   => 'Filter Coffee',
+			'excerpt'    => 'Haftanın tek origin çekirdeği, V60.',
+			'excerpt_en' => 'Single origin of the week, brewed on V60.',
+			'price'      => 95,
+			'cat'        => 'kahve-icecek',
+		),
+		array(
+			'title'      => 'Türk Kahvesi',
+			'title_en'   => 'Turkish Coffee',
+			'excerpt'    => 'Taze çekilmiş, bakır cezvede; yanında lokum.',
+			'excerpt_en' => 'Freshly ground, brewed in copper, served with Turkish delight.',
+			'price'      => 75,
+			'cat'        => 'kahve-icecek',
+		),
+		array(
+			'title'      => 'Ev Yapımı Limonata',
+			'title_en'   => 'Homemade Lemonade',
+			'excerpt'    => 'Limon, nane, az şeker.',
 			'excerpt_en' => 'Lemon, mint and just a little sugar.',
-			'price'    => 75,
-			'cat'      => 'kahve-icecek',
-			'flags'    => array( '_ysf_vegan' => 1, '_ysf_glutenfree' => 1 ),
+			'price'      => 85,
+			'cat'        => 'kahve-icecek',
+			'flags'      => array( '_ysf_vegan' => 1, '_ysf_glutenfree' => 1 ),
 		),
 	);
 }
@@ -256,22 +320,36 @@ function ysf_wizard_campaigns() {
 		array(
 			'title'      => 'Hafta içi öğle menüsü 295 ₺',
 			'title_en'   => 'Weekday lunch menu for 295 ₺',
-			'excerpt'    => 'Pazartesi–Cuma 12:00–16:00 arası çorba + ana yemek + filtre kahve.',
-			'excerpt_en' => 'Monday to Friday, 12:00–16:00: soup, a main course and filter coffee.',
+			'excerpt'    => 'Pazartesi–Cuma 12:00–16:00 arası pizza veya makarna + salata + filtre kahve.',
+			'excerpt_en' => 'Monday to Friday, 12:00–16:00: pizza or pasta, a salad and filter coffee.',
 			'badge'      => 'Öğle fırsatı',
 			'badge_en'   => 'Lunch deal',
 			'type'       => 'kampanya',
+			'image'      => 'dish-pasta.jpg',
 			'bar'        => 1,
 			'days'       => 45,
 		),
 		array(
-			'title'      => 'İki kişilik akşam yemeği menüsü',
+			'title'      => 'Hafta sonu serpme kahvaltı',
+			'title_en'   => 'Weekend Turkish breakfast',
+			'excerpt'    => 'Cumartesi–Pazar 09:00–13:00 arası serpme kahvaltı, sınırsız çay dahil.',
+			'excerpt_en' => 'Saturday and Sunday, 09:00–13:00: full Turkish breakfast with unlimited tea.',
+			'badge'      => 'Hafta sonu',
+			'badge_en'   => 'Weekend',
+			'type'       => 'kampanya',
+			'image'      => 'dish-kahvalti.jpg',
+			'bar'        => 1,
+			'days'       => 60,
+		),
+		array(
+			'title'      => 'İki kişilik akşam menüsü',
 			'title_en'   => 'Dinner menu for two',
-			'excerpt'    => 'Başlangıç, iki ana yemek ve tatlı; özel günler için ideal.',
-			'excerpt_en' => 'A starter, two mains and dessert — ideal for special occasions.',
+			'excerpt'    => 'Aperatif tabağı, iki ana yemek ve tatlı; özel günler için ideal.',
+			'excerpt_en' => 'An aperitif board, two mains and dessert — ideal for special occasions.',
 			'badge'      => 'Çift menü',
 			'badge_en'   => 'For two',
 			'type'       => 'kampanya',
+			'image'      => 'hero-2.jpg',
 			'days'       => 60,
 		),
 		array(
@@ -282,6 +360,7 @@ function ysf_wizard_campaigns() {
 			'badge'      => 'Duyuru',
 			'badge_en'   => 'Notice',
 			'type'       => 'duyuru',
+			'image'      => 'dish-donuk-pasta.jpg',
 			'bar'        => 1,
 			'days'       => 120,
 		),
@@ -310,6 +389,77 @@ function ysf_find_post_by_title( $title, $post_type ) {
 	);
 
 	return ! empty( $found ) ? (int) $found[0] : 0;
+}
+
+/**
+ * Temayla gelen görseli medya kütüphanesine aktarıp öne çıkan görsel yapar.
+ *
+ * Aynı dosya daha önce aktarıldıysa yeniden yüklemez, var olan eki kullanır.
+ *
+ * @param int    $post_id Ürün kimliği.
+ * @param string $file    assets/images içindeki dosya adı.
+ * @return bool İşlem başarılı mı.
+ */
+function ysf_wizard_set_image( $post_id, $file ) {
+	$path = YSF_DIR . '/assets/images/' . $file;
+
+	if ( ! $post_id || ! $file || ! file_exists( $path ) ) {
+		return false;
+	}
+
+	// Daha önce aktarilmis mi? Ayni dosyayi ikinci kez yuklemeyelim.
+	$existing = get_posts(
+		array(
+			'post_type'      => 'attachment',
+			'post_status'    => 'inherit',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_key'       => '_ysf_theme_asset', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'meta_value'     => $file, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+		)
+	);
+
+	if ( ! empty( $existing ) ) {
+		set_post_thumbnail( $post_id, (int) $existing[0] );
+
+		return true;
+	}
+
+	$contents = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+	if ( false === $contents ) {
+		return false;
+	}
+
+	$upload = wp_upload_bits( 'ysf-' . $file, null, $contents );
+
+	if ( ! empty( $upload['error'] ) ) {
+		return false;
+	}
+
+	$attachment_id = wp_insert_attachment(
+		array(
+			'post_mime_type' => 'image/jpeg',
+			'post_title'     => get_the_title( $post_id ),
+			'post_status'    => 'inherit',
+		),
+		$upload['file'],
+		$post_id
+	);
+
+	if ( ! $attachment_id || is_wp_error( $attachment_id ) ) {
+		return false;
+	}
+
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+
+	wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
+	update_post_meta( $attachment_id, '_ysf_theme_asset', $file );
+	update_post_meta( $attachment_id, '_wp_attachment_image_alt', get_the_title( $post_id ) );
+	set_post_thumbnail( $post_id, $attachment_id );
+
+	return true;
 }
 
 /**
@@ -507,8 +657,9 @@ function ysf_wizard_run( $with_samples = true ) {
 
 	// 4. Örnek içerik.
 	if ( $with_samples ) {
-		$created_items = 0;
-		$order         = 0;
+		$created_items  = 0;
+		$created_images = 0;
+		$order          = 0;
 
 		foreach ( ysf_wizard_menu_items() as $item ) {
 			++$order;
@@ -562,11 +713,20 @@ function ysf_wizard_run( $with_samples = true ) {
 			if ( isset( $term_ids[ $item['cat'] ] ) ) {
 				wp_set_object_terms( $id, array( (int) $term_ids[ $item['cat'] ] ), 'ysf_menu_cat' );
 			}
+
+			if ( ! empty( $item['image'] ) && ysf_wizard_set_image( $id, $item['image'] ) ) {
+				++$created_images;
+			}
 		}
 
 		if ( $created_items ) {
 			/* translators: %d: ürün sayısı. */
 			$report[] = sprintf( __( '%d örnek menü ürünü eklendi.', 'ysffoodlab' ), $created_items );
+		}
+
+		if ( $created_images ) {
+			/* translators: %d: görsel sayısı. */
+			$report[] = sprintf( __( '%d ürün fotoğrafı medya kütüphanesine aktarıldı.', 'ysffoodlab' ), $created_images );
 		}
 
 		$created_campaigns = 0;
@@ -605,6 +765,10 @@ function ysf_wizard_run( $with_samples = true ) {
 
 			if ( isset( $page_ids['online-siparis'] ) ) {
 				update_post_meta( $id, '_ysf_link', get_permalink( $page_ids['online-siparis'] ) );
+			}
+
+			if ( ! empty( $campaign['image'] ) ) {
+				ysf_wizard_set_image( $id, $campaign['image'] );
 			}
 		}
 

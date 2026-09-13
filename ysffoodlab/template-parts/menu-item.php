@@ -8,6 +8,7 @@
 $ysf_id     = get_the_ID();
 $ysf_badges = ysf_item_badges( $ysf_id );
 $ysf_thumb  = get_the_post_thumbnail_url( $ysf_id, 'ysf-thumb' );
+$ysf_thumb  = $ysf_thumb ? $ysf_thumb : ysf_placeholder_image();
 $ysf_desc   = ysf_field( $ysf_id, 'excerpt' );
 $ysf_cal    = (int) get_post_meta( $ysf_id, '_ysf_calories', true );
 $ysf_prep   = (int) get_post_meta( $ysf_id, '_ysf_prep', true );

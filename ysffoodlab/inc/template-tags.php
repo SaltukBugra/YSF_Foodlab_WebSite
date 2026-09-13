@@ -145,6 +145,74 @@ function ysf_get_hours() {
 }
 
 /**
+ * Temayla birlikte gelen görselin adresi.
+ *
+ * @param string $file Dosya adı (assets/images içinde).
+ * @return string
+ */
+function ysf_asset_image( $file ) {
+	if ( ! file_exists( YSF_DIR . '/assets/images/' . $file ) ) {
+		return '';
+	}
+
+	return YSF_URI . '/assets/images/' . $file;
+}
+
+/**
+ * Kapak slaytında gösterilecek görseller.
+ *
+ * Özelleştirici'den görsel seçilmediyse temayla gelen varsayılanlar kullanılır,
+ * böylece site ilk günden boş görünmez.
+ *
+ * @return array
+ */
+function ysf_hero_slides() {
+	$slides = array();
+
+	foreach ( array( 'ysf_hero_image', 'ysf_hero_image_2', 'ysf_hero_image_3', 'ysf_hero_image_4' ) as $key ) {
+		$url = ysf_get_option( $key, '' );
+
+		if ( $url ) {
+			$slides[] = $url;
+		}
+	}
+
+	if ( $slides ) {
+		return $slides;
+	}
+
+	foreach ( array( 'hero-1.jpg', 'hero-2.jpg', 'hero-3.jpg', 'hero-4.jpg' ) as $file ) {
+		$url = ysf_asset_image( $file );
+
+		if ( $url ) {
+			$slides[] = $url;
+		}
+	}
+
+	return $slides;
+}
+
+/**
+ * Hakkımızda bölümü görseli (seçilmediyse varsayılan).
+ *
+ * @return string
+ */
+function ysf_about_image() {
+	$url = ysf_get_option( 'ysf_about_image', '' );
+
+	return $url ? $url : ysf_asset_image( 'about.jpg' );
+}
+
+/**
+ * Fotoğrafı olmayan ürünler için yedek görsel.
+ *
+ * @return string
+ */
+function ysf_placeholder_image() {
+	return ysf_asset_image( 'placeholder.jpg' );
+}
+
+/**
  * Sitenin UTC farkını saniye cinsinden döndürür (yaz saati dahil).
  *
  * @return int

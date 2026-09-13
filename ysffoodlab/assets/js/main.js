@@ -827,6 +827,147 @@
 	}
 
 	/* ------------------------------------------------------------------ *
+	 * Hareket: kapak slaytı ve kaydırma animasyonları
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Kullanıcı azaltılmış hareket istiyor mu?
+	 */
+	function motionAllowed() {
+		if ( ! window.matchMedia ) {
+			return true;
+		}
+
+		return ! window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+	}
+
+	/**
+	 * Kapak görselleri arasında yumuşak geçiş.
+	 */
+	function initHeroSlider() {
+		var root = qs( '[data-ysf-slider]' );
+
+		if ( ! root ) {
+			return;
+		}
+
+		var slides = qsa( '[data-ysf-slide]', root );
+
+		if ( slides.length < 2 ) {
+			return;
+		}
+
+		var dots = qsa( '[data-ysf-slide-to]' );
+		var index = 0;
+		var timer = null;
+
+		function show( target ) {
+			index = ( target + slides.length ) % slides.length;
+
+			slides.forEach( function ( slide, n ) {
+				slide.classList.toggle( 'is-active', n === index );
+			} );
+
+			dots.forEach( function ( dot, n ) {
+				dot.classList.toggle( 'is-active', n === index );
+				dot.setAttribute( 'aria-current', n === index ? 'true' : 'false' );
+			} );
+		}
+
+		function stop() {
+			if ( timer ) {
+				window.clearInterval( timer );
+				timer = null;
+			}
+		}
+
+		function start() {
+			stop();
+
+			if ( ! motionAllowed() ) {
+				return;
+			}
+
+			timer = window.setInterval( function () {
+				show( index + 1 );
+			}, 6500 );
+		}
+
+		dots.forEach( function ( dot, n ) {
+			dot.addEventListener( 'click', function () {
+				show( n );
+				start();
+			} );
+		} );
+
+		// Fare üzerindeyken ve sekme arka plandayken bekle.
+		root.addEventListener( 'mouseenter', stop );
+		root.addEventListener( 'mouseleave', start );
+
+		document.addEventListener( 'visibilitychange', function () {
+			if ( document.hidden ) {
+				stop();
+			} else {
+				start();
+			}
+		} );
+
+		start();
+	}
+
+	/**
+	 * Bölümler görünür alana girdikçe yumuşakça belirsin.
+	 *
+	 * Sınıf yalnızca burada eklenir; JavaScript çalışmazsa içerik olduğu gibi
+	 * görünür kalır.
+	 */
+	function initReveal() {
+		if ( ! motionAllowed() || ! ( 'IntersectionObserver' in window ) ) {
+			return;
+		}
+
+		var targets = qsa(
+			'.ysf-section-head, .ysf-card, .ysf-fact, .ysf-menu-group, .ysf-split > *, .ysf-info-list, .ysf-map, .ysf-form'
+		);
+
+		if ( ! targets.length ) {
+			return;
+		}
+
+		var observer = new IntersectionObserver(
+			function ( entries ) {
+				entries.forEach( function ( entry ) {
+					if ( ! entry.isIntersecting ) {
+						return;
+					}
+
+					var el = entry.target;
+					var delay = parseInt( el.getAttribute( 'data-ysf-delay' ) || '0', 10 );
+
+					window.setTimeout( function () {
+						el.classList.add( 'is-visible' );
+					}, delay );
+
+					observer.unobserve( el );
+				} );
+			},
+			{ rootMargin: '0px 0px -8% 0px', threshold: 0.05 }
+		);
+
+		targets.forEach( function ( el ) {
+			el.classList.add( 'ysf-reveal' );
+			observer.observe( el );
+		} );
+
+		// Aynı satırdaki kartlar sırayla belirsin.
+		qsa( '.ysf-grid, .ysf-facts' ).forEach( function ( row ) {
+			qsa( '.ysf-reveal', row ).forEach( function ( el, n ) {
+				el.setAttribute( 'data-ysf-delay', String( Math.min( n * 90, 450 ) ) );
+			} );
+		} );
+	}
+
+	/* ------------------------------------------------------------------ *
 	 * Menü filtresi ve arama
 	 * ------------------------------------------------------------------ */
 
@@ -843,9 +984,58 @@
 
 		var active = 'all';
 
+		/**
+		 * Ürünü/grubu yumuşak geçişle gösterir veya gizler.
+		 *
+		 * @param {HTMLElement} el      Öğe.
+		 * @param {boolean}     visible Görünür olacak mı.
+		 * @param {number}      delay   Görünürken beklenecek süre (ms).
+		 */
+		function toggle( el, visible, delay ) {
+			if ( ! motionAllowed() ) {
+				el.classList.remove( 'is-hiding' );
+				el.hidden = ! visible;
+
+				return;
+			}
+
+			if ( visible ) {
+				if ( el.hidden ) {
+					el.hidden = false;
+					el.classList.add( 'is-hiding' );
+
+					window.requestAnimationFrame( function () {
+						window.setTimeout( function () {
+							el.classList.remove( 'is-hiding' );
+						}, delay || 0 );
+					} );
+
+					return;
+				}
+
+				el.classList.remove( 'is-hiding' );
+
+				return;
+			}
+
+			if ( el.hidden ) {
+				return;
+			}
+
+			el.classList.add( 'is-hiding' );
+
+			window.setTimeout( function () {
+				// Bu arada yeniden görünür olduysa dokunma.
+				if ( el.classList.contains( 'is-hiding' ) ) {
+					el.hidden = true;
+				}
+			}, 320 );
+		}
+
 		function apply() {
 			var term = search ? search.value.trim().toLowerCase() : '';
 			var visibleTotal = 0;
+			var shown = 0;
 
 			groups.forEach( function ( group ) {
 				var slug = group.getAttribute( 'data-ysf-group' );
@@ -856,14 +1046,16 @@
 					var matchesTerm = ! term || ( item.getAttribute( 'data-search' ) || '' ).indexOf( term ) > -1;
 					var visible = matchesCat && matchesTerm;
 
-					item.hidden = ! visible;
+					// Görünen ürünler sırayla belirsin.
+					toggle( item, visible, visible ? Math.min( shown * 40, 320 ) : 0 );
 
 					if ( visible ) {
 						groupVisible++;
+						shown++;
 					}
 				} );
 
-				group.hidden = 0 === groupVisible;
+				toggle( group, groupVisible > 0, 0 );
 				visibleTotal += groupVisible;
 			} );
 
@@ -871,10 +1063,12 @@
 			if ( ! groups.length ) {
 				items.forEach( function ( item ) {
 					var matchesTerm = ! term || ( item.getAttribute( 'data-search' ) || '' ).indexOf( term ) > -1;
-					item.hidden = ! matchesTerm;
+
+					toggle( item, matchesTerm, matchesTerm ? Math.min( shown * 40, 320 ) : 0 );
 
 					if ( matchesTerm ) {
 						visibleTotal++;
+						shown++;
 					}
 				} );
 			}
@@ -919,6 +1113,8 @@
 		initOrderForm();
 		initSimpleForms();
 		initMenuFilters();
+		initHeroSlider();
+		initReveal();
 	}
 
 	if ( 'loading' === document.readyState ) {

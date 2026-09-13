@@ -10,8 +10,8 @@ $ysf_badges = ysf_item_badges( $ysf_id );
 $ysf_desc   = ysf_field( $ysf_id, 'excerpt' );
 ?>
 <article class="ysf-card">
-	<?php if ( has_post_thumbnail( $ysf_id ) ) : ?>
-		<div class="ysf-card__media">
+	<div class="ysf-card__media">
+		<?php if ( has_post_thumbnail( $ysf_id ) ) : ?>
 			<?php
 			echo get_the_post_thumbnail(
 				$ysf_id,
@@ -23,11 +23,14 @@ $ysf_desc   = ysf_field( $ysf_id, 'excerpt' );
 				)
 			);
 			?>
-			<?php if ( ! empty( $ysf_badges[0] ) ) : ?>
-				<span class="ysf-card__badge"><?php echo esc_html( $ysf_badges[0]['label'] ); ?></span>
-			<?php endif; ?>
-		</div>
-	<?php endif; ?>
+		<?php elseif ( ysf_placeholder_image() ) : ?>
+			<img src="<?php echo esc_url( ysf_placeholder_image() ); ?>" alt="" loading="lazy" decoding="async">
+		<?php endif; ?>
+
+		<?php if ( ! empty( $ysf_badges[0] ) ) : ?>
+			<span class="ysf-card__badge"><?php echo esc_html( $ysf_badges[0]['label'] ); ?></span>
+		<?php endif; ?>
+	</div>
 
 	<div class="ysf-card__body">
 		<h3 class="ysf-card__title"><?php echo esc_html( ysf_field( $ysf_id, 'title' ) ); ?></h3>
