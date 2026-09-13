@@ -20,6 +20,26 @@ const YSF_META_PHONE = '_ysf_phone';
 const YSF_META_ADDR  = '_ysf_addr_';
 
 /**
+ * Metni güvenli biçimde kısaltır.
+ *
+ * mbstring yüklü değilse substr kullanılır; kayıt isteği bu yüzden
+ * 500 dönmesin diye çekirdek mb_substr'e bağlanmıyoruz.
+ *
+ * @param string $value Metin.
+ * @param int    $max   Azami karakter.
+ * @return string
+ */
+function ysf_clip( $value, $max ) {
+	$value = (string) $value;
+
+	if ( function_exists( 'mb_substr' ) ) {
+		return mb_substr( $value, 0, (int) $max );
+	}
+
+	return substr( $value, 0, (int) $max );
+}
+
+/**
  * Adres defterindeki adres türleri.
  *
  * @return array
@@ -263,10 +283,10 @@ function ysf_sanitize_address( $raw ) {
 
 		if ( 'textarea' === $field['type'] ) {
 			$value = sanitize_textarea_field( $value );
-			$value = mb_substr( $value, 0, 300 );
+			$value = ysf_clip( $value, 300 );
 		} else {
 			$value = sanitize_text_field( $value );
-			$value = mb_substr( $value, 0, 120 );
+			$value = ysf_clip( $value, 120 );
 		}
 
 		$clean[ $key ] = trim( $value );
@@ -623,36 +643,47 @@ function ysf_ajax_register() {
 
 	$user = get_userdata( $user_id );
 
-	wp_set_current_user( $user_id );
-	wp_set_auth_cookie( $user_id, true );
-	do_action( 'wp_login', $user->user_login, $user );
+	if ( $user ) {
+		wp_set_current_user( $user_id );
+		wp_set_auth_cookie( $user_id, true );
 
-	ysf_send_notification(
-		ysf_get_option( 'ysf_email', '' ),
-		__( 'Yeni üye kaydı', 'ysffoodlab' ),
-		array(
-			__( 'Ad Soyad', 'ysffoodlab' ) => $name,
-			__( 'E-posta', 'ysffoodlab' )  => $email,
-			__( 'Telefon', 'ysffoodlab' )  => ysf_phone_display( $phone ),
-			__( 'Adres', 'ysffoodlab' )    => ysf_address_one_line( $address ),
-		),
-		__( 'Web sitesinden yeni bir üye kaydoldu.', 'ysffoodlab' )
-	);
+		// Bazı eklentiler wp_login sırasında yönlendirir veya hata fırlatır.
+		// Üyelik zaten oluştu; yanıtın bozulmaması için yutuyoruz.
+		try {
+			do_action( 'wp_login', $user->user_login, $user );
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		}
+	}
 
-	ysf_send_notification(
-		$email,
-		sprintf(
-			/* translators: %s: site adı. */
-			__( '%s — üyeliğiniz oluşturuldu', 'ysffoodlab' ),
-			get_bloginfo( 'name' )
-		),
-		array(
-			ysf_t( 'form_name' )  => $name,
-			ysf_t( 'form_email' ) => $email,
-			ysf_t( 'form_phone' ) => ysf_phone_display( $phone ),
-		),
-		ysf_t( 'acc_welcome_mail' )
-	);
+	try {
+		ysf_send_notification(
+			ysf_get_option( 'ysf_email', '' ),
+			__( 'Yeni üye kaydı', 'ysffoodlab' ),
+			array(
+				__( 'Ad Soyad', 'ysffoodlab' ) => $name,
+				__( 'E-posta', 'ysffoodlab' )  => $email,
+				__( 'Telefon', 'ysffoodlab' )  => ysf_phone_display( $phone ),
+				__( 'Adres', 'ysffoodlab' )    => ysf_address_one_line( $address ),
+			),
+			__( 'Web sitesinden yeni bir üye kaydoldu.', 'ysffoodlab' )
+		);
+
+		ysf_send_notification(
+			$email,
+			sprintf(
+				/* translators: %s: site adı. */
+				__( '%s — üyeliğiniz oluşturuldu', 'ysffoodlab' ),
+				get_bloginfo( 'name' )
+			),
+			array(
+				ysf_t( 'form_name' )  => $name,
+				ysf_t( 'form_email' ) => $email,
+				ysf_t( 'form_phone' ) => ysf_phone_display( $phone ),
+			),
+			ysf_t( 'acc_welcome_mail' )
+		);
+	} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+	}
 
 	wp_send_json_success(
 		array(

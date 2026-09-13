@@ -42,21 +42,17 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 							<input type="password" id="ysf-login-pass" name="password" required autocomplete="current-password">
 						</div>
 
-						<div class="ysf-field ysf-field--full">
-							<label class="ysf-choice">
-								<input type="checkbox" name="remember" value="1" checked>
-								<span><?php ysf_e( 'acc_remember' ); ?></span>
-							</label>
-						</div>
+						<label class="ysf-check">
+							<input type="checkbox" name="remember" value="1" checked>
+							<span><?php ysf_e( 'acc_remember' ); ?></span>
+						</label>
 
 						<label class="ysf-hp" aria-hidden="true">
 							<?php esc_html_e( 'Bu alanı boş bırakın', 'ysffoodlab' ); ?>
 							<input type="text" name="ysf_hp" tabindex="-1" autocomplete="off">
 						</label>
 
-						<div class="ysf-field ysf-field--full">
-							<div class="ysf-alert" data-ysf-result hidden></div>
-						</div>
+						<div class="ysf-alert ysf-field--full" data-ysf-result hidden></div>
 
 						<div class="ysf-field ysf-field--full">
 							<button type="submit" class="ysf-btn ysf-btn--block" data-ysf-submit>
@@ -76,9 +72,7 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 								<input type="email" id="ysf-lost-user" name="login" required autocomplete="email">
 							</div>
 
-							<div class="ysf-field ysf-field--full">
-								<div class="ysf-alert" data-ysf-result hidden></div>
-							</div>
+							<div class="ysf-alert ysf-field--full" data-ysf-result hidden></div>
 
 							<div class="ysf-field ysf-field--full">
 								<button type="submit" class="ysf-btn ysf-btn--ghost ysf-btn--block" data-ysf-submit>
@@ -131,26 +125,22 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 								</details>
 							</div>
 
-							<div class="ysf-field ysf-field--full">
-								<label class="ysf-choice">
-									<input type="checkbox" name="consent" required>
-									<span>
-										<?php ysf_e( 'form_consent' ); ?>
-										<?php if ( ysf_get_option( 'ysf_kvkk_url', '' ) ) : ?>
-											<a href="<?php echo esc_url( ysf_get_option( 'ysf_kvkk_url', '' ) ); ?>" target="_blank" rel="noopener">KVKK</a>
-										<?php endif; ?>
-									</span>
-								</label>
-							</div>
+							<label class="ysf-check ysf-field--full">
+								<input type="checkbox" name="consent" required>
+								<span>
+									<?php ysf_e( 'form_consent' ); ?>
+									<?php if ( ysf_get_option( 'ysf_kvkk_url', '' ) ) : ?>
+										<a href="<?php echo esc_url( ysf_get_option( 'ysf_kvkk_url', '' ) ); ?>" target="_blank" rel="noopener">KVKK</a>
+									<?php endif; ?>
+								</span>
+							</label>
 
 							<label class="ysf-hp" aria-hidden="true">
 								<?php esc_html_e( 'Bu alanı boş bırakın', 'ysffoodlab' ); ?>
 								<input type="text" name="ysf_hp" tabindex="-1" autocomplete="off">
 							</label>
 
-							<div class="ysf-field ysf-field--full">
-								<div class="ysf-alert" data-ysf-result hidden></div>
-							</div>
+							<div class="ysf-alert ysf-field--full" data-ysf-result hidden></div>
 
 							<div class="ysf-field ysf-field--full">
 								<button type="submit" class="ysf-btn ysf-btn--block" data-ysf-submit>
@@ -221,9 +211,7 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 								</details>
 							</div>
 
-							<div class="ysf-field ysf-field--full">
-								<div class="ysf-alert" data-ysf-result hidden></div>
-							</div>
+							<div class="ysf-alert ysf-field--full" data-ysf-result hidden></div>
 
 							<div class="ysf-field ysf-field--full">
 								<button type="submit" class="ysf-btn" data-ysf-submit><?php ysf_e( 'acc_save' ); ?></button>
@@ -266,9 +254,7 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 									);
 									?>
 
-									<div class="ysf-field ysf-field--full">
-										<div class="ysf-alert" data-ysf-result hidden></div>
-									</div>
+									<div class="ysf-alert ysf-field--full" data-ysf-result hidden></div>
 
 									<div class="ysf-addr-card__actions">
 										<button type="submit" class="ysf-btn ysf-btn--sm" data-ysf-submit><?php ysf_e( 'acc_save' ); ?></button>

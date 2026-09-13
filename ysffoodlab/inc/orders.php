@@ -89,7 +89,11 @@ function ysf_send_notification( $to, $subject, $rows, $intro = '' ) {
 		sprintf( 'From: %1$s <%2$s>', wp_specialchars_decode( get_bloginfo( 'name' ) ), 'wordpress@' . wp_parse_url( home_url(), PHP_URL_HOST ) ),
 	);
 
-	return wp_mail( $to, $subject, $html, $headers );
+	try {
+		return wp_mail( $to, $subject, $html, $headers );
+	} catch ( Throwable $e ) {
+		return false;
+	}
 }
 
 /**

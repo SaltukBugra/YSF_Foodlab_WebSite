@@ -57,6 +57,11 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.2.1 =
+* Kayit islemi uye olusturulduktan sonra e-posta/eklenti hatasinda 500 donuyordu.
+  Uyelik ve oturum yine aciliyordu ama sayfa hata gosteriyordu. Bildirim
+  e-postalari artik yaniti bozmuyor; kayit sonrasi yonlendirme calisiyor.
+
 = 1.2.0 =
 * Uye hesaplari eklendi. Hesabim sayfasindan giris, kayit, sifre sifirlama,
   profil guncelleme ve adres defteri yonetilir. Kayitta ad soyad, e-posta,
