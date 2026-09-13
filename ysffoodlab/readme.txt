@@ -57,6 +57,11 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.2.2 =
+* Hesabim kisi simgesi masaustu menude header'i dolduran dev bir siluete
+  donusuyordu. Simge artik kucuk kalir; masaustunde yalnizca ust seritte,
+  mobilde acilir menunun altinda gorunur.
+
 = 1.2.1 =
 * Kayit islemi uye olusturulduktan sonra e-posta/eklenti hatasinda 500 donuyordu.
   Uyelik ve oturum yine aciliyordu ama sayfa hata gosteriyordu. Bildirim

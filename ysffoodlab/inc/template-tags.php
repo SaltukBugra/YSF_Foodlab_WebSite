@@ -640,14 +640,20 @@ function ysf_social_links() {
  */
 function ysf_icon( $name ) {
 	$icons = array(
-		'whatsapp' => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.7-.1-1.4-.5-3-1.6-4.3-3.4-.9-1.2-1.4-2.4-1.5-3.2 0-.7.3-1.4.7-1.8.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.5l-.4.5c-.1.2-.2.3-.1.5.3.6.8 1.3 1.4 1.8.5.4 1 .7 1.4.8.2.1.4 0 .5-.1l.6-.6c.1-.2.3-.2.5-.1l1.5.8c.2.1.3.2.3.4 0 .2 0 .6-.1.9z"/></svg>',
-		'phone'    => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3h3l1.5 3.8-2 1.4a11.4 11.4 0 0 0 5.7 5.7l1.4-2L20 13.4v3c0 .9-.7 1.6-1.6 1.6A15 15 0 0 1 3.4 3.6C3.4 3.3 4.1 3 6.6 3z"/></svg>',
-		'pin'      => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>',
-		'clock'    => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 11h-5v-2h3V6h2v7z"/></svg>',
-		'mail'     => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3V5zm2 2v.4l7 4.4 7-4.4V7H5zm0 2.8V17h14V9.8l-7 4.4-7-4.4z"/></svg>',
-		'cart'     => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h-3v2h2l3 8h9l3-7H7.5L7 4zm2 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>',
-		'user'     => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10c-4 0-7 2-7 4.5V21h14v-3.5c0-2.5-3-4.5-7-4.5z"/></svg>',
+		'whatsapp' => '<path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.7-.1-1.4-.5-3-1.6-4.3-3.4-.9-1.2-1.4-2.4-1.5-3.2 0-.7.3-1.4.7-1.8.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .5.4l.7 1.6c.1.2 0 .4-.1.5l-.4.5c-.1.2-.2.3-.1.5.3.6.8 1.3 1.4 1.8.5.4 1 .7 1.4.8.2.1.4 0 .5-.1l.6-.6c.1-.2.3-.2.5-.1l1.5.8c.2.1.3.2.3.4 0 .2 0 .6-.1.9z"/>',
+		'phone'    => '<path d="M6.6 3h3l1.5 3.8-2 1.4a11.4 11.4 0 0 0 5.7 5.7l1.4-2L20 13.4v3c0 .9-.7 1.6-1.6 1.6A15 15 0 0 1 3.4 3.6C3.4 3.3 4.1 3 6.6 3z"/>',
+		'pin'      => '<path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/>',
+		'clock'    => '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 11h-5v-2h3V6h2v7z"/>',
+		'mail'     => '<path d="M3 5h18v14H3V5zm2 2v.4l7 4.4 7-4.4V7H5zm0 2.8V17h14V9.8l-7 4.4-7-4.4z"/>',
+		'cart'     => '<path d="M7 4h-3v2h2l3 8h9l3-7H7.5L7 4zm2 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>',
+		'user'     => '<path d="M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 10c-4 0-7 2-7 4.5V21h14v-3.5c0-2.5-3-4.5-7-4.5z"/>',
 	);
 
-	return isset( $icons[ $name ] ) ? $icons[ $name ] : '';
+	if ( ! isset( $icons[ $name ] ) ) {
+		return '';
+	}
+
+	// width/height verilmezse SVG mevcut alani doldurur; hesap simgesi
+	// masaustu menude header'i kaplayan dev bir siluete donusuyordu.
+	return '<svg class="ysf-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' . $icons[ $name ] . '</svg>';
 }

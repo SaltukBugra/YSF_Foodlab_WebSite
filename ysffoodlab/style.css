@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.2.1
+Version: 1.2.2
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -1747,19 +1747,28 @@ body.ysf-no-scroll {
 	min-width: 96px;
 }
 
+.ysf-icon {
+	display: block;
+	width: 1.1em;
+	height: 1.1em;
+	flex: none;
+	fill: currentColor;
+}
+
 .ysf-topbar__account {
 	display: inline-flex;
 	gap: 6px;
 	align-items: center;
 }
 
-.ysf-topbar__account svg {
-	width: 15px;
-	height: 15px;
-	fill: currentColor;
+.ysf-topbar__account .ysf-icon {
+	width: 14px;
+	height: 14px;
 }
 
-.ysf-nav__account {
+/* .ysf-nav a { display:block } daha özgül; bu yüzden a.ysf-nav__account.
+   Aksi halde Hesabım simgesi masaüstü menüde header'ı dolduruyor. */
+.ysf-nav a.ysf-nav__account {
 	display: none;
 }
 
@@ -2350,19 +2359,24 @@ body.ysf-no-scroll {
 }
 
 @media (max-width: 1024px) {
-	.ysf-nav__account {
+	.ysf-nav a.ysf-nav__account {
 		display: inline-flex;
 		gap: 8px;
 		align-items: center;
 		margin-top: 20px;
 		padding-top: 20px;
+		border-bottom: 0;
 		border-top: 1px solid var(--ysf-line);
 		font-weight: 600;
 		color: var(--ysf-ink);
 		text-decoration: none;
 	}
 
-	.ysf-nav__account svg {
+	.ysf-nav a.ysf-nav__account::after {
+		display: none;
+	}
+
+	.ysf-nav a.ysf-nav__account .ysf-icon {
 		width: 18px;
 		height: 18px;
 		fill: var(--ysf-accent-dark);
