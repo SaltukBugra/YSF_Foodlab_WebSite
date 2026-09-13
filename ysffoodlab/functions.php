@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.2.3' );
+define( 'YSF_VERSION', '1.2.4' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 
@@ -21,6 +21,7 @@ require_once YSF_DIR . '/inc/template-tags.php';
 require_once YSF_DIR . '/inc/orders.php';
 require_once YSF_DIR . '/inc/reservations.php';
 require_once YSF_DIR . '/inc/accounts.php';
+require_once YSF_DIR . '/inc/kitchen.php';
 require_once YSF_DIR . '/inc/seo.php';
 require_once YSF_DIR . '/inc/setup-wizard.php';
 

@@ -18,7 +18,7 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 	<div class="ysf-wrap">
 		<?php ysf_breadcrumb(); ?>
 		<h1><?php echo esc_html( ysf_field( $ysf_page_id, 'title' ) ); ?></h1>
-		<p><?php ysf_e( 'acc_lead' ); ?></p>
+		<p><?php echo ( $ysf_logged && ysf_can_manage_menu() ) ? esc_html( ysf_t( 'kit_lead' ) ) : esc_html( ysf_t( 'acc_lead' ) ); ?></p>
 	</div>
 </section>
 
@@ -166,6 +166,12 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 					</a>
 				</header>
 
+				<?php if ( ysf_can_manage_menu() ) : ?>
+					<div class="ysf-card-panel ysf-card-panel--kitchen">
+						<?php get_template_part( 'template-parts/kitchen-desk' ); ?>
+					</div>
+				<?php endif; ?>
+
 				<div class="ysf-account__grid">
 					<div class="ysf-card-panel">
 						<h3 class="ysf-card-panel__title"><?php ysf_e( 'acc_profile_title' ); ?></h3>
@@ -270,8 +276,8 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 				</div>
 
 				<?php
-				$ysf_orders = ysf_user_records( 'ysf_order', 5 );
-				$ysf_res    = ysf_user_records( 'ysf_reservation', 5 );
+				$ysf_orders = ysf_is_kitchen_staff() ? array() : ysf_user_records( 'ysf_order', 5 );
+				$ysf_res    = ysf_is_kitchen_staff() ? array() : ysf_user_records( 'ysf_reservation', 5 );
 				?>
 
 				<?php if ( $ysf_orders || $ysf_res ) : ?>

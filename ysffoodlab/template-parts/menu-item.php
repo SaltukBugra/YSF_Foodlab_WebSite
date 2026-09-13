@@ -17,7 +17,7 @@ $ysf_terms  = wp_get_post_terms( $ysf_id, 'ysf_menu_cat', array( 'fields' => 'sl
 $ysf_search = strtolower( ysf_field( $ysf_id, 'title' ) . ' ' . wp_strip_all_tags( $ysf_desc ) );
 ?>
 <article
-	class="ysf-item <?php echo $ysf_thumb ? '' : 'ysf-item--noimg'; ?>"
+	class="ysf-item <?php echo $ysf_thumb ? '' : 'ysf-item--noimg'; ?><?php echo get_post_meta( $ysf_id, '_ysf_sold_out', true ) ? ' ysf-item--soldout' : ''; ?>"
 	data-ysf-item
 	data-cats="<?php echo esc_attr( is_wp_error( $ysf_terms ) ? '' : implode( ' ', $ysf_terms ) ); ?>"
 	data-search="<?php echo esc_attr( $ysf_search ); ?>"

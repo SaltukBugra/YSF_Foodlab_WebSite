@@ -9,7 +9,7 @@ $ysf_id     = get_the_ID();
 $ysf_badges = ysf_item_badges( $ysf_id );
 $ysf_desc   = ysf_field( $ysf_id, 'excerpt' );
 ?>
-<article class="ysf-card">
+<article class="ysf-card<?php echo get_post_meta( $ysf_id, '_ysf_sold_out', true ) ? ' ysf-card--soldout' : ''; ?>">
 	<div class="ysf-card__media">
 		<?php if ( has_post_thumbnail( $ysf_id ) ) : ?>
 			<?php

@@ -716,6 +716,13 @@
 				return;
 			}
 
+			if ( 'file' === field.type ) {
+				if ( field.files && field.files[ 0 ] ) {
+					data[ field.name ] = field.files[ 0 ];
+				}
+				return;
+			}
+
 			if ( 'radio' === field.type && ! field.checked ) {
 				return;
 			}
@@ -1062,6 +1069,226 @@
 	/**
 	 * Sipariş formunda kayıtlı adresi tek dokunuşla doldurur.
 	 */
+	function initKitchenDesk() {
+		var root = qs( '[data-ysf-kitchen]' );
+
+		if ( ! root ) {
+			return;
+		}
+
+		var form = qs( '[data-ysf-form="kitchen"]', root );
+		var flash = qs( '[data-ysf-kit-flash]', root );
+		var search = qs( '[data-ysf-kit-search]', root );
+		var filters = qsa( '[data-ysf-kit-filter]', root );
+		var active = '';
+
+		function field( name ) {
+			return form ? qs( '[name="' + name + '"]', form ) : null;
+		}
+
+		function applyFilter() {
+			var query = search ? String( search.value ).toLowerCase().trim() : '';
+
+			qsa( '[data-ysf-kit-row]', root ).forEach( function ( row ) {
+				var matchCat = ! active || row.getAttribute( 'data-cat' ) === active;
+				var haystack = row.getAttribute( 'data-search' ) || '';
+				var matchQuery = ! query || haystack.indexOf( query ) !== -1;
+
+				row.hidden = ! ( matchCat && matchQuery );
+			} );
+		}
+
+		function paintStock( row, sold ) {
+			row.classList.toggle( 'is-soldout', sold );
+			row.setAttribute( 'data-sold', sold ? '1' : '0' );
+
+			var state = qs( '[data-ysf-kit-state]', row );
+			var button = qs( '[data-ysf-kit-stock]', row );
+
+			if ( state ) {
+				state.textContent = sold ? t( 'kit_sold_out', 'Stokta yok' ) : t( 'kit_in_stock', 'Stokta' );
+			}
+
+			if ( button ) {
+				button.setAttribute( 'data-task', sold ? 'in_stock' : 'sold_out' );
+				button.textContent = sold ? t( 'kit_in_stock', 'Stokta' ) : t( 'kit_sold_out', 'Stokta yok' );
+				button.classList.toggle( 'ysf-btn--ghost', ! sold );
+			}
+		}
+
+		function fillForm( row ) {
+			if ( ! form ) {
+				return;
+			}
+
+			var id = field( 'id' );
+			var title = field( 'title' );
+			var category = field( 'category' );
+			var price = field( 'price' );
+			var excerpt = field( 'excerpt' );
+			var sold = field( 'sold_out' );
+			var orderable = field( 'orderable' );
+			var photo = field( 'photo' );
+
+			if ( id ) {
+				id.value = row ? ( row.getAttribute( 'data-id' ) || '0' ) : '0';
+			}
+
+			if ( title ) {
+				title.value = row ? ( row.getAttribute( 'data-title' ) || '' ) : '';
+			}
+
+			if ( category ) {
+				category.value = row ? ( row.getAttribute( 'data-cat' ) || '0' ) : '0';
+			}
+
+			if ( price ) {
+				price.value = row ? ( row.getAttribute( 'data-price' ) || '' ) : '';
+			}
+
+			if ( excerpt ) {
+				excerpt.value = row ? ( row.getAttribute( 'data-excerpt' ) || '' ) : '';
+			}
+
+			if ( sold ) {
+				sold.checked = ! ! ( row && '1' === row.getAttribute( 'data-sold' ) );
+			}
+
+			if ( orderable ) {
+				orderable.checked = ! row || '1' === row.getAttribute( 'data-orderable' );
+			}
+
+			if ( photo ) {
+				photo.value = '';
+			}
+
+			form.hidden = false;
+			form.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+
+			if ( title ) {
+				title.focus();
+			}
+		}
+
+		function runAction( id, task, onDone ) {
+			request( 'ysf_kitchen_action', { id: id, task: task } ).then( function ( result ) {
+				showResult( flash, result.payload.message || t( 'form_error', '' ), result.ok );
+
+				if ( result.ok && onDone ) {
+					onDone( result.payload );
+				}
+			} ).catch( function () {
+				showResult( flash, t( 'form_error', '' ), false );
+			} );
+		}
+
+		filters.forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				filters.forEach( function ( other ) {
+					other.classList.remove( 'is-active' );
+				} );
+
+				button.classList.add( 'is-active' );
+				active = button.getAttribute( 'data-ysf-kit-filter' ) || '';
+				applyFilter();
+			} );
+		} );
+
+		if ( search ) {
+			search.addEventListener( 'input', applyFilter );
+		}
+
+		qsa( '[data-ysf-kit-new]', root ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				fillForm( null );
+			} );
+		} );
+
+		qsa( '[data-ysf-kit-cancel]', root ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				if ( form ) {
+					form.hidden = true;
+				}
+			} );
+		} );
+
+		qsa( '[data-ysf-kit-edit]', root ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				fillForm( button.closest( '[data-ysf-kit-row]' ) );
+			} );
+		} );
+
+		qsa( '[data-ysf-kit-stock]', root ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				var row = button.closest( '[data-ysf-kit-row]' );
+				var task = button.getAttribute( 'data-task' ) || 'sold_out';
+
+				if ( ! row ) {
+					return;
+				}
+
+				button.disabled = true;
+
+				runAction( row.getAttribute( 'data-id' ), task, function () {
+					paintStock( row, 'sold_out' === task );
+				} );
+
+				window.setTimeout( function () {
+					button.disabled = false;
+				}, 400 );
+			} );
+		} );
+
+		qsa( '[data-ysf-kit-remove]', root ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				var row = button.closest( '[data-ysf-kit-row]' );
+
+				if ( ! row || ! window.confirm( t( 'kit_remove_ask', '' ) ) ) {
+					return;
+				}
+
+				runAction( row.getAttribute( 'data-id' ), 'remove', function () {
+					row.remove();
+				} );
+			} );
+		} );
+
+		qsa( '[data-ysf-kit-restore]', root ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				runAction( button.getAttribute( 'data-id' ), 'restore', function () {
+					window.location.reload();
+				} );
+			} );
+		} );
+
+		if ( form ) {
+			form.addEventListener( 'submit', function ( event ) {
+				event.preventDefault();
+
+				var result = qs( '[data-ysf-result]', form );
+
+				if ( ! form.checkValidity() ) {
+					showResult( result, t( 'form_required', 'Zorunlu alanları doldurun.' ), false );
+					form.reportValidity();
+					return;
+				}
+
+				submitForm( form, 'ysf_kitchen_save', collectForm( form ), function ( payload ) {
+					if ( payload.redirect ) {
+						window.setTimeout( function () {
+							window.location.href = payload.redirect;
+						}, 400 );
+					} else {
+						window.location.reload();
+					}
+				}, { keepValues: true } );
+			} );
+		}
+	}
+
+	/**
+	 * Sipariş formunda kayıtlı adresi tek dokunuşla doldurur.
+	 */
 	function initSavedAddressPicker() {
 		var picker = qs( '[data-ysf-saved-address]' );
 		var target = qs( '#ysf-order-address' );
@@ -1382,6 +1609,7 @@
 		initAccountForms();
 		initAddressFields();
 		initAddressCards();
+		initKitchenDesk();
 		initSavedAddressPicker();
 		initMenuFilters();
 		initHeroSlider();

@@ -2,9 +2,9 @@
 /**
  * Üye hesapları: kayıt, giriş, profil ve adres defteri.
  *
- * Müşteriler WordPress kullanıcısı olarak saklanır (rol: subscriber). Telefon
- * ve adresler kullanıcı meta alanlarında tutulur. Panele erişim kapalıdır,
- * tüm işlemler ön yüzdeki Hesabım sayfasından yapılır.
+ * Müşteriler WordPress kullanıcısı olarak saklanır (rol: subscriber).
+ * Mutfak sorumlusu (ysf_kitchen) menüyü Hesabım sayfasından yönetir;
+ * panele yine giremez. Telefon ve adresler kullanıcı meta alanlarında tutulur.
  *
  * @package ysffoodlab
  */
@@ -752,10 +752,16 @@ function ysf_ajax_login() {
 
 	wp_set_current_user( $user->ID );
 
+	$redirect = ysf_account_url();
+
+	if ( ysf_can_manage_menu( $user->ID ) ) {
+		$redirect = ysf_account_url() . '#ysf-kitchen';
+	}
+
 	wp_send_json_success(
 		array(
 			'message'  => ysf_t( 'acc_login_ok' ),
-			'redirect' => ysf_account_url(),
+			'redirect' => $redirect,
 		)
 	);
 }

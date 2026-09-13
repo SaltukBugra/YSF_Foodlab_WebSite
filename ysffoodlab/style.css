@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.2.3
+Version: 1.2.4
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -1745,6 +1745,146 @@ body.ysf-no-scroll {
 	color: var(--ysf-muted);
 	font-variant-numeric: tabular-nums;
 	min-width: 96px;
+}
+
+.ysf-item--soldout,
+.ysf-card--soldout {
+	opacity: 0.72;
+}
+
+.ysf-card-panel--kitchen {
+	margin-bottom: var(--ysf-gap);
+}
+
+.ysf-kitchen__head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	align-items: flex-start;
+	justify-content: space-between;
+	margin-bottom: 18px;
+}
+
+.ysf-kitchen__head .ysf-card-panel__title {
+	margin: 4px 0 8px;
+}
+
+.ysf-kitchen__form {
+	margin: 0 0 24px;
+	padding: 18px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+	background: var(--ysf-cream);
+}
+
+.ysf-kitchen__form[hidden] {
+	display: none;
+}
+
+.ysf-kitchen__toolbar {
+	display: grid;
+	gap: 12px;
+	margin-bottom: 18px;
+}
+
+.ysf-kitchen__filters.ysf-filters {
+	position: static;
+	top: auto;
+	z-index: 1;
+	margin-bottom: 0;
+	padding-block: 0;
+	background: transparent;
+}
+
+.ysf-kitchen__search {
+	width: 100%;
+	max-width: 360px;
+	padding: 10px 14px;
+	border: 1px solid var(--ysf-line);
+	border-radius: 999px;
+	background: #fff;
+}
+
+.ysf-kitchen__list {
+	display: grid;
+	gap: 12px;
+}
+
+.ysf-kitchen__row {
+	display: grid;
+	grid-template-columns: 72px 1fr auto;
+	gap: 14px;
+	align-items: center;
+	padding: 12px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+	background: var(--ysf-cream);
+}
+
+.ysf-kitchen__row.is-soldout {
+	opacity: 0.78;
+}
+
+.ysf-kitchen__row[hidden] {
+	display: none;
+}
+
+.ysf-kitchen__thumb {
+	width: 72px;
+	height: 72px;
+	border-radius: 12px;
+	object-fit: cover;
+	background: var(--ysf-cream-2);
+}
+
+.ysf-kitchen__info h4 {
+	margin: 0 0 4px;
+	font-size: 1.05rem;
+}
+
+.ysf-kitchen__info p {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 14px;
+	margin: 0;
+	color: var(--ysf-muted);
+	font-size: 0.88rem;
+}
+
+.ysf-kitchen__state {
+	color: var(--ysf-ink);
+	font-weight: 700;
+}
+
+.ysf-kitchen__row.is-soldout .ysf-kitchen__state {
+	color: var(--ysf-accent-dark);
+}
+
+.ysf-kitchen__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.ysf-kitchen__trash {
+	margin-top: 24px;
+}
+
+@media (max-width: 720px) {
+	.ysf-kitchen__row {
+		grid-template-columns: 64px 1fr;
+	}
+
+	.ysf-kitchen__thumb {
+		width: 64px;
+		height: 64px;
+	}
+
+	.ysf-kitchen__actions {
+		grid-column: 1 / -1;
+		justify-content: flex-start;
+	}
 }
 
 .ysf-icon {
