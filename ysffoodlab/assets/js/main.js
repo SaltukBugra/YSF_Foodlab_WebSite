@@ -941,8 +941,42 @@
 	}
 
 	function clearPasswordFields( form ) {
-		qsa( 'input[type="password"]', form ).forEach( function ( field ) {
+		qsa( '.ysf-pass input, input[type="password"]', form ).forEach( function ( field ) {
 			field.value = '';
+		} );
+	}
+
+	function initPasswordToggles() {
+		qsa( 'input[type="password"]' ).forEach( function ( field ) {
+			if ( field.closest( '.ysf-pass' ) || field.closest( '.ysf-hp' ) ) {
+				return;
+			}
+
+			var wrap = document.createElement( 'div' );
+			var button = document.createElement( 'button' );
+			var label = document.createElement( 'span' );
+
+			wrap.className = 'ysf-pass';
+			field.parentNode.insertBefore( wrap, field );
+			wrap.appendChild( field );
+
+			button.type = 'button';
+			button.className = 'ysf-pass__toggle';
+			button.setAttribute( 'aria-pressed', 'false' );
+			button.setAttribute( 'aria-label', t( 'acc_pass_show', 'Göster' ) );
+			button.innerHTML = '<svg class="ysf-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>';
+			label.textContent = t( 'acc_pass_show', 'Göster' );
+			button.appendChild( label );
+			wrap.appendChild( button );
+
+			button.addEventListener( 'click', function () {
+				var show = 'password' === field.type;
+
+				field.type = show ? 'text' : 'password';
+				button.setAttribute( 'aria-pressed', show ? 'true' : 'false' );
+				button.setAttribute( 'aria-label', show ? t( 'acc_pass_hide', 'Gizle' ) : t( 'acc_pass_show', 'Göster' ) );
+				label.textContent = show ? t( 'acc_pass_hide', 'Gizle' ) : t( 'acc_pass_show', 'Göster' );
+			} );
 		} );
 	}
 
@@ -1606,6 +1640,7 @@
 		initCart();
 		initOrderForm();
 		initSimpleForms();
+		initPasswordToggles();
 		initAccountForms();
 		initAddressFields();
 		initAddressCards();

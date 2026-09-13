@@ -57,6 +57,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.2.5 =
+* Giris, kayit ve profil sifre alanlarinda Goster / Gizle dugmesi.
+
 = 1.2.4 =
 * Mutfak Sorumlusu rolu eklendi. Yetkili, siparis ekranina degil Hesabim
   sayfasindaki menu kontrolune girer: stokta yok isareti, yeni urun ekleme
