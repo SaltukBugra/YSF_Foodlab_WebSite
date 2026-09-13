@@ -39,7 +39,8 @@ function ysf_register_post_types() {
 			'supports'      => array( 'title', 'editor', 'thumbnail', 'excerpt', 'page-attributes', 'custom-fields' ),
 			'rewrite'       => array( 'slug' => 'lezzet' ),
 			'show_in_rest'  => true,
-			'rest_base'     => 'menu-items',
+			// Cekirdegin /wp/v2/menu-items ucuyla cakismamasi icin on ekli.
+			'rest_base'     => 'ysf-menu-items',
 		)
 	);
 
@@ -59,7 +60,7 @@ function ysf_register_post_types() {
 			'show_admin_column' => true,
 			'rewrite'           => array( 'slug' => 'menu-kategori' ),
 			'show_in_rest'      => true,
-			'rest_base'         => 'menu-categories',
+			'rest_base'         => 'ysf-menu-categories',
 		)
 	);
 
@@ -84,7 +85,7 @@ function ysf_register_post_types() {
 			'supports'      => array( 'title', 'editor', 'thumbnail', 'excerpt', 'page-attributes', 'custom-fields' ),
 			'rewrite'       => array( 'slug' => 'kampanya' ),
 			'show_in_rest'  => true,
-			'rest_base'     => 'campaigns',
+			'rest_base'     => 'ysf-campaigns',
 		)
 	);
 
