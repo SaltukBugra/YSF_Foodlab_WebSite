@@ -52,7 +52,7 @@ $ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( arr
 
 		<div class="ysf-topbar__meta">
 			<?php if ( $ysf_phone ) : ?>
-				<a href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>">
+				<a class="ysf-topbar__phone" href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>">
 					<?php echo esc_html( $ysf_phone ); ?>
 				</a>
 			<?php endif; ?>

@@ -57,6 +57,19 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.1.1 =
+* Ust menu artik Ingilizce'ye ceviriliyor. Menu ogesinin etiketi, bagli
+  sayfanin Turkce basligiyla ayniysa sayfanin _ysf_title_en degeri kullanilir;
+  menude elle yazilmis ozel etiketlere dokunulmaz.
+* Menuden gezinirken dil secimi korunuyor (site ici baglantilara lang=en
+  eklenir, dis baglantilara eklenmez).
+* Mobilde ust seritteki duyuru metni kirpilmiyor: dar ekranda telefon
+  numarasi ve "Duyurular" etiketi gizlenip metne tam genislik veriliyor.
+  Telefon zaten alt eylem cubugunda ve yuzen butonda mevcut.
+* Menu sayfasindaki kategori dugmeleri mobilde yana kaydirma yerine alt
+  satira geciyor; tum kategoriler tek bakista gorunur.
+* Mobil menu acikken kapatma (X) dugmesi cekmecenin altinda kalmiyor.
+
 = 1.1.0 =
 * Ana sayfaya kapak slayti eklendi: gorseller yumusak gecisle degisir ve
   yavasca yakinlasir. Ozelestir bolumunden 4 gorsele kadar secilebilir.

@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.1.0' );
+define( 'YSF_VERSION', '1.1.1' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 

@@ -98,6 +98,57 @@ function ysf_language_attributes( $output ) {
 add_filter( 'language_attributes', 'ysf_language_attributes' );
 
 /**
+ * Navigasyon menüsünü aktif dile uyarlar.
+ *
+ * Menü öğelerinin başlığı, bağlı olduğu sayfanın/yazının İngilizce başlığıyla
+ * (_ysf_title_en) değiştirilir; kategori öğelerinde terim çevirisi kullanılır.
+ * Site içi bağlantılara dil parametresi eklenir, böylece menüden gezinirken
+ * İngilizce seçimi korunur.
+ *
+ * @param array $items Menü öğeleri.
+ * @return array
+ */
+function ysf_nav_menu_i18n( $items ) {
+	if ( 'en' !== ysf_lang() || ! is_array( $items ) ) {
+		return $items;
+	}
+
+	$host = wp_parse_url( home_url(), PHP_URL_HOST );
+
+	foreach ( $items as $item ) {
+		$object_id  = isset( $item->object_id ) ? (int) $item->object_id : 0;
+		$translated = '';
+		$original   = '';
+
+		if ( $object_id && 'taxonomy' === $item->type ) {
+			$term = get_term( $object_id );
+
+			if ( $term && ! is_wp_error( $term ) ) {
+				$translated = get_term_meta( $object_id, '_ysf_name_en', true );
+				$original   = $term->name;
+			}
+		} elseif ( $object_id ) {
+			$translated = get_post_meta( $object_id, '_ysf_title_en', true );
+			$original   = get_the_title( $object_id );
+		}
+
+		// Etiket, bağlı sayfanın başlığıyla aynıysa çeviriyi kullan. Yönetici
+		// menüde kendi etiketini yazmışsa (ör. "Sipariş Ver") ona dokunmayız.
+		if ( $translated && $original && $item->title === $original ) {
+			$item->title = $translated;
+		}
+
+		// Dil parametresi yalnızca site içi bağlantılara eklenir.
+		if ( ! empty( $item->url ) && wp_parse_url( $item->url, PHP_URL_HOST ) === $host ) {
+			$item->url = ysf_localize_url( $item->url );
+		}
+	}
+
+	return $items;
+}
+add_filter( 'wp_nav_menu_objects', 'ysf_nav_menu_i18n' );
+
+/**
  * Verilen dil için mevcut sayfanın bağlantısını üretir.
  *
  * @param string $lang Dil kodu.

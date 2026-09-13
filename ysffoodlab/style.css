@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.1.0
+Version: 1.1.1
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -733,9 +733,13 @@ pre {
 }
 
 @media (max-width: 1024px) {
+	/* Menü açıkken çekmece başlığın üzerine geldiği için kapatma düğmesini
+	   üstte tutuyoruz; aksi halde X düğmesi görünmez oluyor. */
 	.ysf-burger {
 		display: block;
 		order: 3;
+		position: relative;
+		z-index: 2;
 	}
 
 	.ysf-nav {
@@ -2081,6 +2085,38 @@ body.ysf-no-scroll {
 .ysf-menu-group,
 .ysf-section {
 	scroll-margin-top: calc(var(--ysf-header-h) + 24px);
+}
+
+/* --------------------------------------------------------------------------
+   Mobilde okunabilirlik: dar ekranda metinler kırpılmasın
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+	/* Duyuru metni tüm satırı kullansın. Telefon numarası alt eylem
+	   çubuğunda ve yüzen arama butonunda zaten var. */
+	.ysf-topbar__phone,
+	.ysf-topbar__badge {
+		display: none;
+	}
+
+	.ysf-topbar__inner {
+		gap: 12px;
+	}
+}
+
+@media (max-width: 700px) {
+	/* Kategori düğmeleri yana kaydırma gerektirmesin; alt satıra geçsin. */
+	.ysf-filters {
+		position: static;
+		flex-wrap: wrap;
+		overflow-x: visible;
+		padding-block: 4px 0;
+	}
+
+	.ysf-filter {
+		font-size: 0.82rem;
+		padding: 8px 14px;
+	}
 }
 
 /* Kartlarin ve butonlarin uzerine gelindiginde canlanmasi */
