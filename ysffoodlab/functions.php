@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.1.2' );
+define( 'YSF_VERSION', '1.1.3' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 
@@ -182,6 +182,53 @@ function ysf_dequeue_unused() {
 	}
 }
 add_action( 'wp_enqueue_scripts', 'ysf_dequeue_unused', 100 );
+
+/**
+ * Cookie Admin Pro çerez onayını yalnızca admin-ajax kaydı başarılı dönerse
+ * tarayıcıya yazıyor. Sunucu tarafındaki kayıt hata verdiğinde onay hiç
+ * saklanmadığı için uyarı her sayfada yeniden çıkıyor. Eklentinin kaydetme
+ * fonksiyonunu sarmalayıp onayı çereze de yazdırıyoruz.
+ */
+function ysf_cookieadmin_consent_fix() {
+	if ( ! wp_script_is( 'cookieadmin_js', 'enqueued' ) || ! wp_script_is( 'cookieadmin_pro_js', 'enqueued' ) ) {
+		return;
+	}
+
+	$js = <<<'JS'
+( function () {
+	function wrap() {
+		if ( typeof window.cookieadmin_pro_set_consent !== 'function' ) {
+			return;
+		}
+
+		var proSetConsent = window.cookieadmin_pro_set_consent;
+
+		window.cookieadmin_pro_set_consent = function ( preference, days ) {
+			var result = proSetConsent.apply( this, arguments );
+
+			if ( false === result || typeof window.cookieadmin_save_consent_cookie !== 'function' ) {
+				return result;
+			}
+
+			try {
+				window.cookieadmin_save_consent_cookie( preference, days || 365 );
+			} catch ( e ) {}
+
+			return result;
+		};
+	}
+
+	if ( 'loading' === document.readyState ) {
+		document.addEventListener( 'DOMContentLoaded', wrap );
+	} else {
+		wrap();
+	}
+}() );
+JS;
+
+	wp_add_inline_script( 'cookieadmin_js', $js );
+}
+add_action( 'wp_enqueue_scripts', 'ysf_cookieadmin_consent_fix', 99 );
 
 /**
  * Alıntı uzunluğu ve sonu.

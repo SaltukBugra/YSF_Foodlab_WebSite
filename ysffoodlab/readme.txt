@@ -57,6 +57,16 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.1.3 =
+* Cerez uyarisinin her sayfada yeniden cikmasi giderildi. Cookie Admin Pro
+  eklentisi onayi yalnizca admin-ajax kaydi basarili donerse tarayiciya
+  yaziyor; sunucudaki kayit "Error saving consent data." hatasi verdigi icin
+  onay hic saklanmiyordu. Tema, eklentinin kaydetme fonksiyonunu sarmalayip
+  onayi cereze de yazdiriyor. Kalici cozum icin Cookie Admin Pro eklentisi
+  devre disi birakilabilir.
+* Kapak slaytindaki nokta butonlarinda aria-current yalnizca aktif slaytta
+  birakiliyor.
+
 = 1.1.2 =
 * Mobil menu duzeltildi. Baslikta kullanilan backdrop-filter, icindeki
   position:fixed menuye kapsayici blok olusturuyordu; bu nedenle acilan menu

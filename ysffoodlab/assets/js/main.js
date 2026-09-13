@@ -870,7 +870,12 @@
 
 			dots.forEach( function ( dot, n ) {
 				dot.classList.toggle( 'is-active', n === index );
-				dot.setAttribute( 'aria-current', n === index ? 'true' : 'false' );
+
+				if ( n === index ) {
+					dot.setAttribute( 'aria-current', 'true' );
+				} else {
+					dot.removeAttribute( 'aria-current' );
+				}
 			} );
 		}
 
