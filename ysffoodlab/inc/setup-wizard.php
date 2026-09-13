@@ -425,6 +425,20 @@ function ysf_wizard_run( $with_samples = true ) {
 
 		if ( $existing ) {
 			$page_ids[ $slug ] = $existing->ID;
+
+			// Sayfa baska bir yolla olusturulmus olabilir; eksik sablonu ve
+			// Ingilizce basligi tamamla, mevcut secimlerin uzerine yazma.
+			if ( ! empty( $page['template'] ) && ! get_post_meta( $existing->ID, '_wp_page_template', true ) ) {
+				update_post_meta( $existing->ID, '_wp_page_template', $page['template'] );
+
+				/* translators: %s: sayfa başlığı. */
+				$report[] = sprintf( __( '“%s” sayfasına doğru şablon atandı.', 'ysffoodlab' ), $existing->post_title );
+			}
+
+			if ( ! empty( $page['title_en'] ) && ! get_post_meta( $existing->ID, '_ysf_title_en', true ) ) {
+				update_post_meta( $existing->ID, '_ysf_title_en', $page['title_en'] );
+			}
+
 			continue;
 		}
 
