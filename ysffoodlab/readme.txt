@@ -57,6 +57,17 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.2.9 =
+* Header yazisi el yazisi font ve logo ile ayni siyah zeminde,
+  markanin devamı gibi gorunur.
+
+= 1.2.8 =
+* Header logosunun yanina buyuk harflerle YSF Foodlab yazisi eklendi.
+
+= 1.2.7 =
+* Header logosu buyutuldu; ozelestirici kirpma alani kare (200x200)
+  oldu, boylece kare logo yatay serite sigmayip kesilmiyor.
+
 = 1.2.6 =
 * Urun adi yanindaki etiketler siniflandi: bilgi (koyu), olumlu (yesil),
   olumsuz (kirmizi), kampanya (sari). Sef ve yonetici birden fazla etiket ekler.

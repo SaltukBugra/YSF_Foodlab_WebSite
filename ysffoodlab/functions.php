@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.2.6' );
+define( 'YSF_VERSION', '1.2.9' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 
@@ -45,8 +45,8 @@ function ysf_theme_setup() {
 	add_theme_support(
 		'custom-logo',
 		array(
-			'height'      => 96,
-			'width'       => 320,
+			'height'      => 200,
+			'width'       => 200,
 			'flex-height' => true,
 			'flex-width'  => true,
 		)
@@ -101,7 +101,7 @@ function ysf_enqueue_assets() {
 	if ( ysf_get_option( 'ysf_google_fonts', true ) ) {
 		wp_enqueue_style(
 			'ysf-fonts',
-			'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap',
+			'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap',
 			array(),
 			null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 		);

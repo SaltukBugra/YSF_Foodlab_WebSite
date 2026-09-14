@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.2.6
+Version: 1.2.9
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -34,6 +34,7 @@ Tags: restaurant, food, custom-menu, custom-logo, featured-images, translation-r
 	--ysf-muted-dark: rgba(251, 247, 241, 0.66);
 
 	--ysf-font-head: "Playfair Display", "Georgia", "Times New Roman", serif;
+	--ysf-font-script: "Great Vibes", "Segoe Script", "Snell Roundhand", cursive;
 	--ysf-font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
 	--ysf-radius: 14px;
@@ -45,7 +46,7 @@ Tags: restaurant, food, custom-menu, custom-logo, featured-images, translation-r
 	--ysf-wrap: 1180px;
 	--ysf-gap: clamp(16px, 3vw, 32px);
 	--ysf-section: clamp(56px, 8vw, 104px);
-	--ysf-header-h: 76px;
+	--ysf-header-h: 104px;
 }
 
 *,
@@ -549,15 +550,21 @@ pre {
 .ysf-brand {
 	display: inline-flex;
 	align-items: center;
-	gap: 12px;
+	gap: 14px;
 	flex: none;
+	margin-block: -10px;
 	text-decoration: none;
 	color: var(--ysf-ink);
 }
 
 .ysf-brand img {
-	max-height: 52px;
+	display: block;
 	width: auto;
+	max-width: min(42vw, 200px);
+	height: auto;
+	max-height: 92px;
+	object-fit: contain;
+	object-position: left center;
 }
 
 .ysf-brand__text {
@@ -568,8 +575,42 @@ pre {
 
 .ysf-brand__name {
 	font-family: var(--ysf-font-head);
-	font-size: 1.3rem;
+	font-size: clamp(1.45rem, 2.6vw, 2.05rem);
 	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.ysf-brand--mark {
+	gap: 0;
+	align-items: stretch;
+	overflow: hidden;
+	margin-block: -6px;
+	padding: 0 22px 0 0;
+	border-radius: 16px;
+	background: #050505;
+	box-shadow: inset 0 0 0 1px rgba(212, 180, 131, 0.12);
+}
+
+.ysf-brand--mark img {
+	max-height: 96px;
+	background: #050505;
+}
+
+.ysf-brand--mark .ysf-brand__text {
+	justify-content: center;
+	padding-left: 2px;
+}
+
+.ysf-brand--mark .ysf-brand__name {
+	font-family: var(--ysf-font-script);
+	font-size: clamp(1.85rem, 3.2vw, 2.75rem);
+	font-weight: 400;
+	letter-spacing: 0.03em;
+	line-height: 1;
+	text-transform: none;
+	color: #d4b483;
 }
 
 .ysf-brand__tagline {
@@ -759,6 +800,28 @@ pre {
 		background: var(--ysf-cream);
 	}
 
+	.ysf-brand img {
+		max-height: 72px;
+		max-width: min(40vw, 150px);
+	}
+
+	.ysf-brand--mark {
+		padding-right: 14px;
+		border-radius: 12px;
+	}
+
+	.ysf-brand--mark img {
+		max-height: 72px;
+	}
+
+	.ysf-brand__name {
+		font-size: clamp(1.05rem, 4.2vw, 1.45rem);
+	}
+
+	.ysf-brand--mark .ysf-brand__name {
+		font-size: clamp(1.45rem, 6vw, 2rem);
+	}
+
 	.ysf-nav {
 		position: fixed;
 		inset: 0 0 0 auto;
@@ -769,7 +832,7 @@ pre {
 		margin: 0;
 		/* Üst şerit + başlık yüksekliği kadar boşluk: ilk bağlantı logonun ve
 		   kapatma düğmesinin altında kalır. */
-		padding: 124px 24px 32px;
+		padding: 148px 24px 32px;
 		background: var(--ysf-cream);
 		border-left: 1px solid var(--ysf-line);
 		box-shadow: var(--ysf-shadow-lg);

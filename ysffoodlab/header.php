@@ -89,7 +89,7 @@ if ( is_user_logged_in() ) {
 
 <header class="ysf-header" data-ysf-header>
 	<div class="ysf-wrap ysf-header__inner">
-		<a class="ysf-brand" href="<?php echo esc_url( ysf_localize_url( home_url( '/' ) ) ); ?>" rel="home">
+		<a class="ysf-brand<?php echo has_custom_logo() ? ' ysf-brand--mark' : ''; ?>" href="<?php echo esc_url( ysf_localize_url( home_url( '/' ) ) ); ?>" rel="home">
 			<?php if ( has_custom_logo() ) : ?>
 				<?php
 				$ysf_logo_id = get_theme_mod( 'custom_logo' );
@@ -100,9 +100,13 @@ if ( is_user_logged_in() ) {
 					array(
 						'alt'     => esc_attr( get_bloginfo( 'name' ) ),
 						'loading' => 'eager',
+						'sizes'   => '(max-width: 1024px) 150px, 200px',
 					)
 				);
 				?>
+				<span class="ysf-brand__text">
+					<span class="ysf-brand__name">YSF Foodlab</span>
+				</span>
 			<?php else : ?>
 				<span class="ysf-brand__text">
 					<span class="ysf-brand__name"><?php bloginfo( 'name' ); ?></span>
