@@ -32,6 +32,11 @@ gerekmez.
 * Rezervasyonlar ve Siparisler: formdan gelen her talep panele kaydedilir,
   yoneticiye e-posta gider ve durumu Bekliyor / Onaylandi / Tamamlandi /
   Iptal olarak guncellenebilir.
+* Masa servisi: /garson adresi garson telefonu icindir, /kasiyer kasa
+  telefonu icindir, /mutfak-ekrani mutfak tableti icindir. Yonetici,
+  Kullanicilar ekranindan personele Garson, Kasiyer veya Mutfak Sorumlusu
+  rolunu verir. Kasiyer sekmesi yalnizca kasiyer ve yonetici hesaplarinda
+  gorunur. Masa sayisi Ozellestir > Masa servisi bolumunden ayarlanir.
 
 == Cift dil ==
 
@@ -56,6 +61,81 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 * Google Fonts kullanimi Ozelestir > Gelismis bolumunden kapatilabilir.
 
 == Degisiklik gecmisi ==
+
+= 1.4.15 =
+* Kayit OTP: 6 haneli kod telefona SMS (Netgsm) ve e-postaya gider; hesap kod dogrulanmadan acilmaz.
+
+= 1.4.14 =
+* Instagram ve Facebook ana sayfada ve yüzen WhatsApp butonunun üstünde.
+
+= 1.4.13 =
+* Instagram @ysffoodlab ve Facebook YSF Foodlab ikonları üst bar, iletişim ve alt bilgide.
+
+= 1.4.12 =
+* Yönetici girişi artık şifreyle tamamlanmaz: authenticator kodu zorunlu. Kurulu değilse girişte karekod çıkar; mevcut oturum kurulum bitene kadar kilitlenir.
+
+= 1.4.11 =
+* Yönetici hesabına Google Authenticator uyumlu iki adımlı doğrulama. Personel ve üyeler etkilenmez.
+
+= 1.4.10 =
+* Logo varken yanındaki YSF Foodlab yazısı kaldırıldı.
+
+= 1.4.9 =
+* SMTP kimliği info@ysffoodlab.com.tr kutusuna çekilir; kayıt mail gitmese de ekrandaki kodla tamamlanır.
+
+= 1.4.8 =
+* Veridyen SMTP: port 465/SSL varsayılan, kimlik doğrulama LOGIN, alternatif sunucular denenir.
+
+= 1.4.7 =
+* SMTP mail ayarları Özelleştir > YSF Food Lab Ayarları > İşletme Bilgileri içine alındı.
+
+= 1.4.6 =
+* Kayıt hatası artık gerçek nedeni gösterir; tarayıcı otomatik doldurma bot tuzağını tetiklemez.
+
+= 1.4.5 =
+* Form hataları “çok fazla deneme” kilidini doldurmaz; kilit 15 dakikada açılır.
+
+= 1.4.4 =
+* Üye ol formunda adres otomatik doldurma “zorunlu alan” hatasını tetiklemez; eksik alan adı gösterilir.
+
+= 1.4.3 =
+* Kayıtta e-posta kullanıcı adı alanına yazılsa da kabul edilir; @ öncesi giriş adı olur.
+
+= 1.4.2 =
+* Giden e-posta adresi info@ysffoodlab.com.tr (gerçek MX kaydı). SMTP ayarları eklendi.
+
+= 1.4.1 =
+* Giden e-postalar info@ysffoodlab.com adresinden gönderilir.
+
+= 1.4.0 =
+* Giriş kullanıcı adı, e-posta veya telefonla yapılabilir.
+* Üyelik e-posta doğrulama kodu ile tamamlanır.
+* Şifremi unuttum bağlantısı Hesabım sayfasında yeni şifre belirletir.
+
+= 1.3.9 =
+* Kasiyer sekmesi yalnızca kasiyer ve yönetici hesaplarında görünür.
+* Kasiyer penceresi (/kasiyer): açık masa hesapları, nakit/kart tahsilat, günlük kasa.
+* Android YSF Kasiyer uygulaması eklendi.
+
+= 1.3.2 =
+* Personel ekranlarında sekme yok. Mutfak siparişleri sırayla kuyruğa düşer.
+* Garson masaları dolu/boş listeler; dolu masada önceki siparişler, Ekle ile yeni sipariş.
+
+= 1.3.1 =
+* Hesabım ve personel ekranlarında Mutfak / Garson sekmeleri.
+* Garson sayfası (/garson) ve mutfak ekranı (/mutfak-ekrani) tema açılınca oluşur.
+
+= 1.3.0 =
+* Garson uygulaması (mobil): masadan sipariş alma, mutfağa gönderme, masayı kapatma.
+* Mutfak ekranı: masa (ve isteğe bağlı online) biletlerini canlı kolonlarda gösterir.
+* Her iki uygulama da tarayıcıdan ana ekrana eklenebilir. Garson rolü Kullanıcılar’dan atanır.
+* Masa sayısı Görünüm > Özelleştir > Masa servisi bölümünden ayarlanır.
+
+= 1.2.11 =
+* Sepete ekleme yalnizca Online Siparis sayfasinda; Menü sayfasi sadece listeler.
+
+= 1.2.10 =
+* Header yazisi Great Vibes yerine Cinzel (Roman, iddiali) fonta gecildi.
 
 = 1.2.9 =
 * Header yazisi el yazisi font ve logo ile ayni siyah zeminde,

@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return bool Sınır aşıldıysa true.
  */
 function ysf_rate_limited( $bucket, $limit = 5, $window = 600 ) {
-	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
+	$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
 	$key = 'ysf_rl_' . $bucket . '_' . md5( $ip );
 
 	$count = (int) get_transient( $key );
@@ -33,6 +33,72 @@ function ysf_rate_limited( $bucket, $limit = 5, $window = 600 ) {
 	set_transient( $key, $count + 1, $window );
 
 	return false;
+}
+
+/**
+ * AJAX güvenlik anahtarını doğrular; başarısızsa JSON hata döner.
+ */
+function ysf_require_ajax_nonce() {
+	if ( ! check_ajax_referer( 'ysf_public', 'nonce', false ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_session_stale' ) ), 403 );
+	}
+}
+
+/**
+ * Bot tuzağı doldurulmuş mu? Tarayıcı otomatik doldurmasını yok sayar.
+ *
+ * @return bool
+ */
+function ysf_honeypot_tripped() {
+	if ( ! isset( $_POST['ysf_hp'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		return false;
+	}
+
+	$hp = wp_unslash( $_POST['ysf_hp'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+	if ( is_array( $hp ) ) {
+		return true;
+	}
+
+	$hp = trim( (string) $hp );
+
+	if ( '' === $hp || '0' === $hp ) {
+		return false;
+	}
+
+	foreach ( array( 'name', 'email', 'login', 'username', 'phone' ) as $key ) {
+		if ( empty( $_POST[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			continue;
+		}
+
+		$other = trim( (string) wp_unslash( $_POST[ $key ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( $other && 0 === strcasecmp( $hp, $other ) ) {
+			return false;
+		}
+	}
+
+	if ( is_email( $hp ) ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Son e-posta hata metni.
+ *
+ * @return string
+ */
+function ysf_mail_fail_message() {
+	$reason = get_transient( 'ysf_mail_last_error' );
+	$base   = ysf_t( 'acc_verify_send_fail' );
+
+	if ( $reason ) {
+		return $base . ' ' . $reason;
+	}
+
+	return $base;
 }
 
 /**
@@ -48,16 +114,290 @@ function ysf_valid_phone( $phone ) {
 }
 
 /**
- * Bildirim e-postası gönderir.
+ * Posta kutusunu gerçek alan adına çeker (ysffoodlab.com → ysffoodlab.com.tr).
  *
- * @param string $to      Alıcı.
- * @param string $subject Konu.
- * @param array  $rows    Etiket => değer satırları.
- * @param string $intro   Giriş metni.
+ * @param string $email Adres.
+ * @return string
+ */
+function ysf_normalize_mailbox( $email ) {
+	$email = trim( (string) $email );
+
+	if ( preg_match( '/@ysffoodlab\\.com$/i', $email ) ) {
+		return preg_replace( '/@ysffoodlab\\.com$/i', '@ysffoodlab.com.tr', $email );
+	}
+
+	return $email;
+}
+
+/**
+ * SMTP kullanıcı adı (tam posta kutusu).
+ *
+ * @return string
+ */
+function ysf_smtp_username() {
+	$user = ysf_normalize_mailbox( (string) ysf_get_option( 'ysf_smtp_user', '' ) );
+
+	if ( is_email( $user ) ) {
+		return $user;
+	}
+
+	return ysf_mail_from_address();
+}
+
+/**
+ * Giden e-postaların gönderen adresi.
+ *
+ * @return string
+ */
+function ysf_mail_from_address() {
+	$from = defined( 'YSF_MAIL_FROM' ) ? YSF_MAIL_FROM : 'info@ysffoodlab.com.tr';
+	$user = ysf_normalize_mailbox( (string) ysf_get_option( 'ysf_smtp_user', '' ) );
+
+	if ( is_email( $user ) ) {
+		return $user;
+	}
+
+	$from = ysf_normalize_mailbox( $from );
+
+	return is_email( $from ) ? $from : 'info@ysffoodlab.com.tr';
+}
+
+/**
+ * Eski info@ysffoodlab.com gönderenini gerçek kutuya çevirir.
+ */
+function ysf_maybe_fix_mail_domain() {
+	if ( get_option( 'ysf_mail_domain_v3' ) ) {
+		return;
+	}
+
+	foreach ( array( 'ysf_smtp_user', 'ysf_email' ) as $key ) {
+		$val = (string) get_theme_mod( $key, '' );
+
+		if ( preg_match( '/@ysffoodlab\\.com$/i', $val ) ) {
+			set_theme_mod( $key, ysf_normalize_mailbox( $val ) );
+		}
+	}
+
+	update_option( 'ysf_mail_domain_v3', '1', false );
+}
+add_action( 'init', 'ysf_maybe_fix_mail_domain', 5 );
+
+/**
+ * Giden e-postaların görünen gönderen adı.
+ *
+ * @return string
+ */
+function ysf_mail_from_name() {
+	$name = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+
+	return $name ? $name : 'YSF Food Lab';
+}
+
+/**
+ * WordPress wp_mail gönderenini restoran adresine çeker.
+ *
+ * @param string $from Mevcut adres.
+ * @return string
+ */
+function ysf_filter_mail_from( $from ) {
+	unset( $from );
+
+	return ysf_mail_from_address();
+}
+add_filter( 'wp_mail_from', 'ysf_filter_mail_from' );
+
+/**
+ * WordPress wp_mail gönderen adını restoran adına çeker.
+ *
+ * @param string $name Mevcut ad.
+ * @return string
+ */
+function ysf_filter_mail_from_name( $name ) {
+	unset( $name );
+
+	return ysf_mail_from_name();
+}
+add_filter( 'wp_mail_from_name', 'ysf_filter_mail_from_name' );
+
+/**
+ * SMTP şifresini theme_mod’dan okur.
+ *
+ * @return string
+ */
+function ysf_smtp_password() {
+	$pass = (string) ysf_get_option( 'ysf_smtp_pass', '' );
+	$pass = wp_unslash( $pass );
+	$pass = html_entity_decode( $pass, ENT_QUOTES, 'UTF-8' );
+	$pass = preg_replace( '/^\xEF\xBB\xBF/', '', $pass );
+
+	return trim( $pass );
+}
+
+/**
+ * Denenecek SMTP sunucu / port / şifreleme kombinasyonları.
+ *
+ * @return array<int,array{host:string,port:int,enc:string}>
+ */
+function ysf_smtp_attempts() {
+	$host = trim( (string) ysf_get_option( 'ysf_smtp_host', 'mail.ysffoodlab.com.tr' ) );
+	$host = $host ? $host : 'mail.ysffoodlab.com.tr';
+	$port = (int) ysf_get_option( 'ysf_smtp_port', 465 );
+	$enc  = sanitize_key( (string) ysf_get_option( 'ysf_smtp_enc', 'ssl' ) );
+	$port = $port ? $port : 465;
+	$enc  = $enc ? $enc : 'ssl';
+
+	$saved = get_transient( 'ysf_smtp_ok' );
+	$list  = array();
+
+	if ( is_array( $saved ) && ! empty( $saved['host'] ) ) {
+		$list[] = $saved;
+	}
+
+	$list[] = array(
+		'host' => $host,
+		'port' => $port,
+		'enc'  => $enc,
+	);
+	$list[] = array(
+		'host' => $host,
+		'port' => 465,
+		'enc'  => 'ssl',
+	);
+	$list[] = array(
+		'host' => $host,
+		'port' => 587,
+		'enc'  => 'tls',
+	);
+	$list[] = array(
+		'host' => 'localhost',
+		'port' => 465,
+		'enc'  => 'ssl',
+	);
+	$list[] = array(
+		'host' => 'localhost',
+		'port' => 587,
+		'enc'  => 'tls',
+	);
+	$list[] = array(
+		'host' => '127.0.0.1',
+		'port' => 465,
+		'enc'  => 'ssl',
+	);
+	$list[] = array(
+		'host' => 'mirel.veridyen.com',
+		'port' => 465,
+		'enc'  => 'ssl',
+	);
+	$list[] = array(
+		'host' => 'mirel.veridyen.com',
+		'port' => 587,
+		'enc'  => 'tls',
+	);
+
+	$out  = array();
+	$seen = array();
+
+	foreach ( $list as $row ) {
+		$key = $row['host'] . ':' . (int) $row['port'] . ':' . $row['enc'];
+
+		if ( isset( $seen[ $key ] ) ) {
+			continue;
+		}
+
+		$seen[ $key ] = true;
+		$out[]        = $row;
+	}
+
+	return $out;
+}
+
+/**
+ * SMTP ayarlıysa PHPMailer’ı kimlik doğrulamalı gönderime alır.
+ *
+ * @param PHPMailer\PHPMailer\PHPMailer $phpmailer Mailer.
+ */
+function ysf_phpmailer_from( $phpmailer ) {
+	$from = ysf_mail_from_address();
+	$name = ysf_mail_from_name();
+	$user = ysf_smtp_username();
+	$pass = ysf_smtp_password();
+	$try  = isset( $GLOBALS['ysf_smtp_try'] ) && is_array( $GLOBALS['ysf_smtp_try'] ) ? $GLOBALS['ysf_smtp_try'] : array(
+		'host' => trim( (string) ysf_get_option( 'ysf_smtp_host', 'mail.ysffoodlab.com.tr' ) ),
+		'port' => (int) ysf_get_option( 'ysf_smtp_port', 465 ),
+		'enc'  => sanitize_key( (string) ysf_get_option( 'ysf_smtp_enc', 'ssl' ) ),
+	);
+
+	$host = ! empty( $try['host'] ) ? $try['host'] : 'mail.ysffoodlab.com.tr';
+	$port = ! empty( $try['port'] ) ? (int) $try['port'] : 465;
+	$enc  = ! empty( $try['enc'] ) ? $try['enc'] : 'ssl';
+
+	try {
+		$phpmailer->CharSet  = 'UTF-8';
+		$phpmailer->Encoding = 'base64';
+		$phpmailer->setFrom( $from, $name, false );
+
+		if ( $host && '' !== $pass ) {
+			$phpmailer->isSMTP();
+			$phpmailer->Host       = $host;
+			$phpmailer->SMTPAuth   = true;
+			$phpmailer->Username   = $user;
+			$phpmailer->Password   = $pass;
+			$phpmailer->Port       = $port ? $port : 465;
+			$phpmailer->Timeout    = 20;
+			$phpmailer->Sender     = $user;
+			$phpmailer->SMTPOptions = array(
+				'ssl' => array(
+					'verify_peer'       => false,
+					'verify_peer_name'  => false,
+					'allow_self_signed' => true,
+				),
+			);
+
+			if ( 'ssl' === $enc ) {
+				$phpmailer->SMTPSecure = 'ssl';
+				if ( 587 === (int) $phpmailer->Port ) {
+					$phpmailer->Port = 465;
+				}
+			} elseif ( 'none' === $enc ) {
+				$phpmailer->SMTPSecure  = '';
+				$phpmailer->SMTPAutoTLS = false;
+			} else {
+				$phpmailer->SMTPSecure = 'tls';
+				if ( 465 === (int) $phpmailer->Port ) {
+					$phpmailer->Port = 587;
+				}
+			}
+		}
+	} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		set_transient( 'ysf_mail_last_error', $e->getMessage(), 10 * MINUTE_IN_SECONDS );
+	}
+}
+add_action( 'phpmailer_init', 'ysf_phpmailer_from' );
+
+/**
+ * wp_mail hata mesajını saklar.
+ *
+ * @param WP_Error $error Hata.
+ */
+function ysf_mail_failed( $error ) {
+	if ( is_wp_error( $error ) ) {
+		set_transient( 'ysf_mail_last_error', $error->get_error_message(), 10 * MINUTE_IN_SECONDS );
+	}
+}
+add_action( 'wp_mail_failed', 'ysf_mail_failed' );
+
+/**
+ * HTML e-posta gönderir.
+ *
+ * @param string     $to      Alıcı.
+ * @param string     $subject Konu.
+ * @param array      $rows    Etiket => değer satırları.
+ * @param string     $intro   Giriş metni.
+ * @param array|null $cta     İsteğe bağlı düğme: label, url.
  * @return bool
  */
-function ysf_send_notification( $to, $subject, $rows, $intro = '' ) {
-	$to = $to ? $to : get_option( 'admin_email' );
+function ysf_send_notification( $to, $subject, $rows, $intro = '', $cta = null ) {
+	$to = is_email( $to ) ? $to : ysf_mail_from_address();
 
 	$html  = '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#14100d">';
 	$html .= '<h2 style="color:#b56a16;margin:0 0 12px">' . esc_html( $subject ) . '</h2>';
@@ -81,19 +421,63 @@ function ysf_send_notification( $to, $subject, $rows, $intro = '' ) {
 	}
 
 	$html .= '</table>';
+
+	if ( is_array( $cta ) && ! empty( $cta['url'] ) ) {
+		$label = isset( $cta['label'] ) && $cta['label'] ? $cta['label'] : $cta['url'];
+		$html .= '<p style="margin:22px 0 8px">';
+		$html .= '<a href="' . esc_url( $cta['url'] ) . '" style="display:inline-block;background:#d98324;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:bold">';
+		$html .= esc_html( $label );
+		$html .= '</a></p>';
+		$html .= '<p style="color:#6d635b;font-size:12px;word-break:break-all">' . esc_html( $cta['url'] ) . '</p>';
+	}
+
 	$html .= '<p style="color:#6d635b;font-size:12px;margin-top:18px">' . esc_html( home_url( '/' ) ) . '</p>';
 	$html .= '</div>';
 
+	$from = ysf_mail_from_address();
+	$name = ysf_mail_from_name();
+
 	$headers = array(
 		'Content-Type: text/html; charset=UTF-8',
-		sprintf( 'From: %1$s <%2$s>', wp_specialchars_decode( get_bloginfo( 'name' ) ), 'wordpress@' . wp_parse_url( home_url(), PHP_URL_HOST ) ),
+		sprintf( 'From: %1$s <%2$s>', $name, $from ),
+		sprintf( 'Reply-To: %1$s <%2$s>', $name, $from ),
 	);
 
 	try {
-		return wp_mail( $to, $subject, $html, $headers );
+		$ok = false;
+
+		if ( ysf_smtp_password() ) {
+			foreach ( ysf_smtp_attempts() as $try ) {
+				$GLOBALS['ysf_smtp_try'] = $try;
+				delete_transient( 'ysf_mail_last_error' );
+
+				$ok = wp_mail( $to, $subject, $html, $headers );
+
+				if ( $ok ) {
+					set_transient( 'ysf_smtp_ok', $try, WEEK_IN_SECONDS );
+					break;
+				}
+			}
+
+			unset( $GLOBALS['ysf_smtp_try'] );
+		} else {
+			$ok = wp_mail( $to, $subject, $html, $headers );
+		}
 	} catch ( Throwable $e ) {
-		return false;
+		unset( $GLOBALS['ysf_smtp_try'] );
+		set_transient( 'ysf_mail_last_error', $e->getMessage(), 10 * MINUTE_IN_SECONDS );
+		$ok = false;
 	}
+
+	if ( ! $ok ) {
+		$reason = get_transient( 'ysf_mail_last_error' );
+
+		if ( $reason ) {
+			error_log( 'YSF mail failed: ' . $reason ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		}
+	}
+
+	return $ok;
 }
 
 /**
@@ -205,14 +589,13 @@ function ysf_ajax_submit_order() {
 	$total = $subtotal + $fee;
 	$types = ysf_order_types();
 
-	$order_id = wp_insert_post(
+	$order_id = ysf_insert_request_post(
 		array(
 			'post_type'    => 'ysf_order',
 			'post_status'  => 'publish',
 			'post_title'   => sprintf( '%1$s — %2$s', $name, ysf_price( $total ) ),
 			'post_content' => $note,
-		),
-		true
+		)
 	);
 
 	if ( is_wp_error( $order_id ) ) {
@@ -232,6 +615,9 @@ function ysf_ajax_submit_order() {
 		'_ysf_delivery_fee' => $fee > 0 ? ysf_price( $fee ) : ysf_t( 'free' ),
 		'_ysf_total'        => $total,
 		'_ysf_state'        => 'pending',
+		'_ysf_channel'      => isset( $types[ $type ] ) ? $type : 'delivery',
+		'_ysf_source'       => 'online',
+		'_ysf_kitchen_state'=> 'queued',
 		'_ysf_lang'         => ysf_lang(),
 	);
 

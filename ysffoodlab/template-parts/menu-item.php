@@ -14,9 +14,10 @@ $ysf_prep   = (int) get_post_meta( $ysf_id, '_ysf_prep', true );
 $ysf_allerg = get_post_meta( $ysf_id, '_ysf_allergens', true );
 $ysf_terms  = wp_get_post_terms( $ysf_id, 'ysf_menu_cat', array( 'fields' => 'slugs' ) );
 $ysf_search = strtolower( ysf_field( $ysf_id, 'title' ) . ' ' . wp_strip_all_tags( $ysf_desc ) );
+$ysf_show_cart = ! empty( $args['show_cart'] );
 ?>
 <article
-	class="ysf-item <?php echo $ysf_thumb ? '' : 'ysf-item--noimg'; ?><?php echo get_post_meta( $ysf_id, '_ysf_sold_out', true ) ? ' ysf-item--soldout' : ''; ?>"
+	class="ysf-item <?php echo $ysf_thumb ? '' : 'ysf-item--noimg'; ?><?php echo ysf_meta_flag( $ysf_id, '_ysf_sold_out' ) ? ' ysf-item--soldout' : ''; ?>"
 	data-ysf-item
 	data-cats="<?php echo esc_attr( is_wp_error( $ysf_terms ) ? '' : implode( ' ', $ysf_terms ) ); ?>"
 	data-search="<?php echo esc_attr( $ysf_search ); ?>"
@@ -60,6 +61,6 @@ $ysf_search = strtolower( ysf_field( $ysf_id, 'title' ) . ' ' . wp_strip_all_tag
 
 	<div class="ysf-item__side">
 		<?php ysf_the_price( $ysf_id ); ?>
-		<?php ysf_add_to_cart_button( $ysf_id ); ?>
+		<?php ysf_add_to_cart_button( $ysf_id, $ysf_show_cart ); ?>
 	</div>
 </article>

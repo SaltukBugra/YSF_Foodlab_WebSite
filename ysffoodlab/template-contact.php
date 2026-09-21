@@ -127,6 +127,8 @@ $ysf_today   = ysf_today_key();
 				</li>
 			</ul>
 
+			<?php ysf_the_social_links( 'ysf-social ysf-social--contact' ); ?>
+
 			<?php if ( $ysf_map ) : ?>
 				<iframe
 					class="ysf-map"

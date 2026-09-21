@@ -25,6 +25,41 @@
 		return strings[ key ] || fallback || '';
 	}
 
+	function applyTwoFactorChallenge( form, payload ) {
+		var box = qs( '[data-ysf-2fa]', form );
+		var setup = qs( '[data-ysf-2fa-setup]', form );
+		var codeField = qs( '[name="ysf_2fa_code"]', form );
+		var ticket = qs( '[name="ysf_2fa_ticket"]', form );
+		var qr = qs( '[data-ysf-2fa-qr]', form );
+		var secret = qs( '[data-ysf-2fa-secret]', form );
+
+		if ( box ) {
+			box.hidden = false;
+		}
+
+		if ( ticket && payload.ticket ) {
+			ticket.value = payload.ticket;
+		}
+
+		if ( '2fa_setup' === payload.step && setup ) {
+			setup.hidden = false;
+
+			if ( qr && payload.qr ) {
+				qr.src = payload.qr;
+				qr.hidden = false;
+			}
+
+			if ( secret ) {
+				secret.textContent = payload.secret || '';
+			}
+		}
+
+		if ( codeField ) {
+			codeField.required = true;
+			codeField.focus();
+		}
+	}
+
 	function formatPrice( amount ) {
 		var value = Number( amount ) || 0;
 		var decimals = Math.abs( value - Math.round( value ) ) < 0.005 ? 0 : 2;
@@ -40,6 +75,21 @@
 		}
 
 		return formatted + ' ' + ( settings.currency || '₺' );
+	}
+
+	function openWhatsApp( url ) {
+		if ( ! url ) {
+			return;
+		}
+
+		var link = document.createElement( 'a' );
+
+		link.href = url;
+		link.target = '_blank';
+		link.rel = 'noopener noreferrer';
+		document.body.appendChild( link );
+		link.click();
+		document.body.removeChild( link );
 	}
 
 	function request( action, data ) {
@@ -66,8 +116,26 @@
 			credentials: 'same-origin',
 			body: body
 		} ).then( function ( response ) {
-			return response.json().then( function ( json ) {
-				return { ok: response.ok && json && json.success, payload: json && json.data ? json.data : {} };
+			return response.text().then( function ( text ) {
+				var json = null;
+
+				try {
+					json = text ? JSON.parse( text ) : null;
+				} catch ( e ) {
+					json = null;
+				}
+
+				if ( ! json || 'object' !== typeof json ) {
+					return {
+						ok: false,
+						payload: { message: t( 'form_error', 'Bir sorun oluştu. Lütfen tekrar deneyin veya bizi arayın.' ) }
+					};
+				}
+
+				return {
+					ok: response.ok && json.success,
+					payload: json.data && 'object' === typeof json.data ? json.data : {}
+				};
 			} );
 		} );
 	}
@@ -657,6 +725,19 @@
 			return;
 		}
 
+		qsa( '[data-ysf-to-delivery]' ).forEach( function ( link ) {
+			link.addEventListener( 'click', function ( event ) {
+				var target = qs( '#ysf-teslimat' );
+
+				if ( ! target ) {
+					return;
+				}
+
+				event.preventDefault();
+				target.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+			} );
+		} );
+
 		qsa( 'input[name="type"]', form ).forEach( function ( input ) {
 			input.addEventListener( 'change', toggleOrderFields );
 		} );
@@ -689,7 +770,7 @@
 				writeCart( [] );
 
 				if ( payload.whatsapp ) {
-					window.open( payload.whatsapp, '_blank', 'noopener' );
+					openWhatsApp( payload.whatsapp );
 					appendWhatsappButton( qs( '[data-ysf-result]', form ), payload.whatsapp );
 				}
 			} );
@@ -705,7 +786,7 @@
 		var extras = [];
 
 		qsa( 'input, textarea, select', form ).forEach( function ( field ) {
-			if ( ! field.name || 'consent' === field.name ) {
+			if ( ! field.name || 'ysf_hp' === field.name ) {
 				return;
 			}
 
@@ -761,15 +842,19 @@
 			return;
 		}
 
+		var hint = document.createElement( 'p' );
 		var link = document.createElement( 'a' );
+
+		hint.className = 'ysf-alert__hint';
+		hint.textContent = t( 'order_wa_check', 'Mesaj iletilmezse veya iptal edilirse siparişi hazırlamayız. WhatsApp’tan gönderildiğini kontrol edin; gitmediyse aşağıdaki butondan tekrar gönderin.' );
+
 		link.className = 'ysf-btn ysf-btn--wa ysf-btn--sm';
-		link.style.marginTop = '12px';
 		link.href = url;
 		link.target = '_blank';
 		link.rel = 'noopener noreferrer';
 		link.textContent = t( 'order_send_wa', 'WhatsApp’tan gönder' );
 
-		box.appendChild( document.createElement( 'br' ) );
+		box.appendChild( hint );
 		box.appendChild( link );
 	}
 
@@ -912,8 +997,10 @@
 			// Adres kısmen doldurulduysa zorunlu alanlar devreye girer; tamamen
 			// boş bırakılan adres geçerlidir.
 			function syncRequired() {
+				var form = grid.closest( 'form' );
 				var fields = qsa( 'input, select, textarea', grid );
-				var filled = fields.some( function ( field ) {
+				var skip = form && 'register' === form.getAttribute( 'data-ysf-form' );
+				var filled = ! skip && fields.some( function ( field ) {
 					return '' !== String( field.value ).trim();
 				} );
 
@@ -980,11 +1067,183 @@
 		} );
 	}
 
+	function showRegisterVerify( payload ) {
+		var registerPanel = qs( '[data-ysf-register-panel]' );
+		var verifyPanel = qs( '[data-ysf-verify-panel]' );
+		var tokenField = qs( '#ysf-verify-token' );
+		var destEl = qs( '[data-ysf-verify-dest]' );
+		var codeField = qs( '#ysf-verify-code' );
+		var verifyForm = qs( '[data-ysf-form="verify"]' );
+		var verifyResult = verifyForm ? qs( '[data-ysf-result]', verifyForm ) : null;
+
+		if ( registerPanel ) {
+			registerPanel.hidden = true;
+		}
+
+		if ( verifyPanel ) {
+			verifyPanel.hidden = false;
+		}
+
+		if ( tokenField ) {
+			tokenField.value = payload && payload.token ? payload.token : '';
+		}
+
+		if ( destEl ) {
+			var parts = [];
+
+			if ( payload && payload.phone ) {
+				parts.push( payload.phone );
+			}
+
+			if ( payload && payload.email ) {
+				parts.push( payload.email );
+			}
+
+			destEl.textContent = parts.join( ' · ' );
+		}
+
+		if ( codeField ) {
+			codeField.value = payload && payload.code ? payload.code : '';
+			codeField.focus();
+		}
+
+		if ( verifyResult && payload && payload.message ) {
+			showResult( verifyResult, payload.message, true );
+		}
+	}
+
+	function showRegisterForm() {
+		var registerPanel = qs( '[data-ysf-register-panel]' );
+		var verifyPanel = qs( '[data-ysf-verify-panel]' );
+
+		if ( registerPanel ) {
+			registerPanel.hidden = false;
+		}
+
+		if ( verifyPanel ) {
+			verifyPanel.hidden = true;
+		}
+	}
+
+	function validateRegisterForm( form ) {
+		prepareRegisterForm( form );
+
+		qsa( '[data-ysf-addr] input, [data-ysf-addr] select, [data-ysf-addr] textarea', form ).forEach( function ( field ) {
+			field.required = false;
+			if ( field.setCustomValidity ) {
+				field.setCustomValidity( '' );
+			}
+		} );
+
+		var name = qs( '[name="name"]', form );
+		var email = qs( '[name="email"]', form );
+		var phone = qs( '[name="phone"]', form );
+		var pass = qs( '[name="password"]', form );
+		var pass2 = qs( '[name="password2"]', form );
+		var consent = qs( '[name="consent"]', form );
+		var nameVal = name ? String( name.value || '' ).trim() : '';
+		var emailVal = email ? String( email.value || '' ).trim() : '';
+		var phoneVal = phone ? String( phone.value || '' ).trim() : '';
+		var passVal = pass ? String( pass.value || '' ) : '';
+		var pass2Val = pass2 ? String( pass2.value || '' ) : '';
+
+		if ( name ) {
+			name.value = nameVal;
+		}
+
+		if ( ! nameVal ) {
+			return { field: name, message: t( 'form_name', 'Ad Soyad' ) + ': ' + t( 'form_required', 'Lütfen zorunlu alanları doldurun.' ) };
+		}
+
+		if ( ! emailVal || -1 === emailVal.indexOf( '@' ) || -1 === emailVal.indexOf( '.' ) ) {
+			return { field: email, message: t( 'acc_email_invalid', 'E-posta adresi geçersiz görünüyor.' ) };
+		}
+
+		if ( phoneVal.replace( /\D+/g, '' ).length < 10 ) {
+			return { field: phone, message: t( 'form_phone_invalid', 'Geçerli bir telefon numarası yazın.' ) };
+		}
+
+		if ( passVal.length < 8 ) {
+			return { field: pass, message: t( 'acc_pass_short', 'Şifre en az 8 karakter olmalı.' ) };
+		}
+
+		if ( passVal !== pass2Val ) {
+			return { field: pass2, message: t( 'acc_pass_mismatch', 'Şifreler birbiriyle aynı değil.' ) };
+		}
+
+		if ( consent && ! consent.checked ) {
+			return { field: consent, message: t( 'acc_need_consent', 'Kayıt için alttaki onay kutusunu işaretleyin.' ) };
+		}
+
+		return null;
+	}
+
+	function invalidFormMessage( form ) {
+		var field = form.querySelector( ':invalid' );
+
+		if ( ! field ) {
+			return t( 'form_required', 'Lütfen zorunlu alanları doldurun.' );
+		}
+
+		if ( field.validity.valueMissing ) {
+			if ( 'consent' === field.name ) {
+				return t( 'form_consent', 'Kişisel verilerimin bu talep kapsamında işlenmesine onay veriyorum.' );
+			}
+
+			return t( 'form_required', 'Lütfen zorunlu alanları doldurun.' );
+		}
+
+		if ( 'email' === field.name || field.validity.typeMismatch ) {
+			return t( 'acc_email_invalid', 'E-posta adresi geçersiz görünüyor.' );
+		}
+
+		if ( 'username' === field.name ) {
+			return t( 'acc_username_invalid', 'Kullanıcı adı harfle başlamalı ve yalnızca küçük harf, rakam, nokta veya alt çizgi içerebilir.' );
+		}
+
+		return field.validationMessage || t( 'form_required', 'Lütfen zorunlu alanları doldurun.' );
+	}
+
+	function prepareRegisterForm( form ) {
+		var user = qs( '[name="username"]', form );
+		var email = qs( '[name="email"]', form );
+		var zip = qs( '[name="addr_posta_kodu"]', form );
+		var userVal = user ? String( user.value || '' ).trim() : '';
+		var emailVal = email ? String( email.value || '' ).trim() : '';
+
+		if ( email ) {
+			email.value = emailVal;
+		}
+
+		if ( user && -1 !== userVal.indexOf( '@' ) ) {
+			if ( email && ! emailVal ) {
+				email.value = userVal;
+				emailVal = userVal;
+			}
+
+			userVal = userVal.split( '@' )[ 0 ];
+		}
+
+		if ( ! userVal && emailVal && -1 !== emailVal.indexOf( '@' ) ) {
+			userVal = emailVal.split( '@' )[ 0 ];
+		}
+
+		if ( user ) {
+			user.value = userVal.toLowerCase().replace( /[^a-z0-9._-]/g, '' ).slice( 0, 30 );
+		}
+
+		if ( zip && zip.value && ! /^\d{5}$/.test( String( zip.value ).trim() ) ) {
+			zip.value = '';
+		}
+	}
+
 	function initAccountForms() {
 		var map = {
 			login: 'ysf_login',
 			register: 'ysf_register',
 			lostpass: 'ysf_lost_password',
+			verify: 'ysf_verify_register',
+			resetpass: 'ysf_reset_password',
 			profile: 'ysf_save_profile'
 		};
 
@@ -995,13 +1254,38 @@
 				return;
 			}
 
+			if ( 'register' === name ) {
+				var email = qs( '[name="email"]', form );
+				var user = qs( '[name="username"]', form );
+
+				if ( email && user ) {
+					email.addEventListener( 'blur', function () {
+						if ( ! String( user.value || '' ).trim() && -1 !== String( email.value || '' ).indexOf( '@' ) ) {
+							user.value = String( email.value ).split( '@' )[ 0 ].toLowerCase().replace( /[^a-z0-9._-]/g, '' ).slice( 0, 30 );
+						}
+					} );
+				}
+			}
+
 			form.addEventListener( 'submit', function ( event ) {
 				event.preventDefault();
 
 				var result = qs( '[data-ysf-result]', form );
 
-				if ( ! form.checkValidity() ) {
-					showResult( result, t( 'form_required', 'Zorunlu alanları doldurun.' ), false );
+				if ( 'register' === name ) {
+					var invalid = validateRegisterForm( form );
+
+					if ( invalid ) {
+						showResult( result, invalid.message, false );
+
+						if ( invalid.field && invalid.field.focus ) {
+							invalid.field.focus();
+						}
+
+						return;
+					}
+				} else if ( ! form.checkValidity() ) {
+					showResult( result, invalidFormMessage( form ), false );
 					form.reportValidity();
 					return;
 				}
@@ -1011,14 +1295,82 @@
 						clearPasswordFields( form );
 					}
 
+					if ( 'register' === name && payload && 'verify' === payload.step ) {
+						showRegisterVerify( payload );
+						return;
+					}
+
+					if ( 'login' === name && payload && ( '2fa' === payload.step || '2fa_setup' === payload.step ) ) {
+						applyTwoFactorChallenge( form, payload );
+						window.setTimeout( function () {
+							var button = qs( '[data-ysf-submit]', form );
+
+							if ( button ) {
+								button.textContent = t( 'tfa_continue', 'Kodu doğrula' );
+							}
+						}, 0 );
+						return;
+					}
+
+					if ( 'login' === name && payload && payload.backups && payload.backups.length ) {
+						var resultBox = qs( '[data-ysf-result]', form );
+						var backupText = ( payload.message || t( 'tfa_on', 'İki adımlı doğrulama açıldı.' ) ) + ' ' + t( 'tfa_backups_once', 'Yedek kodlar:' ) + ' ' + payload.backups.join( '  ' );
+						showResult( resultBox, backupText, true );
+
+						if ( payload.redirect ) {
+							window.setTimeout( function () {
+								window.location.href = payload.redirect;
+							}, 8000 );
+						}
+
+						return;
+					}
+
 					if ( payload.redirect ) {
 						window.setTimeout( function () {
 							window.location.href = payload.redirect;
 						}, 800 );
 					}
-				}, { keepValues: 'profile' === name } );
+				}, { keepValues: 'profile' === name || 'register' === name || 'verify' === name || 'resetpass' === name || 'login' === name } );
 			} );
 		} );
+
+		var resend = qs( '[data-ysf-resend-verify]' );
+		var back = qs( '[data-ysf-verify-back]' );
+		var verifyForm = qs( '[data-ysf-form="verify"]' );
+
+		if ( resend && verifyForm ) {
+			resend.addEventListener( 'click', function () {
+				var tokenField = qs( '#ysf-verify-token' );
+				var result = qs( '[data-ysf-result]', verifyForm );
+				var label = resend.textContent;
+
+				if ( ! tokenField || ! tokenField.value ) {
+					showRegisterForm();
+					return;
+				}
+
+				resend.disabled = true;
+				resend.textContent = t( 'form_sending', 'Gönderiliyor…' );
+
+				request( 'ysf_resend_verify', { token: tokenField.value } ).then( function ( response ) {
+					if ( response.ok ) {
+						showRegisterVerify( response.payload );
+					} else {
+						showResult( result, response.payload.message || t( 'form_error', 'Bir sorun oluştu.' ), false );
+					}
+				} ).catch( function () {
+					showResult( result, t( 'form_error', 'Bir sorun oluştu.' ), false );
+				} ).then( function () {
+					resend.disabled = false;
+					resend.textContent = label;
+				} );
+			} );
+		}
+
+		if ( back ) {
+			back.addEventListener( 'click', showRegisterForm );
+		}
 	}
 
 	function initAddressCards() {
@@ -1098,6 +1450,61 @@
 				} );
 			}
 		} );
+	}
+
+	/**
+	 * Hesabım: Mutfak / Garson / Profil sekmeleri.
+	 */
+	function initAccountTabs() {
+		var nav = qs( '[data-ysf-acc-tabs]' );
+
+		if ( ! nav ) {
+			return;
+		}
+
+		var tabs = qsa( '[data-ysf-acc-tab]', nav );
+		var panels = qsa( '[data-ysf-acc-panel]' );
+
+		function show( id ) {
+			tabs.forEach( function ( tab ) {
+				var on = tab.getAttribute( 'data-ysf-acc-tab' ) === id;
+				tab.classList.toggle( 'is-active', on );
+				tab.setAttribute( 'aria-selected', on ? 'true' : 'false' );
+			} );
+
+			panels.forEach( function ( panel ) {
+				panel.hidden = panel.getAttribute( 'data-ysf-acc-panel' ) !== id;
+			} );
+		}
+
+		tabs.forEach( function ( tab ) {
+			tab.addEventListener( 'click', function () {
+				var id = tab.getAttribute( 'data-ysf-acc-tab' );
+				show( id );
+
+				if ( window.history && window.history.replaceState ) {
+					window.history.replaceState( null, '', '#' + ( 'kitchen' === id ? 'ysf-kitchen' : ( 'cashier' === id ? 'kasiyer' : id ) ) );
+				}
+			} );
+		} );
+
+		var hash = ( window.location.hash || '' ).replace( '#', '' );
+
+		if ( 'ysf-kitchen' === hash || 'mutfak' === hash ) {
+			hash = 'kitchen';
+		} else if ( 'garson' === hash || 'ysf-waiter' === hash ) {
+			hash = 'waiter';
+		} else if ( 'kasiyer' === hash || 'ysf-cashier' === hash || 'cashier' === hash ) {
+			hash = 'cashier';
+		} else if ( 'profil' === hash ) {
+			hash = 'profile';
+		}
+
+		var start = qs( '[data-ysf-acc-tab="' + hash + '"]', nav );
+
+		if ( start ) {
+			show( hash );
+		}
 	}
 
 	/**
@@ -1770,6 +2177,7 @@
 		initAddressFields();
 		initAddressCards();
 		initKitchenDesk();
+		initAccountTabs();
 		initSavedAddressPicker();
 		initMenuFilters();
 		initHeroSlider();

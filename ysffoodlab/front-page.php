@@ -204,9 +204,14 @@ if ( $ysf_featured ) :
 				?>
 			</div>
 
-			<?php if ( $ysf_menu_url ) : ?>
-				<p style="text-align:center;margin-top:36px">
-					<a class="ysf-btn ysf-btn--ghost" href="<?php echo esc_url( $ysf_menu_url ); ?>"><?php ysf_e( 'cta_menu' ); ?></a>
+			<?php if ( $ysf_menu_url || $ysf_orders_on ) : ?>
+				<p class="ysf-btn-row" style="justify-content:center;margin-top:36px">
+					<?php if ( $ysf_menu_url ) : ?>
+						<a class="ysf-btn ysf-btn--ghost" href="<?php echo esc_url( $ysf_menu_url ); ?>"><?php ysf_e( 'cta_menu' ); ?></a>
+					<?php endif; ?>
+					<?php if ( $ysf_orders_on ) : ?>
+						<a class="ysf-btn" href="<?php echo esc_url( $ysf_order_url ); ?>"><?php ysf_e( 'cta_order' ); ?></a>
+					<?php endif; ?>
 				</p>
 			<?php endif; ?>
 		</div>
@@ -232,6 +237,8 @@ if ( $ysf_about_text ) :
 				<span class="ysf-eyebrow"><?php bloginfo( 'name' ); ?></span>
 				<h2><?php echo esc_html( ysf_option_i18n( 'ysf_about_title', '' ) ); ?></h2>
 				<p class="ysf-lead"><?php echo esc_html( $ysf_about_text ); ?></p>
+
+				<?php ysf_the_social_links( 'ysf-social ysf-social--home' ); ?>
 
 				<?php
 				$ysf_about_page = get_page_by_path( 'hakkimizda' );
@@ -422,6 +429,7 @@ if ( $ysf_map ) :
 						</a>
 					<?php endif; ?>
 				</div>
+				<?php ysf_the_social_links( 'ysf-social ysf-social--home' ); ?>
 			</div>
 
 			<div>

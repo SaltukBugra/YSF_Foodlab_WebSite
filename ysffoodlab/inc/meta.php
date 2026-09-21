@@ -210,7 +210,7 @@ function ysf_register_meta() {
 					'type'              => $type,
 					'single'            => true,
 					'show_in_rest'      => true,
-					'default'           => 'boolean' === $type ? false : ( 'number' === $type ? 0 : '' ),
+					'default'           => 'boolean' === $type ? ( '_ysf_orderable' === $key ) : ( 'number' === $type ? 0 : '' ),
 					'sanitize_callback' => 'ysf_sanitize_meta_' . $type,
 					'auth_callback'     => function () {
 						return current_user_can( 'edit_posts' );
@@ -280,7 +280,7 @@ function ysf_sanitize_meta_number( $value ) {
  * @return bool
  */
 function ysf_sanitize_meta_boolean( $value ) {
-	return (bool) $value && 'false' !== $value && '0' !== $value;
+	return ysf_is_flag_value( $value, false );
 }
 
 /**
@@ -670,7 +670,7 @@ function ysf_save_meta( $post_id, $post ) {
 	foreach ( $groups as $fields ) {
 		foreach ( $fields as $key => $field ) {
 			if ( 'checkbox' === $field['type'] ) {
-				update_post_meta( $post_id, $key, isset( $_POST[ $key ] ) ? 1 : 0 );
+				ysf_set_meta_flag( $post_id, $key, isset( $_POST[ $key ] ) );
 				continue;
 			}
 

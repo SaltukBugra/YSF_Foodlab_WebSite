@@ -197,6 +197,7 @@ function ysf_order_columns( $columns ) {
 		'cb'              => isset( $columns['cb'] ) ? $columns['cb'] : '',
 		'title'           => __( 'Sipariş', 'ysffoodlab' ),
 		'ysf_order_type'  => __( 'Tip', 'ysffoodlab' ),
+		'ysf_order_table' => __( 'Masa', 'ysffoodlab' ),
 		'ysf_order_total' => __( 'Tutar', 'ysffoodlab' ),
 		'ysf_res_phone'   => __( 'Telefon', 'ysffoodlab' ),
 		'ysf_status'      => __( 'Durum', 'ysffoodlab' ),
@@ -236,6 +237,10 @@ function ysf_render_admin_columns( $column, $post_id ) {
 
 		case 'ysf_order_type':
 			echo esc_html( (string) get_post_meta( $post_id, '_ysf_order_type', true ) );
+			break;
+
+		case 'ysf_order_table':
+			echo esc_html( (string) get_post_meta( $post_id, '_ysf_table', true ) );
 			break;
 
 		case 'ysf_order_total':

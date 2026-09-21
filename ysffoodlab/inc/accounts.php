@@ -462,6 +462,45 @@ function ysf_account_url( $args = array() ) {
 }
 
 /**
+ * Adres çubuğundaki şifre yenileme isteğini okur.
+ *
+ * @return array{user:?WP_User,error:string,key:string,login:string}
+ */
+function ysf_password_reset_request() {
+	$out = array(
+		'user'  => null,
+		'error' => '',
+		'key'   => '',
+		'login' => '',
+	);
+
+	if ( empty( $_GET['ysf_rp'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return $out;
+	}
+
+	$out['key']   = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$out['login'] = isset( $_GET['login'] ) ? sanitize_user( wp_unslash( $_GET['login'] ), true ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	if ( ! $out['key'] || ! $out['login'] ) {
+		$out['error'] = ysf_t( 'acc_reset_invalid' );
+
+		return $out;
+	}
+
+	$user = check_password_reset_key( $out['key'], $out['login'] );
+
+	if ( is_wp_error( $user ) || ! $user ) {
+		$out['error'] = ysf_t( 'acc_reset_invalid' );
+
+		return $out;
+	}
+
+	$out['user'] = $user;
+
+	return $out;
+}
+
+/**
  * Müşteri hesabı mı (panele erişimi olmayan üye)?
  *
  * @param int $user_id Kullanıcı.
@@ -536,6 +575,420 @@ function ysf_generate_username( $email, $name = '' ) {
 }
 
 /**
+ * Giriş için kullanıcı adını sadeleştirir.
+ *
+ * @param string $raw Ham değer.
+ * @return string
+ */
+function ysf_normalize_username( $raw ) {
+	$login = strtolower( sanitize_user( (string) $raw, true ) );
+	$login = preg_replace( '/[^a-z0-9._\-]/', '', $login );
+
+	return substr( (string) $login, 0, 30 );
+}
+
+/**
+ * E-posta veya e-posta yazılmış kullanıcı adından giriş adı üretir.
+ *
+ * @param string $raw E-posta veya yerel kısım.
+ * @return string
+ */
+function ysf_username_from_email( $raw ) {
+	$raw = strtolower( trim( (string) $raw ) );
+
+	if ( false !== strpos( $raw, '@' ) ) {
+		$raw = (string) strstr( $raw, '@', true );
+	}
+
+	return ysf_normalize_username( $raw );
+}
+
+/**
+ * Kullanıcı adı kurallara uyuyor mu?
+ *
+ * @param string $login Kullanıcı adı.
+ * @return true|\WP_Error
+ */
+function ysf_validate_username( $login ) {
+	$login = ysf_normalize_username( $login );
+
+	if ( strlen( $login ) < 3 ) {
+		return new WP_Error( 'username', ysf_t( 'acc_username_short' ) );
+	}
+
+	if ( ! preg_match( '/^[a-z][a-z0-9._-]*$/', $login ) ) {
+		return new WP_Error( 'username', ysf_t( 'acc_username_invalid' ) );
+	}
+
+	$reserved = array( 'admin', 'administrator', 'root', 'wordpress', 'www', 'support', 'info', 'mail', 'garson', 'kasiyer', 'mutfak', 'sef', 'ysf' );
+
+	if ( in_array( $login, $reserved, true ) ) {
+		return new WP_Error( 'username', ysf_t( 'acc_username_taken' ) );
+	}
+
+	if ( username_exists( $login ) ) {
+		return new WP_Error( 'username', ysf_t( 'acc_username_taken' ) );
+	}
+
+	return true;
+}
+
+/**
+ * Kullanıcı adı, e-posta veya telefonla üyeyi bulur.
+ *
+ * @param string $login Giriş değeri.
+ * @return WP_User|null
+ */
+function ysf_find_user_by_login( $login ) {
+	$login = trim( (string) $login );
+
+	if ( '' === $login ) {
+		return null;
+	}
+
+	if ( is_email( $login ) ) {
+		$user = get_user_by( 'email', $login );
+
+		if ( $user ) {
+			return $user;
+		}
+	}
+
+	$user = get_user_by( 'login', $login );
+
+	if ( ! $user && strtolower( $login ) !== $login ) {
+		$user = get_user_by( 'login', strtolower( $login ) );
+	}
+
+	if ( $user ) {
+		return $user;
+	}
+
+	$phone = ysf_normalize_phone( $login );
+
+	if ( ! $phone ) {
+		return null;
+	}
+
+	$users = get_users(
+		array(
+			'meta_key'   => YSF_META_PHONE, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'meta_value' => $phone, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			'number'     => 1,
+		)
+	);
+
+	return $users ? $users[0] : null;
+}
+
+/**
+ * Bekleyen kayıt e-posta anahtarı.
+ *
+ * @param string $email E-posta.
+ * @return string
+ */
+function ysf_pending_reg_mail_key( $email ) {
+	return 'ysf_regmail_' . md5( strtolower( $email ) );
+}
+
+/**
+ * Bekleyen kayıt telefon anahtarı.
+ *
+ * @param string $phone Normalize telefon.
+ * @return string
+ */
+function ysf_pending_reg_phone_key( $phone ) {
+	return 'ysf_regphone_' . md5( (string) $phone );
+}
+
+/**
+ * Bekleyen kaydı siler.
+ *
+ * @param string $token Jeton.
+ * @param string $email E-posta.
+ * @param string $phone Telefon.
+ */
+function ysf_clear_pending_reg( $token, $email = '', $phone = '' ) {
+	if ( $token ) {
+		$pending = get_transient( 'ysf_reg_' . $token );
+
+		if ( is_array( $pending ) ) {
+			if ( ! $email && ! empty( $pending['email'] ) ) {
+				$email = $pending['email'];
+			}
+
+			if ( ! $phone && ! empty( $pending['phone'] ) ) {
+				$phone = $pending['phone'];
+			}
+		}
+
+		delete_transient( 'ysf_reg_' . $token );
+	}
+
+	if ( $email ) {
+		delete_transient( ysf_pending_reg_mail_key( $email ) );
+	}
+
+	if ( $phone ) {
+		delete_transient( ysf_pending_reg_phone_key( $phone ) );
+	}
+}
+
+/**
+ * 6 haneli OTP üretir.
+ *
+ * @return string
+ */
+function ysf_otp_make() {
+	return (string) wp_rand( 100000, 999999 );
+}
+
+/**
+ * OTP özeti.
+ *
+ * @param string $code Düz kod.
+ * @return string
+ */
+function ysf_otp_hash( $code ) {
+	return hash_hmac( 'sha256', (string) $code, wp_salt( 'auth' ) );
+}
+
+/**
+ * OTP eşleşmesi.
+ *
+ * @param string $code Düz kod.
+ * @param string $hash Saklanan özet.
+ * @return bool
+ */
+function ysf_otp_matches( $code, $hash ) {
+	if ( ! $code || ! $hash ) {
+		return false;
+	}
+
+	return hash_equals( (string) $hash, ysf_otp_hash( $code ) );
+}
+
+/**
+ * Bekleyen kayıttaki OTP geçerli mi.
+ *
+ * @param array  $pending Bekleyen kayıt.
+ * @param string $code    Girilen kod.
+ * @return true|WP_Error
+ */
+function ysf_pending_otp_ok( $pending, $code ) {
+	if ( isset( $pending['code_expires'] ) && time() > (int) $pending['code_expires'] ) {
+		return new WP_Error( 'otp_expired', ysf_t( 'acc_verify_code_exp' ) );
+	}
+
+	$ok = false;
+
+	if ( ! empty( $pending['code_hash'] ) ) {
+		$ok = ysf_otp_matches( $code, $pending['code_hash'] );
+	} elseif ( isset( $pending['code'] ) ) {
+		$ok = hash_equals( (string) $pending['code'], (string) $code );
+	}
+
+	if ( ! $ok ) {
+		return new WP_Error( 'otp_wrong', ysf_t( 'acc_verify_wrong' ) );
+	}
+
+	return true;
+}
+
+/**
+ * Netgsm SMS bilgileri dolu mu.
+ *
+ * @return bool
+ */
+function ysf_sms_configured() {
+	return (bool) ysf_get_option( 'ysf_sms_usercode', '' )
+		&& (bool) ysf_get_option( 'ysf_sms_pass', '' )
+		&& (bool) ysf_get_option( 'ysf_sms_header', '' );
+}
+
+/**
+ * SMS için ülke kodlu numara (90555...).
+ *
+ * @param string $phone Normalize telefon.
+ * @return string
+ */
+function ysf_sms_msisdn( $phone ) {
+	$phone = ysf_normalize_phone( $phone );
+
+	if ( ! $phone ) {
+		return '';
+	}
+
+	return ltrim( $phone, '+' );
+}
+
+/**
+ * OTP SMS gönderir (Netgsm).
+ *
+ * @param string $phone Normalize telefon.
+ * @param string $code  OTP.
+ * @return bool
+ */
+function ysf_send_otp_sms( $phone, $code ) {
+	if ( ! $code || ! ysf_sms_configured() ) {
+		return false;
+	}
+
+	$msisdn = ysf_sms_msisdn( $phone );
+
+	if ( ! $msisdn ) {
+		return false;
+	}
+
+	$phone_key = 'ysf_smsn_' . md5( $msisdn );
+	$sent_n    = (int) get_transient( $phone_key );
+
+	if ( $sent_n >= 6 || ysf_rate_limited( 'otp_sms_ip', 10, 30 * MINUTE_IN_SECONDS ) ) {
+		return false;
+	}
+
+	$header  = sanitize_text_field( ysf_get_option( 'ysf_sms_header', '' ) );
+	$message = sprintf(
+		'YSF Foodlab OTP kodunuz: %s. 10 dk gecerlidir. Kimseyle paylasmayin.',
+		$code
+	);
+
+	$response = wp_remote_post(
+		'https://api.netgsm.com.tr/sms/send/get',
+		array(
+			'timeout' => 12,
+			'headers' => array(
+				'Accept' => 'text/plain',
+			),
+			'body'    => array(
+				'usercode'  => ysf_get_option( 'ysf_sms_usercode', '' ),
+				'password'  => ysf_get_option( 'ysf_sms_pass', '' ),
+				'gsmno'     => $msisdn,
+				'message'   => $message,
+				'msgheader' => $header,
+				'dil'       => 'TR',
+			),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		return false;
+	}
+
+	$body = trim( (string) wp_remote_retrieve_body( $response ) );
+
+	if ( ! preg_match( '/^(00|01|02)\b/', $body ) ) {
+		return false;
+	}
+
+	set_transient( $phone_key, $sent_n + 1, 30 * MINUTE_IN_SECONDS );
+
+	return true;
+}
+
+/**
+ * Doğrulama kodu e-postası gönderir.
+ *
+ * @param array  $pending Bekleyen kayıt.
+ * @param string $code    Düz OTP.
+ * @return bool
+ */
+function ysf_send_verify_email( $pending, $code = '' ) {
+	if ( ! $code && isset( $pending['code'] ) ) {
+		$code = $pending['code'];
+	}
+
+	$email = isset( $pending['email'] ) ? $pending['email'] : '';
+
+	if ( ! $code || ! is_email( $email ) ) {
+		return false;
+	}
+
+	return ysf_send_notification(
+		$email,
+		sprintf(
+			/* translators: %s: site adı. */
+			__( '%s — OTP doğrulama kodu', 'ysffoodlab' ),
+			get_bloginfo( 'name' )
+		),
+		array(
+			ysf_t( 'acc_username' )    => isset( $pending['username'] ) ? $pending['username'] : '',
+			ysf_t( 'acc_verify_code' ) => $code,
+		),
+		sprintf( ysf_t( 'acc_verify_mail' ), $code )
+	);
+}
+
+/**
+ * Kayıt OTP’sini SMS ve e-posta ile gönderir.
+ *
+ * @param array  $pending Bekleyen kayıt.
+ * @param string $code    Düz OTP.
+ * @return array{mail:bool,sms:bool}
+ */
+function ysf_send_register_otp( $pending, $code ) {
+	$mail = ysf_send_verify_email( $pending, $code );
+	$sms  = false;
+
+	if ( ! empty( $pending['phone'] ) ) {
+		$sms = ysf_send_otp_sms( $pending['phone'], $code );
+	}
+
+	return array(
+		'mail' => (bool) $mail,
+		'sms'  => (bool) $sms,
+	);
+}
+
+/**
+ * Kayıt doğrulama ekranı cevabı.
+ *
+ * @param string $token     Jeton.
+ * @param array  $pending   Bekleyen kayıt.
+ * @param array  $sent      mail/sms bayrakları.
+ * @param string $plain_code Düz kod (yalnızca her iki kanal da düşerse).
+ * @return array
+ */
+function ysf_register_verify_payload( $token, $pending, $sent, $plain_code = '' ) {
+	$email = isset( $pending['email'] ) ? $pending['email'] : '';
+	$phone = isset( $pending['phone'] ) ? ysf_phone_display( $pending['phone'] ) : '';
+	$mail  = ! empty( $sent['mail'] );
+	$sms   = ! empty( $sent['sms'] );
+	$out   = array(
+		'step'     => 'verify',
+		'token'    => $token,
+		'email'    => $email,
+		'phone'    => $phone,
+		'mailSent' => $mail,
+		'smsSent'  => $sms,
+	);
+
+	if ( $sms && $mail ) {
+		$out['message'] = sprintf( ysf_t( 'acc_verify_sent_both' ), $phone, $email );
+
+		return $out;
+	}
+
+	if ( $sms ) {
+		$out['message'] = sprintf( ysf_t( 'acc_verify_sent_sms' ), $phone );
+
+		return $out;
+	}
+
+	if ( $mail ) {
+		$out['message'] = sprintf( ysf_t( 'acc_verify_sent_mail' ), $email );
+
+		return $out;
+	}
+
+	$out['message']    = sprintf( ysf_t( 'acc_verify_onscreen' ), $plain_code );
+	$out['code']       = $plain_code;
+	$out['mailFailed'] = true;
+
+	return $out;
+}
+
+/**
  * Formdan gelen adres verisini alır.
  *
  * @return array
@@ -552,10 +1005,72 @@ function ysf_address_from_request() {
 }
 
 /**
- * Üye kaydı.
+ * Giriş sonrası yönlendirme adresi.
+ *
+ * @param WP_User $user Üye.
+ * @return string
+ */
+function ysf_after_login_redirect( $user ) {
+	$redirect = ysf_account_url();
+
+	if ( ysf_can_take_orders( $user->ID ) && ysf_waiter_url() ) {
+		$redirect = ysf_waiter_url();
+	}
+
+	if ( ysf_can_manage_menu( $user->ID ) ) {
+		$redirect = ysf_account_url() . '#ysf-kitchen';
+	}
+
+	if ( ysf_can_view_kds( $user->ID ) && ysf_kds_url() && ! ysf_can_manage_menu( $user->ID ) && ! ysf_can_take_orders( $user->ID ) ) {
+		$redirect = ysf_kds_url();
+	}
+
+	if ( ysf_can_cashier( $user->ID ) && ysf_cashier_url() && ! ysf_can_manage_menu( $user->ID ) && ! ysf_can_take_orders( $user->ID ) && ! ysf_can_view_kds( $user->ID ) ) {
+		$redirect = ysf_cashier_url();
+	}
+
+	$requested = isset( $_POST['redirect'] ) ? wp_unslash( $_POST['redirect'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$requested = wp_validate_redirect( $requested, '' );
+
+	if ( $requested && ysf_is_staff_redirect( $requested ) ) {
+		$kds_path    = untrailingslashit( (string) wp_parse_url( ysf_kds_url(), PHP_URL_PATH ) );
+		$waiter_path = untrailingslashit( (string) wp_parse_url( ysf_waiter_url(), PHP_URL_PATH ) );
+		$cash_path   = untrailingslashit( (string) wp_parse_url( ysf_cashier_url(), PHP_URL_PATH ) );
+		$req_path    = untrailingslashit( (string) wp_parse_url( $requested, PHP_URL_PATH ) );
+
+		if ( $kds_path && $req_path === $kds_path && ysf_can_view_kds( $user->ID ) ) {
+			$redirect = $requested;
+		} elseif ( $waiter_path && $req_path === $waiter_path && ysf_can_take_orders( $user->ID ) ) {
+			$redirect = $requested;
+		} elseif ( $cash_path && $req_path === $cash_path && ysf_can_cashier( $user->ID ) ) {
+			$redirect = $requested;
+		}
+	}
+
+	return $redirect;
+}
+
+/**
+ * Oturumu açar.
+ *
+ * @param WP_User $user     Üye.
+ * @param bool    $remember Beni hatırla.
+ */
+function ysf_sign_in_user( $user, $remember = true ) {
+	wp_set_current_user( $user->ID );
+	wp_set_auth_cookie( $user->ID, $remember );
+
+	try {
+		do_action( 'wp_login', $user->user_login, $user );
+	} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+	}
+}
+
+/**
+ * Üye kaydı: doğrulama kodu gönderir, hesabı henüz oluşturmaz.
  */
 function ysf_ajax_register() {
-	check_ajax_referer( 'ysf_public', 'nonce' );
+	ysf_require_ajax_nonce();
 
 	if ( is_user_logged_in() ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_logged_in' ) ), 400 );
@@ -565,26 +1080,56 @@ function ysf_ajax_register() {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_closed' ) ), 403 );
 	}
 
-	if ( ! empty( $_POST['ysf_hp'] ) ) {
+	if ( ysf_honeypot_tripped() ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
-	if ( ysf_rate_limited( 'register', 5, HOUR_IN_SECONDS ) ) {
-		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	$name      = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
+	$raw_user  = isset( $_POST['username'] ) ? trim( (string) wp_unslash( $_POST['username'] ) ) : '';
+	$raw_email = isset( $_POST['email'] ) ? trim( (string) wp_unslash( $_POST['email'] ) ) : '';
+	$phone     = isset( $_POST['phone'] ) ? ysf_normalize_phone( wp_unslash( $_POST['phone'] ) ) : '';
+	$pass      = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
+	$pass2     = isset( $_POST['password2'] ) ? (string) wp_unslash( $_POST['password2'] ) : '';
+
+	if ( false !== strpos( $raw_user, '@' ) ) {
+		if ( ! $raw_email ) {
+			$raw_email = $raw_user;
+		}
+
+		$raw_user = (string) strstr( $raw_user, '@', true );
 	}
 
-	$name  = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
-	$email = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
-	$phone = isset( $_POST['phone'] ) ? ysf_normalize_phone( wp_unslash( $_POST['phone'] ) ) : '';
-	$pass  = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
-	$pass2 = isset( $_POST['password2'] ) ? (string) wp_unslash( $_POST['password2'] ) : '';
+	$username = ysf_normalize_username( $raw_user );
+	$email    = sanitize_email( $raw_email );
 
-	if ( ! $name || ! $email || ! $pass ) {
-		wp_send_json_error( array( 'message' => ysf_t( 'form_required' ) ), 400 );
+	if ( ! $username && $email ) {
+		$username = ysf_username_from_email( $email );
+	}
+
+	if ( empty( $_POST['consent'] ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_need_consent' ), 'field' => 'consent' ), 400 );
+	}
+
+	if ( ! $name ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'form_name' ) . ': ' . ysf_t( 'form_required' ), 'field' => 'name' ), 400 );
+	}
+
+	if ( ! $email ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_email_invalid' ), 'field' => 'email' ), 400 );
+	}
+
+	$valid_login = ysf_validate_username( $username );
+
+	if ( is_wp_error( $valid_login ) ) {
+		wp_send_json_error( array( 'message' => $valid_login->get_error_message(), 'field' => 'username' ), 400 );
 	}
 
 	if ( ! is_email( $email ) ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_email_invalid' ), 'field' => 'email' ), 400 );
+	}
+
+	if ( ! $pass ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_pass_short' ), 'field' => 'password' ), 400 );
 	}
 
 	if ( email_exists( $email ) ) {
@@ -622,13 +1167,137 @@ function ysf_ajax_register() {
 		);
 	}
 
+	if ( ysf_rate_limited( 'reg_mail', 12, 15 * MINUTE_IN_SECONDS ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
+	$old_mail  = get_transient( ysf_pending_reg_mail_key( $email ) );
+	$old_phone = get_transient( ysf_pending_reg_phone_key( $phone ) );
+
+	if ( is_string( $old_mail ) && $old_mail ) {
+		ysf_clear_pending_reg( $old_mail );
+	}
+
+	if ( is_string( $old_phone ) && $old_phone && $old_phone !== $old_mail ) {
+		ysf_clear_pending_reg( $old_phone );
+	}
+
+	$token   = wp_generate_password( 32, false );
+	$code    = ysf_otp_make();
+	$pending = array(
+		'name'         => $name,
+		'username'     => $username,
+		'email'        => $email,
+		'phone'        => $phone,
+		'pass'         => $pass,
+		'address'      => $address,
+		'code_hash'    => ysf_otp_hash( $code ),
+		'code_expires' => time() + 10 * MINUTE_IN_SECONDS,
+		'tries'        => 0,
+		'lang'         => ysf_lang(),
+	);
+
+	set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
+	set_transient( ysf_pending_reg_mail_key( $email ), $token, 30 * MINUTE_IN_SECONDS );
+	set_transient( ysf_pending_reg_phone_key( $phone ), $token, 30 * MINUTE_IN_SECONDS );
+
+	$sent  = ysf_send_register_otp( $pending, $code );
+	$plain = ( empty( $sent['mail'] ) && empty( $sent['sms'] ) ) ? $code : '';
+
+	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $plain ) );
+}
+add_action( 'wp_ajax_nopriv_ysf_register', 'ysf_ajax_register' );
+add_action( 'wp_ajax_ysf_register', 'ysf_ajax_register' );
+
+/**
+ * Kayıt doğrulama kodunu tekrar gönderir.
+ */
+function ysf_ajax_resend_verify() {
+	ysf_require_ajax_nonce();
+
+	$token   = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : '';
+	$pending = $token ? get_transient( 'ysf_reg_' . $token ) : false;
+
+	if ( ! is_array( $pending ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_expired' ) ), 400 );
+	}
+
+	if ( ysf_rate_limited( 'resend_mail', 8, 15 * MINUTE_IN_SECONDS ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
+	$code                    = ysf_otp_make();
+	$pending['code_hash']    = ysf_otp_hash( $code );
+	$pending['code_expires'] = time() + 10 * MINUTE_IN_SECONDS;
+	$pending['tries']        = 0;
+	unset( $pending['code'] );
+	set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
+
+	$sent  = ysf_send_register_otp( $pending, $code );
+	$plain = ( empty( $sent['mail'] ) && empty( $sent['sms'] ) ) ? $code : '';
+
+	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $plain ) );
+}
+add_action( 'wp_ajax_nopriv_ysf_resend_verify', 'ysf_ajax_resend_verify' );
+add_action( 'wp_ajax_ysf_resend_verify', 'ysf_ajax_resend_verify' );
+
+/**
+ * Doğrulama kodunu onaylayıp üyeliği oluşturur.
+ */
+function ysf_ajax_verify_register() {
+	ysf_require_ajax_nonce();
+
+	if ( is_user_logged_in() ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_logged_in' ) ), 400 );
+	}
+
+	$token   = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : '';
+	$code    = isset( $_POST['code'] ) ? preg_replace( '/\D+/', '', (string) wp_unslash( $_POST['code'] ) ) : '';
+	$pending = $token ? get_transient( 'ysf_reg_' . $token ) : false;
+
+	if ( ! is_array( $pending ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_expired' ) ), 400 );
+	}
+
+	if ( ysf_rate_limited( 'verify_try', 30, 15 * MINUTE_IN_SECONDS ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
+	$otp_ok = ysf_pending_otp_ok( $pending, $code );
+
+	if ( is_wp_error( $otp_ok ) ) {
+		if ( 'otp_expired' === $otp_ok->get_error_code() ) {
+			wp_send_json_error( array( 'message' => $otp_ok->get_error_message() ), 400 );
+		}
+
+		$pending['tries'] = isset( $pending['tries'] ) ? (int) $pending['tries'] + 1 : 1;
+
+		if ( $pending['tries'] > 8 ) {
+			ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
+			wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_locked' ) ), 400 );
+		}
+
+		set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
+		wp_send_json_error( array( 'message' => $otp_ok->get_error_message() ), 400 );
+	}
+
+	if ( email_exists( $pending['email'] ) ) {
+		ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_email_taken' ) ), 400 );
+	}
+
+	if ( username_exists( $pending['username'] ) ) {
+		ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_username_taken' ) ), 400 );
+	}
+
 	$user_id = wp_insert_user(
 		array(
-			'user_login'   => ysf_generate_username( $email, $name ),
-			'user_email'   => $email,
-			'user_pass'    => $pass,
-			'display_name' => $name,
-			'first_name'   => $name,
+			'user_login'   => $pending['username'],
+			'user_email'   => $pending['email'],
+			'user_pass'    => $pending['pass'],
+			'display_name' => $pending['name'],
+			'first_name'   => $pending['name'],
 			'role'         => 'subscriber',
 		)
 	);
@@ -637,22 +1306,16 @@ function ysf_ajax_register() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 500 );
 	}
 
-	update_user_meta( $user_id, YSF_META_PHONE, $phone );
-	update_user_meta( $user_id, '_ysf_lang', ysf_lang() );
-	ysf_save_user_address( $user_id, 'home', $address );
+	update_user_meta( $user_id, YSF_META_PHONE, $pending['phone'] );
+	update_user_meta( $user_id, '_ysf_verified_phone', '1' );
+	update_user_meta( $user_id, '_ysf_lang', isset( $pending['lang'] ) ? $pending['lang'] : ysf_lang() );
+	ysf_save_user_address( $user_id, 'home', isset( $pending['address'] ) ? $pending['address'] : array() );
+	ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
 
 	$user = get_userdata( $user_id );
 
 	if ( $user ) {
-		wp_set_current_user( $user_id );
-		wp_set_auth_cookie( $user_id, true );
-
-		// Bazı eklentiler wp_login sırasında yönlendirir veya hata fırlatır.
-		// Üyelik zaten oluştu; yanıtın bozulmaması için yutuyoruz.
-		try {
-			do_action( 'wp_login', $user->user_login, $user );
-		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-		}
+		ysf_sign_in_user( $user, true );
 	}
 
 	try {
@@ -660,25 +1323,27 @@ function ysf_ajax_register() {
 			ysf_get_option( 'ysf_email', '' ),
 			__( 'Yeni üye kaydı', 'ysffoodlab' ),
 			array(
-				__( 'Ad Soyad', 'ysffoodlab' ) => $name,
-				__( 'E-posta', 'ysffoodlab' )  => $email,
-				__( 'Telefon', 'ysffoodlab' )  => ysf_phone_display( $phone ),
-				__( 'Adres', 'ysffoodlab' )    => ysf_address_one_line( $address ),
+				__( 'Ad Soyad', 'ysffoodlab' )       => $pending['name'],
+				__( 'Kullanıcı adı', 'ysffoodlab' ) => $pending['username'],
+				__( 'E-posta', 'ysffoodlab' )        => $pending['email'],
+				__( 'Telefon', 'ysffoodlab' )        => ysf_phone_display( $pending['phone'] ),
+				__( 'Adres', 'ysffoodlab' )          => ysf_address_one_line( isset( $pending['address'] ) ? $pending['address'] : array() ),
 			),
 			__( 'Web sitesinden yeni bir üye kaydoldu.', 'ysffoodlab' )
 		);
 
 		ysf_send_notification(
-			$email,
+			$pending['email'],
 			sprintf(
 				/* translators: %s: site adı. */
 				__( '%s — üyeliğiniz oluşturuldu', 'ysffoodlab' ),
 				get_bloginfo( 'name' )
 			),
 			array(
-				ysf_t( 'form_name' )  => $name,
-				ysf_t( 'form_email' ) => $email,
-				ysf_t( 'form_phone' ) => ysf_phone_display( $phone ),
+				ysf_t( 'form_name' )    => $pending['name'],
+				ysf_t( 'acc_username' ) => $pending['username'],
+				ysf_t( 'form_email' )   => $pending['email'],
+				ysf_t( 'form_phone' )   => ysf_phone_display( $pending['phone'] ),
 			),
 			ysf_t( 'acc_welcome_mail' )
 		);
@@ -692,21 +1357,18 @@ function ysf_ajax_register() {
 		)
 	);
 }
-add_action( 'wp_ajax_nopriv_ysf_register', 'ysf_ajax_register' );
-add_action( 'wp_ajax_ysf_register', 'ysf_ajax_register' );
+add_action( 'wp_ajax_nopriv_ysf_verify_register', 'ysf_ajax_verify_register' );
+add_action( 'wp_ajax_ysf_verify_register', 'ysf_ajax_verify_register' );
 
 /**
  * Giriş.
  */
+
 function ysf_ajax_login() {
-	check_ajax_referer( 'ysf_public', 'nonce' );
+	ysf_require_ajax_nonce();
 
-	if ( ! empty( $_POST['ysf_hp'] ) ) {
+	if ( ysf_honeypot_tripped() ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
-	}
-
-	if ( ysf_rate_limited( 'login', 12, 15 * MINUTE_IN_SECONDS ) ) {
-		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
 	}
 
 	$login    = isset( $_POST['login'] ) ? sanitize_text_field( wp_unslash( $_POST['login'] ) ) : '';
@@ -717,29 +1379,19 @@ function ysf_ajax_login() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_required' ) ), 400 );
 	}
 
-	// Telefon numarasıyla da giriş yapılabilir.
-	if ( ! is_email( $login ) && ! username_exists( $login ) ) {
-		$phone = ysf_normalize_phone( $login );
+	if ( ysf_rate_limited( 'login_try', 20, 15 * MINUTE_IN_SECONDS ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
 
-		if ( $phone ) {
-			$users = get_users(
-				array(
-					'meta_key'   => YSF_META_PHONE, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-					'meta_value' => $phone, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-					'number'     => 1,
-					'fields'     => array( 'user_email' ),
-				)
-			);
+	$found = ysf_find_user_by_login( $login );
 
-			if ( $users ) {
-				$login = $users[0]->user_email;
-			}
-		}
+	if ( ! $found ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_login_error' ) ), 401 );
 	}
 
 	$user = wp_signon(
 		array(
-			'user_login'    => $login,
+			'user_login'    => $found->user_login,
 			'user_password' => $pass,
 			'remember'      => $remember,
 		),
@@ -747,23 +1399,42 @@ function ysf_ajax_login() {
 	);
 
 	if ( is_wp_error( $user ) ) {
+		$code = $user->get_error_code();
+
+		if ( 'ysf_2fa' === $code || 'ysf_2fa_setup' === $code ) {
+			wp_send_json_success(
+				array_merge(
+					array(
+						'step'    => 'ysf_2fa_setup' === $code ? '2fa_setup' : '2fa',
+						'message' => $user->get_error_message(),
+					),
+					ysf_2fa_client_payload( $found )
+				)
+			);
+		}
+
+		if ( 'ysf_2fa_locked' === $code ) {
+			wp_send_json_error( array( 'message' => $user->get_error_message() ), 429 );
+		}
+
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_login_error' ) ), 401 );
 	}
 
 	wp_set_current_user( $user->ID );
 
-	$redirect = ysf_account_url();
+	$payload = array(
+		'message'  => ysf_t( 'acc_login_ok' ),
+		'redirect' => ysf_after_login_redirect( $user ),
+	);
 
-	if ( ysf_can_manage_menu( $user->ID ) ) {
-		$redirect = ysf_account_url() . '#ysf-kitchen';
+	$codes = get_transient( 'ysf_2fa_new_codes_' . $user->ID );
+
+	if ( is_array( $codes ) && $codes ) {
+		$payload['backups'] = $codes;
+		$payload['message'] = ysf_t( 'tfa_on' );
 	}
 
-	wp_send_json_success(
-		array(
-			'message'  => ysf_t( 'acc_login_ok' ),
-			'redirect' => $redirect,
-		)
-	);
+	wp_send_json_success( $payload );
 }
 add_action( 'wp_ajax_nopriv_ysf_login', 'ysf_ajax_login' );
 add_action( 'wp_ajax_ysf_login', 'ysf_ajax_login' );
@@ -772,23 +1443,113 @@ add_action( 'wp_ajax_ysf_login', 'ysf_ajax_login' );
  * Şifre sıfırlama bağlantısı gönderir.
  */
 function ysf_ajax_lost_password() {
-	check_ajax_referer( 'ysf_public', 'nonce' );
-
-	if ( ysf_rate_limited( 'lostpass', 5, HOUR_IN_SECONDS ) ) {
-		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
-	}
+	ysf_require_ajax_nonce();
 
 	$login = isset( $_POST['login'] ) ? sanitize_text_field( wp_unslash( $_POST['login'] ) ) : '';
 
-	if ( $login && function_exists( 'retrieve_password' ) ) {
-		retrieve_password( $login );
+	if ( ! $login ) {
+		wp_send_json_success( array( 'message' => ysf_t( 'acc_forgot_sent' ) ) );
 	}
 
-	// Kayıtlı olmayan adresler için de aynı yanıt döner (hesap ifşasını önler).
+	if ( ysf_rate_limited( 'lost_mail', 8, 15 * MINUTE_IN_SECONDS ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
+	$user = ysf_find_user_by_login( $login );
+
+	if ( $user ) {
+		$key = get_password_reset_key( $user );
+
+		if ( ! is_wp_error( $key ) ) {
+			$url = ysf_account_url(
+				array(
+					'ysf_rp' => '1',
+					'key'    => $key,
+					'login'  => $user->user_login,
+				)
+			);
+
+			ysf_send_notification(
+				$user->user_email,
+				sprintf(
+					/* translators: %s: site adı. */
+					__( '%s — şifre yenileme', 'ysffoodlab' ),
+					get_bloginfo( 'name' )
+				),
+				array(
+					ysf_t( 'acc_username' ) => $user->user_login,
+					ysf_t( 'form_email' )   => $user->user_email,
+				),
+				ysf_t( 'acc_forgot_mail' ),
+				array(
+					'label' => ysf_t( 'acc_forgot_cta' ),
+					'url'   => $url,
+				)
+			);
+		}
+	}
+
 	wp_send_json_success( array( 'message' => ysf_t( 'acc_forgot_sent' ) ) );
 }
 add_action( 'wp_ajax_nopriv_ysf_lost_password', 'ysf_ajax_lost_password' );
 add_action( 'wp_ajax_ysf_lost_password', 'ysf_ajax_lost_password' );
+
+/**
+ * Şifre yenileme bağlantısındaki yeni şifreyi kaydeder.
+ */
+function ysf_ajax_reset_password() {
+	ysf_require_ajax_nonce();
+
+	if ( ysf_rate_limited( 'resetpass', 8, HOUR_IN_SECONDS ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
+	$key      = isset( $_POST['key'] ) ? sanitize_text_field( wp_unslash( $_POST['key'] ) ) : '';
+	$login    = isset( $_POST['login'] ) ? sanitize_user( wp_unslash( $_POST['login'] ), true ) : '';
+	$pass     = isset( $_POST['password'] ) ? (string) wp_unslash( $_POST['password'] ) : '';
+	$pass2    = isset( $_POST['password2'] ) ? (string) wp_unslash( $_POST['password2'] ) : '';
+	$remember = true;
+
+	if ( ! $key || ! $login ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_reset_invalid' ) ), 400 );
+	}
+
+	if ( strlen( $pass ) < 8 ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_pass_short' ), 'field' => 'password' ), 400 );
+	}
+
+	if ( $pass !== $pass2 ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_pass_mismatch' ), 'field' => 'password2' ), 400 );
+	}
+
+	$user = check_password_reset_key( $key, $login );
+
+	if ( is_wp_error( $user ) || ! $user ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_reset_invalid' ) ), 400 );
+	}
+
+	reset_password( $user, $pass );
+
+	if ( ysf_user_needs_2fa( $user ) ) {
+		wp_send_json_success(
+			array(
+				'message'  => ysf_t( 'acc_reset_ok_login' ),
+				'redirect' => ysf_account_url(),
+			)
+		);
+	}
+
+	ysf_sign_in_user( $user, $remember );
+
+	wp_send_json_success(
+		array(
+			'message'  => ysf_t( 'acc_reset_ok' ),
+			'redirect' => ysf_after_login_redirect( $user ),
+		)
+	);
+}
+add_action( 'wp_ajax_nopriv_ysf_reset_password', 'ysf_ajax_reset_password' );
+add_action( 'wp_ajax_ysf_reset_password', 'ysf_ajax_reset_password' );
 
 /**
  * Profil bilgilerini günceller.

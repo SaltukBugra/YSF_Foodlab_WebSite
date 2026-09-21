@@ -160,8 +160,8 @@ foreach ( $ysf_items as $ysf_item ) {
 		<?php foreach ( $ysf_live as $ysf_item ) : ?>
 			<?php
 			$ysf_id     = $ysf_item->ID;
-			$ysf_sold   = (bool) get_post_meta( $ysf_id, '_ysf_sold_out', true );
-			$ysf_canbuy = (bool) get_post_meta( $ysf_id, '_ysf_orderable', true );
+			$ysf_sold   = ysf_meta_flag( $ysf_id, '_ysf_sold_out' );
+			$ysf_canbuy = ysf_meta_flag( $ysf_id, '_ysf_orderable', true );
 			$ysf_price  = (float) get_post_meta( $ysf_id, '_ysf_price', true );
 			$ysf_terms  = wp_get_post_terms( $ysf_id, 'ysf_menu_cat' );
 			$ysf_cat_id = ( $ysf_terms && ! is_wp_error( $ysf_terms ) ) ? (int) $ysf_terms[0]->term_id : 0;
@@ -169,10 +169,10 @@ foreach ( $ysf_items as $ysf_item ) {
 			$ysf_desc   = wp_strip_all_tags( $ysf_item->post_excerpt ? $ysf_item->post_excerpt : $ysf_item->post_content );
 			$ysf_thumb  = get_the_post_thumbnail_url( $ysf_id, 'ysf-thumb' );
 			$ysf_thumb  = $ysf_thumb ? $ysf_thumb : ysf_placeholder_image();
-			$ysf_vegan  = (bool) get_post_meta( $ysf_id, '_ysf_vegan', true );
-			$ysf_veg    = (bool) get_post_meta( $ysf_id, '_ysf_vegetarian', true );
-			$ysf_gf     = (bool) get_post_meta( $ysf_id, '_ysf_glutenfree', true );
-			$ysf_spicy  = (bool) get_post_meta( $ysf_id, '_ysf_spicy', true );
+			$ysf_vegan  = ysf_meta_flag( $ysf_id, '_ysf_vegan' );
+			$ysf_veg    = ysf_meta_flag( $ysf_id, '_ysf_vegetarian' );
+			$ysf_gf     = ysf_meta_flag( $ysf_id, '_ysf_glutenfree' );
+			$ysf_spicy  = ysf_meta_flag( $ysf_id, '_ysf_spicy' );
 			$ysf_tags   = ysf_get_item_tags( $ysf_id );
 			?>
 			<article

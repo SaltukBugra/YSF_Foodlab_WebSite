@@ -31,6 +31,139 @@ function ysf_digits( $value ) {
 }
 
 /**
+ * Checkbox / bayrak meta değerini doğru boolean'a çevirir.
+ *
+ * WordPress 0 yazınca meta "0" string olarak saklanır; PHP'de if ("0")
+ * true döner ve ürünler yanlışlıkla tükendi görünür.
+ *
+ * @param mixed $value   Ham meta.
+ * @param bool  $default Anahtar yoksa veya boşsa.
+ * @return bool
+ */
+function ysf_is_flag_value( $value, $default = false ) {
+	if ( null === $value || false === $value ) {
+		return false;
+	}
+
+	if ( true === $value ) {
+		return true;
+	}
+
+	if ( is_int( $value ) || is_float( $value ) ) {
+		return 1 === (int) $value;
+	}
+
+	$value = strtolower( trim( (string) $value ) );
+
+	if ( '' === $value ) {
+		return (bool) $default;
+	}
+
+	if ( in_array( $value, array( '0', 'false', 'no', 'off' ), true ) ) {
+		return false;
+	}
+
+	return in_array( $value, array( '1', 'true', 'yes', 'on' ), true );
+}
+
+/**
+ * Gönderi bayrak metasını okur.
+ *
+ * @param int    $post_id Gönderi.
+ * @param string $key     Meta anahtarı.
+ * @param bool   $default Kayıt yoksa varsayılan.
+ * @return bool
+ */
+function ysf_meta_flag( $post_id, $key, $default = false ) {
+	if ( ! metadata_exists( 'post', $post_id, $key ) ) {
+		return (bool) $default;
+	}
+
+	return ysf_is_flag_value( get_post_meta( $post_id, $key, true ), $default );
+}
+
+/**
+ * Gönderi bayrak metasını yazar.
+ *
+ * @param int    $post_id Gönderi.
+ * @param string $key     Meta anahtarı.
+ * @param bool   $on      Açık mı.
+ */
+function ysf_set_meta_flag( $post_id, $key, $on ) {
+	if ( $on ) {
+		update_post_meta( $post_id, $key, 1 );
+		return;
+	}
+
+	if ( '_ysf_orderable' === $key ) {
+		update_post_meta( $post_id, $key, 0 );
+		return;
+	}
+
+	delete_post_meta( $post_id, $key );
+}
+
+/**
+ * Misafir / personel AJAX kayıtlarını yayınlanmış olarak oluşturur.
+ *
+ * ysf_order ve ysf_reservation tipleri panelden elle eklenemesin diye
+ * create_posts kapalıdır. wp_insert_post, yetkisiz kullanıcıda kaydı
+ * pending'e düşürür; mutfak ekranı ise yalnızca publish okur.
+ *
+ * @param array $args wp_insert_post argümanları.
+ * @return int|WP_Error
+ */
+function ysf_insert_request_post( $args ) {
+	$status = isset( $args['post_status'] ) ? $args['post_status'] : 'publish';
+
+	$force = static function ( $data ) use ( $status ) {
+		if ( isset( $data['post_type'] ) && in_array( $data['post_type'], array( 'ysf_order', 'ysf_reservation' ), true ) ) {
+			$data['post_status'] = $status;
+		}
+
+		return $data;
+	};
+
+	add_filter( 'wp_insert_post_data', $force, 99 );
+	$id = wp_insert_post( $args, true );
+	remove_filter( 'wp_insert_post_data', $force, 99 );
+
+	return $id;
+}
+
+/**
+ * Eski "0" tükendi kayıtlarını ve eksik sipariş bayrağını düzeltir.
+ */
+function ysf_maybe_normalize_menu_flags() {
+	if ( get_option( 'ysf_menu_flags_v2' ) ) {
+		return;
+	}
+
+	$ids = get_posts(
+		array(
+			'post_type'      => 'ysf_menu_item',
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+		)
+	);
+
+	foreach ( $ids as $id ) {
+		if ( ! metadata_exists( 'post', $id, '_ysf_orderable' ) ) {
+			ysf_set_meta_flag( $id, '_ysf_orderable', true );
+		}
+
+		if ( metadata_exists( 'post', $id, '_ysf_sold_out' ) && ! ysf_meta_flag( $id, '_ysf_sold_out' ) ) {
+			delete_post_meta( $id, '_ysf_sold_out' );
+		}
+	}
+
+	update_option( 'ysf_menu_flags_v2', 1, false );
+}
+add_action( 'init', 'ysf_maybe_normalize_menu_flags', 40 );
+
+/**
  * Fiyatı biçimlendirir.
  *
  * @param float $amount Tutar.
@@ -103,10 +236,16 @@ function ysf_whatsapp_url( $message = '' ) {
 		return '';
 	}
 
+	// 05xx ile girilmiş Türkiye numarasına ülke kodu ekle.
+	if ( preg_match( '/^0[1-9]\d{9}$/', $number ) ) {
+		$number = '90' . substr( $number, 1 );
+	}
+
 	$url = 'https://wa.me/' . $number;
 
 	if ( $message ) {
-		$url = add_query_arg( 'text', rawurlencode( $message ), $url );
+		// add_query_arg metni bir kez daha kodladığı için mesaj boş düşer.
+		$url .= '?text=' . rawurlencode( $message );
 	}
 
 	return $url;
@@ -578,7 +717,7 @@ function ysf_item_badges( $post_id ) {
 	);
 
 	foreach ( $flags as $meta_key => $info ) {
-		if ( ! get_post_meta( $post_id, $meta_key, true ) ) {
+		if ( ! ysf_meta_flag( $post_id, $meta_key ) ) {
 			continue;
 		}
 
@@ -632,7 +771,7 @@ function ysf_the_item_tags( $post_id ) {
  * @return bool
  */
 function ysf_is_orderable( $post_id ) {
-	if ( get_post_meta( $post_id, '_ysf_sold_out', true ) ) {
+	if ( ysf_meta_flag( $post_id, '_ysf_sold_out' ) ) {
 		return false;
 	}
 
@@ -644,7 +783,7 @@ function ysf_is_orderable( $post_id ) {
 		return false;
 	}
 
-	return (bool) get_post_meta( $post_id, '_ysf_orderable', true );
+	return ysf_meta_flag( $post_id, '_ysf_orderable', true );
 }
 
 /**
@@ -671,13 +810,16 @@ function ysf_the_price( $post_id ) {
 /**
  * Sepete ekle butonu.
  *
- * @param int $post_id Ürün kimliği.
+ * @param int  $post_id     Ürün kimliği.
+ * @param bool $show_button Buton basılsın mı. false ise yalnızca tükendi etiketi.
  */
-function ysf_add_to_cart_button( $post_id ) {
-	if ( ! ysf_is_orderable( $post_id ) ) {
-		if ( get_post_meta( $post_id, '_ysf_sold_out', true ) ) {
-			printf( '<span class="ysf-tag ysf-tag--bad">%s</span>', esc_html( ysf_t( 'sold_out' ) ) );
-		}
+function ysf_add_to_cart_button( $post_id, $show_button = true ) {
+	if ( ysf_meta_flag( $post_id, '_ysf_sold_out' ) ) {
+		printf( '<span class="ysf-tag ysf-tag--bad">%s</span>', esc_html( ysf_t( 'sold_out' ) ) );
+		return;
+	}
+
+	if ( ! $show_button || ! ysf_is_orderable( $post_id ) ) {
 		return;
 	}
 
@@ -793,19 +935,75 @@ function ysf_social_links() {
 
 	$links = array();
 
+	$labels = array(
+		'instagram'   => ysf_t( 'social_instagram' ),
+		'facebook'    => ysf_t( 'social_facebook' ),
+		'x'           => 'X',
+		'youtube'     => 'YouTube',
+		'tripadvisor' => 'Tripadvisor',
+	);
+
 	foreach ( $icons as $key => $svg ) {
 		$url = ysf_get_option( 'ysf_social_' . $key, '' );
+
 		if ( $url ) {
 			$links[ $key ] = array(
 				'url'   => $url,
 				'icon'  => $svg,
-				'label' => ucfirst( $key ),
+				'label' => isset( $labels[ $key ] ) ? $labels[ $key ] : ucfirst( $key ),
 			);
 		}
 	}
 
 	return $links;
 }
+
+/**
+ * Sosyal ikonları basar.
+ *
+ * @param string $class Sarmalayıcı sınıfı.
+ */
+function ysf_the_social_links( $class = 'ysf-social' ) {
+	$links = ysf_social_links();
+
+	if ( ! $links ) {
+		return;
+	}
+
+	echo '<div class="' . esc_attr( $class ) . '">';
+
+	foreach ( $links as $key => $link ) {
+		printf(
+			'<a class="ysf-social__%1$s" href="%2$s" target="_blank" rel="noopener noreferrer" aria-label="%3$s">%4$s</a>',
+			esc_attr( $key ),
+			esc_url( $link['url'] ),
+			esc_attr( $link['label'] ),
+			$link['icon'] // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		);
+	}
+
+	echo '</div>';
+}
+
+/**
+ * Instagram ve Facebook adreslerini yoksa doldurur.
+ */
+function ysf_maybe_seed_social_profiles() {
+	if ( get_option( 'ysf_social_profiles_v1' ) ) {
+		return;
+	}
+
+	if ( ! get_theme_mod( 'ysf_social_instagram' ) ) {
+		set_theme_mod( 'ysf_social_instagram', 'https://www.instagram.com/ysffoodlab/' );
+	}
+
+	if ( ! get_theme_mod( 'ysf_social_facebook' ) ) {
+		set_theme_mod( 'ysf_social_facebook', 'https://www.facebook.com/ysffoodlab' );
+	}
+
+	update_option( 'ysf_social_profiles_v1', '1', false );
+}
+add_action( 'init', 'ysf_maybe_seed_social_profiles', 4 );
 
 /**
  * WhatsApp ve telefon SVG ikonları.

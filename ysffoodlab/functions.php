@@ -9,9 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.2.9' );
+define( 'YSF_VERSION', '1.4.15' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
+define( 'YSF_MAIL_FROM', 'info@ysffoodlab.com.tr' );
 
 require_once YSF_DIR . '/inc/i18n.php';
 require_once YSF_DIR . '/inc/post-types.php';
@@ -21,7 +22,9 @@ require_once YSF_DIR . '/inc/template-tags.php';
 require_once YSF_DIR . '/inc/orders.php';
 require_once YSF_DIR . '/inc/reservations.php';
 require_once YSF_DIR . '/inc/accounts.php';
+require_once YSF_DIR . '/inc/two-factor.php';
 require_once YSF_DIR . '/inc/kitchen.php';
+require_once YSF_DIR . '/inc/floor.php';
 require_once YSF_DIR . '/inc/seo.php';
 require_once YSF_DIR . '/inc/setup-wizard.php';
 
@@ -101,13 +104,35 @@ function ysf_enqueue_assets() {
 	if ( ysf_get_option( 'ysf_google_fonts', true ) ) {
 		wp_enqueue_style(
 			'ysf-fonts',
-			'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap',
+			'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap',
 			array(),
 			null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 		);
 	}
 
 	wp_enqueue_style( 'ysf-style', get_stylesheet_uri(), array(), $css_ver );
+
+	if ( ysf_is_staff_app() ) {
+		$staff_path = YSF_DIR . '/assets/js/staff.js';
+		$staff_ver  = file_exists( $staff_path ) ? (string) filemtime( $staff_path ) : YSF_VERSION;
+
+		wp_enqueue_script( 'ysf-staff', YSF_URI . '/assets/js/staff.js', array(), $staff_ver, true );
+
+		wp_localize_script(
+			'ysf-staff',
+			'YSF',
+			array(
+				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'ysf_public' ),
+				'lang'     => ysf_lang(),
+				'currency' => ysf_get_option( 'ysf_currency', '₺' ),
+				'pollMs'   => 4000,
+				'i18n'     => ysf_staff_js_strings(),
+			)
+		);
+
+		return;
+	}
 
 	$js_path = YSF_DIR . '/assets/js/main.js';
 	$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : YSF_VERSION;
@@ -278,7 +303,7 @@ add_filter( 'body_class', 'ysf_body_classes' );
  * iletişim sayfaları her zaman taze sunulur.
  */
 function ysf_no_cache_form_pages() {
-	$templates = array( 'template-order.php', 'template-reservation.php', 'template-contact.php', 'template-account.php' );
+	$templates = array( 'template-order.php', 'template-reservation.php', 'template-contact.php', 'template-account.php', 'template-waiter.php', 'template-kds.php', 'template-cashier.php' );
 	$is_form   = false;
 
 	foreach ( $templates as $template ) {
@@ -316,3 +341,25 @@ function ysf_admin_assets() {
 	wp_add_inline_style( 'ysf-admin', $css );
 }
 add_action( 'admin_enqueue_scripts', 'ysf_admin_assets' );
+
+/**
+ * SMTP şifresi yoksa yönetim panelinde doğrudan özelleştir bağlantısı gösterir.
+ */
+function ysf_smtp_admin_notice() {
+	if ( ! current_user_can( 'customize' ) ) {
+		return;
+	}
+
+	if ( (string) get_theme_mod( 'ysf_smtp_pass', '' ) ) {
+		return;
+	}
+
+	$url = admin_url( 'customize.php?autofocus[control]=ysf_smtp_pass' );
+
+	echo '<div class="notice notice-warning"><p>';
+	echo esc_html__( 'Üye doğrulama mailleri için SMTP şifresi gerekli.', 'ysffoodlab' );
+	echo ' <a href="' . esc_url( $url ) . '">';
+	echo esc_html__( 'Görünüm → Özelleştir → YSF Food Lab Ayarları → İşletme Bilgileri', 'ysffoodlab' );
+	echo '</a></p></div>';
+}
+add_action( 'admin_notices', 'ysf_smtp_admin_notice' );

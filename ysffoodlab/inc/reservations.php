@@ -154,14 +154,13 @@ function ysf_ajax_submit_reservation() {
 		ysf_t( 'per_person' )
 	);
 
-	$reservation_id = wp_insert_post(
+	$reservation_id = ysf_insert_request_post(
 		array(
 			'post_type'    => 'ysf_reservation',
 			'post_status'  => 'publish',
 			'post_title'   => $title,
 			'post_content' => $note,
-		),
-		true
+		)
 	);
 
 	if ( is_wp_error( $reservation_id ) ) {

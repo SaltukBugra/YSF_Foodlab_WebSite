@@ -71,6 +71,8 @@ if ( is_user_logged_in() ) {
 				</a>
 			<?php endif; ?>
 
+			<?php ysf_the_social_links( 'ysf-social ysf-social--top' ); ?>
+
 			<?php if ( ysf_get_option( 'ysf_show_langswitch', true ) ) : ?>
 				<div class="ysf-langswitch" role="group" aria-label="<?php echo esc_attr( ysf_t( 'lang_switch_label' ) ); ?>">
 					<?php foreach ( ysf_languages() as $ysf_code => $ysf_meta ) : ?>
@@ -104,9 +106,6 @@ if ( is_user_logged_in() ) {
 					)
 				);
 				?>
-				<span class="ysf-brand__text">
-					<span class="ysf-brand__name">YSF Foodlab</span>
-				</span>
 			<?php else : ?>
 				<span class="ysf-brand__text">
 					<span class="ysf-brand__name"><?php bloginfo( 'name' ); ?></span>

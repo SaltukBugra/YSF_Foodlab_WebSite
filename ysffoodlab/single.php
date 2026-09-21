@@ -69,7 +69,7 @@ while ( have_posts() ) :
 							</div>
 							<div class="ysf-item__side">
 								<?php ysf_the_price( $ysf_id ); ?>
-								<?php ysf_add_to_cart_button( $ysf_id ); ?>
+								<?php ysf_add_to_cart_button( $ysf_id, false ); ?>
 							</div>
 						</div>
 					<?php endif; ?>
