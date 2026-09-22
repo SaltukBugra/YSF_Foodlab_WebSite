@@ -9,13 +9,13 @@ $ysf_id    = get_the_ID();
 $ysf_cover = ysf_item_cover_badge( $ysf_id );
 $ysf_desc  = ysf_field( $ysf_id, 'excerpt' );
 ?>
-<article class="ysf-card<?php echo get_post_meta( $ysf_id, '_ysf_sold_out', true ) ? ' ysf-card--soldout' : ''; ?>">
+<article class="ysf-card ysf-card--dish<?php echo ysf_meta_flag( $ysf_id, '_ysf_sold_out' ) ? ' ysf-card--soldout' : ''; ?>">
 	<div class="ysf-card__media">
 		<?php if ( has_post_thumbnail( $ysf_id ) ) : ?>
 			<?php
 			echo get_the_post_thumbnail(
 				$ysf_id,
-				'ysf-card',
+				'ysf-menu',
 				array(
 					'alt'      => esc_attr( ysf_field( $ysf_id, 'title' ) ),
 					'loading'  => 'lazy',
@@ -44,7 +44,8 @@ $ysf_desc  = ysf_field( $ysf_id, 'excerpt' );
 
 		<div class="ysf-card__foot">
 			<?php ysf_the_price( $ysf_id ); ?>
-			<?php ysf_add_to_cart_button( $ysf_id ); ?>
+			<?php ysf_the_campaign_note( $ysf_id ); ?>
+			<?php ysf_add_to_cart_button( $ysf_id, false ); ?>
 		</div>
 	</div>
 </article>

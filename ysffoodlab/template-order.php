@@ -9,7 +9,6 @@
 get_header();
 
 $ysf_page_id   = get_the_ID();
-$ysf_menu_url  = ysf_localize_url( ysf_get_page_url_by_template( 'template-menu.php' ) );
 $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true );
 $ysf_areas     = array_filter( array_map( 'trim', explode( ',', (string) ysf_get_option( 'ysf_delivery_areas', '' ) ) ) );
 $ysf_note      = ysf_option_i18n( 'ysf_order_note', '' );
@@ -50,9 +49,12 @@ if ( ! empty( $ysf_me['addresses'] ) ) {
 			</div>
 		<?php else : ?>
 
-			<div class="ysf-content-layout has-sidebar">
-				<div>
-					<h2><?php ysf_e( 'order_step_info' ); ?></h2>
+			<div class="ysf-order-layout">
+				<div class="ysf-order-layout__main">
+					<h2><?php ysf_e( 'order_pick_menu' ); ?></h2>
+					<?php get_template_part( 'template-parts/menu-catalog', null, array( 'show_cart' => true, 'layout' => 'list' ) ); ?>
+
+					<h2 id="ysf-teslimat" class="ysf-order-layout__form-title"><?php ysf_e( 'order_step_info' ); ?></h2>
 
 					<?php if ( $ysf_min > 0 || $ysf_free_over > 0 ) : ?>
 						<p class="ysf-alert ysf-alert--info">
@@ -182,17 +184,14 @@ if ( ! empty( $ysf_me['addresses'] ) ) {
 					</form>
 				</div>
 
-				<aside class="ysf-sidebar">
-					<div class="widget" style="border:1px solid var(--ysf-line);border-radius:var(--ysf-radius-lg);padding:22px;background:#fff">
+				<aside class="ysf-sidebar ysf-order-sidebar">
+					<div class="widget ysf-order-cart">
 						<h2 class="widget-title"><?php ysf_e( 'order_step_items' ); ?></h2>
 						<div data-ysf-order-lines></div>
 						<div class="ysf-totals" data-ysf-order-totals></div>
-
-						<?php if ( $ysf_menu_url ) : ?>
-							<a class="ysf-btn ysf-btn--ghost ysf-btn--sm ysf-btn--block" href="<?php echo esc_url( $ysf_menu_url ); ?>">
-								<?php ysf_e( 'cta_menu' ); ?>
-							</a>
-						<?php endif; ?>
+						<a class="ysf-btn ysf-btn--block" href="#ysf-teslimat" data-ysf-to-delivery>
+							<?php ysf_e( 'order_to_delivery' ); ?>
+						</a>
 					</div>
 
 					<?php
@@ -215,13 +214,6 @@ if ( ! empty( $ysf_me['addresses'] ) ) {
 						</div>
 					<?php endif; ?>
 
-					<?php if ( ysf_whatsapp_url() ) : ?>
-						<div class="widget">
-							<a class="ysf-btn ysf-btn--wa ysf-btn--block" href="<?php echo esc_url( ysf_whatsapp_url() ); ?>" target="_blank" rel="noopener noreferrer">
-								<?php ysf_e( 'cta_whatsapp' ); ?>
-							</a>
-						</div>
-					<?php endif; ?>
 				</aside>
 			</div>
 

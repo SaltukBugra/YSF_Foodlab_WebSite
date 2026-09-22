@@ -53,7 +53,7 @@ $ysf_address = wp_parse_args(
 	<div class="ysf-field">
 		<label for="<?php echo esc_attr( $ysf_prefix ); ?>-sokak"><?php ysf_e( 'addr_street' ); ?></label>
 		<input type="text" id="<?php echo esc_attr( $ysf_prefix ); ?>-sokak" name="addr_sokak"
-			value="<?php echo esc_attr( $ysf_address['sokak'] ); ?>" maxlength="120" autocomplete="street-address">
+			value="<?php echo esc_attr( $ysf_address['sokak'] ); ?>" maxlength="120" autocomplete="off">
 	</div>
 
 	<div class="ysf-field">
@@ -72,7 +72,7 @@ $ysf_address = wp_parse_args(
 		<label for="<?php echo esc_attr( $ysf_prefix ); ?>-posta"><?php ysf_e( 'addr_zip' ); ?></label>
 		<input type="text" id="<?php echo esc_attr( $ysf_prefix ); ?>-posta" name="addr_posta_kodu"
 			value="<?php echo esc_attr( $ysf_address['posta_kodu'] ); ?>"
-			inputmode="numeric" pattern="\d{5}" maxlength="5" autocomplete="postal-code">
+			inputmode="numeric" maxlength="5" autocomplete="off">
 	</div>
 
 	<div class="ysf-field ysf-field--full">

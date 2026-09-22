@@ -70,6 +70,14 @@ foreach ( $ysf_items as $ysf_item ) {
 			<input type="number" id="ysf-kit-price" name="price" min="0" step="0.01" inputmode="decimal">
 		</div>
 
+		<div class="ysf-field ysf-field--full" data-ysf-kit-sizes>
+			<label><?php ysf_e( 'kit_sizes' ); ?></label>
+			<p class="ysf-muted"><?php ysf_e( 'kit_sizes_hint' ); ?></p>
+			<div class="ysf-kit-sizes__rows" data-ysf-size-rows></div>
+			<button type="button" class="ysf-btn ysf-btn--sm ysf-btn--ghost" data-ysf-size-add><?php ysf_e( 'kit_size_add' ); ?></button>
+			<input type="hidden" name="sizes" value="[]">
+		</div>
+
 		<div class="ysf-field ysf-field--full">
 			<label for="ysf-kit-excerpt"><?php ysf_e( 'kit_desc' ); ?></label>
 			<textarea id="ysf-kit-excerpt" name="excerpt" rows="3" maxlength="400"></textarea>
@@ -160,8 +168,8 @@ foreach ( $ysf_items as $ysf_item ) {
 		<?php foreach ( $ysf_live as $ysf_item ) : ?>
 			<?php
 			$ysf_id     = $ysf_item->ID;
-			$ysf_sold   = (bool) get_post_meta( $ysf_id, '_ysf_sold_out', true );
-			$ysf_canbuy = (bool) get_post_meta( $ysf_id, '_ysf_orderable', true );
+			$ysf_sold   = ysf_meta_flag( $ysf_id, '_ysf_sold_out' );
+			$ysf_canbuy = ysf_meta_flag( $ysf_id, '_ysf_orderable', true );
 			$ysf_price  = (float) get_post_meta( $ysf_id, '_ysf_price', true );
 			$ysf_terms  = wp_get_post_terms( $ysf_id, 'ysf_menu_cat' );
 			$ysf_cat_id = ( $ysf_terms && ! is_wp_error( $ysf_terms ) ) ? (int) $ysf_terms[0]->term_id : 0;
@@ -169,11 +177,12 @@ foreach ( $ysf_items as $ysf_item ) {
 			$ysf_desc   = wp_strip_all_tags( $ysf_item->post_excerpt ? $ysf_item->post_excerpt : $ysf_item->post_content );
 			$ysf_thumb  = get_the_post_thumbnail_url( $ysf_id, 'ysf-thumb' );
 			$ysf_thumb  = $ysf_thumb ? $ysf_thumb : ysf_placeholder_image();
-			$ysf_vegan  = (bool) get_post_meta( $ysf_id, '_ysf_vegan', true );
-			$ysf_veg    = (bool) get_post_meta( $ysf_id, '_ysf_vegetarian', true );
-			$ysf_gf     = (bool) get_post_meta( $ysf_id, '_ysf_glutenfree', true );
-			$ysf_spicy  = (bool) get_post_meta( $ysf_id, '_ysf_spicy', true );
+			$ysf_vegan  = ysf_meta_flag( $ysf_id, '_ysf_vegan' );
+			$ysf_veg    = ysf_meta_flag( $ysf_id, '_ysf_vegetarian' );
+			$ysf_gf     = ysf_meta_flag( $ysf_id, '_ysf_glutenfree' );
+			$ysf_spicy  = ysf_meta_flag( $ysf_id, '_ysf_spicy' );
 			$ysf_tags   = ysf_get_item_tags( $ysf_id );
+			$ysf_sizes  = ysf_get_item_sizes( $ysf_id );
 			?>
 			<article
 				class="ysf-kitchen__row<?php echo $ysf_sold ? ' is-soldout' : ''; ?>"
@@ -190,6 +199,7 @@ foreach ( $ysf_items as $ysf_item ) {
 				data-glutenfree="<?php echo $ysf_gf ? '1' : '0'; ?>"
 				data-spicy="<?php echo $ysf_spicy ? '1' : '0'; ?>"
 				data-tags="<?php echo esc_attr( wp_json_encode( $ysf_tags ) ); ?>"
+				data-sizes="<?php echo esc_attr( wp_json_encode( $ysf_sizes ) ); ?>"
 				data-search="<?php echo esc_attr( strtolower( $ysf_item->post_title . ' ' . $ysf_desc ) ); ?>"
 			>
 				<?php if ( $ysf_thumb ) : ?>

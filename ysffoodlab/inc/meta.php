@@ -23,7 +23,7 @@ function ysf_menu_item_fields() {
 			'label' => __( 'Fiyat', 'ysffoodlab' ),
 			'type'  => 'number',
 			'rest'  => 'number',
-			'help'  => __( 'Sadece sayı yazın, örn: 245', 'ysffoodlab' ),
+			'help'  => __( 'Ebat yoksa bu fiyat geçerlidir. Ebat eklerseniz menüde bilgi, online siparişte seçim olur.', 'ysffoodlab' ),
 		),
 		'_ysf_price_old'   => array(
 			'label' => __( 'İndirim öncesi fiyat', 'ysffoodlab' ),
@@ -133,7 +133,7 @@ function ysf_campaign_fields() {
 			'label' => __( 'Bitiş tarihi', 'ysffoodlab' ),
 			'type'  => 'date',
 			'rest'  => 'string',
-			'help'  => __( 'Bu tarihten sonra sitede otomatik olarak gizlenir.', 'ysffoodlab' ),
+			'help'  => __( 'Kampanyalar bölümünden eklenen kayıtlar bu tarihten sonra da “Süresi doldu” yazısıyla görünür.', 'ysffoodlab' ),
 		),
 		'_ysf_link'        => array(
 			'label' => __( 'Buton bağlantısı', 'ysffoodlab' ),
@@ -210,7 +210,7 @@ function ysf_register_meta() {
 					'type'              => $type,
 					'single'            => true,
 					'show_in_rest'      => true,
-					'default'           => 'boolean' === $type ? false : ( 'number' === $type ? 0 : '' ),
+					'default'           => 'boolean' === $type ? ( '_ysf_orderable' === $key ) : ( 'number' === $type ? 0 : '' ),
 					'sanitize_callback' => 'ysf_sanitize_meta_' . $type,
 					'auth_callback'     => function () {
 						return current_user_can( 'edit_posts' );
@@ -241,6 +241,34 @@ function ysf_register_meta() {
 			),
 			'default'           => array(),
 			'sanitize_callback' => 'ysf_sanitize_tags',
+			'auth_callback'     => function () {
+				return current_user_can( 'edit_posts' ) || current_user_can( 'ysf_manage_menu' );
+			},
+		)
+	);
+
+	register_post_meta(
+		'ysf_menu_item',
+		'_ysf_sizes',
+		array(
+			'type'              => 'array',
+			'single'            => true,
+			'show_in_rest'      => array(
+				'schema' => array(
+					'type'  => 'array',
+					'items' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'key'      => array( 'type' => 'string' ),
+							'label'    => array( 'type' => 'string' ),
+							'label_en' => array( 'type' => 'string' ),
+							'price'    => array( 'type' => 'number' ),
+						),
+					),
+				),
+			),
+			'default'           => array(),
+			'sanitize_callback' => 'ysf_sanitize_sizes',
 			'auth_callback'     => function () {
 				return current_user_can( 'edit_posts' ) || current_user_can( 'ysf_manage_menu' );
 			},
@@ -280,7 +308,7 @@ function ysf_sanitize_meta_number( $value ) {
  * @return bool
  */
 function ysf_sanitize_meta_boolean( $value ) {
-	return (bool) $value && 'false' !== $value && '0' !== $value;
+	return ysf_is_flag_value( $value, false );
 }
 
 /**
@@ -520,6 +548,12 @@ function ysf_render_meta_box( $post, $meta_box ) {
 		}
 
 		echo '</p>';
+
+		if ( 'menu_item' === $group && '_ysf_price' === $key ) {
+			echo '<div class="ysf-meta-full">';
+			ysf_render_sizes_fields( $post );
+			echo '</div>';
+		}
 	}
 
 	echo '</div>';
@@ -622,6 +656,93 @@ function ysf_render_tag_row( $tag, $types ) {
 }
 
 /**
+ * Ebat alanlarını ürün detay kutusunun içine çizer.
+ *
+ * @param WP_Post $post Ürün.
+ */
+function ysf_render_sizes_fields( $post ) {
+	$sizes = ysf_get_item_sizes( $post->ID );
+
+	if ( ! $sizes ) {
+		$sizes[] = array(
+			'label'    => '',
+			'label_en' => '',
+			'price'    => '',
+		);
+	}
+
+	echo '<input type="hidden" name="ysf_sizes_ready" value="1">';
+	echo '<p><strong>' . esc_html__( 'Ebatlar', 'ysffoodlab' ) . '</strong><br>';
+	echo esc_html__( 'Küçük, orta, büyük gibi seçenekler. Menüde bilgi, online siparişte seçim olur. Tek fiyat yeterliyse bu satırı boş bırakın.', 'ysffoodlab' ) . '</p>';
+	echo '<table class="widefat striped" id="ysf-sizes-table"><thead><tr>';
+	echo '<th>' . esc_html__( 'Ebat', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'İngilizce', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'Fiyat', 'ysffoodlab' ) . '</th>';
+	echo '<th></th></tr></thead><tbody>';
+
+	foreach ( $sizes as $size ) {
+		ysf_render_size_row( $size );
+	}
+
+	echo '</tbody></table>';
+	echo '<p><button type="button" class="button" id="ysf-size-add">' . esc_html__( 'Ebat ekle', 'ysffoodlab' ) . '</button></p>';
+	echo '<template id="ysf-size-row-tpl">';
+	ysf_render_size_row(
+		array(
+			'label'    => '',
+			'label_en' => '',
+			'price'    => '',
+		)
+	);
+	echo '</template>';
+	?>
+	<script>
+	(function () {
+		var add = document.getElementById('ysf-size-add');
+		var table = document.getElementById('ysf-sizes-table');
+		var tpl = document.getElementById('ysf-size-row-tpl');
+		if (!add || !table || !tpl) return;
+		add.addEventListener('click', function () {
+			table.querySelector('tbody').insertAdjacentHTML('beforeend', tpl.innerHTML);
+		});
+		table.addEventListener('click', function (event) {
+			if (!event.target.closest('[data-ysf-size-remove]')) return;
+			var row = event.target.closest('tr');
+			var body = table.querySelector('tbody');
+			if (!row || !body) return;
+			if (body.querySelectorAll('tr').length > 1) row.remove();
+			else row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+		});
+	})();
+	</script>
+	<?php
+}
+
+/**
+ * Yönetim paneli ebat satırı.
+ *
+ * @param array $size Ebat.
+ */
+function ysf_render_size_row( $size ) {
+	echo '<tr>';
+	printf(
+		'<td><input type="text" name="ysf_size_label[]" value="%s" class="widefat" maxlength="24" placeholder="%s"></td>',
+		esc_attr( isset( $size['label'] ) ? $size['label'] : '' ),
+		esc_attr__( 'Küçük', 'ysffoodlab' )
+	);
+	printf(
+		'<td><input type="text" name="ysf_size_label_en[]" value="%s" class="widefat" maxlength="24" placeholder="Small"></td>',
+		esc_attr( isset( $size['label_en'] ) ? $size['label_en'] : '' )
+	);
+	printf(
+		'<td><input type="number" name="ysf_size_price[]" value="%s" class="widefat" min="0" step="0.01"></td>',
+		esc_attr( isset( $size['price'] ) ? $size['price'] : '' )
+	);
+	echo '<td><button type="button" class="button-link" data-ysf-size-remove>' . esc_html__( 'Sil', 'ysffoodlab' ) . '</button></td>';
+	echo '</tr>';
+}
+
+/**
  * Meta değerlerini kaydeder.
  *
  * @param int     $post_id Gönderi kimliği.
@@ -661,6 +782,23 @@ function ysf_save_meta( $post_id, $post ) {
 
 			ysf_save_item_tags( $post_id, $rows );
 		}
+
+		if ( isset( $_POST['ysf_sizes_ready'] ) ) {
+			$labels = isset( $_POST['ysf_size_label'] ) ? wp_unslash( $_POST['ysf_size_label'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$ens    = isset( $_POST['ysf_size_label_en'] ) ? wp_unslash( $_POST['ysf_size_label_en'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$prices = isset( $_POST['ysf_size_price'] ) ? wp_unslash( $_POST['ysf_size_price'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$rows   = array();
+
+			foreach ( (array) $labels as $index => $label ) {
+				$rows[] = array(
+					'label'    => $label,
+					'label_en' => isset( $ens[ $index ] ) ? $ens[ $index ] : '',
+					'price'    => isset( $prices[ $index ] ) ? $prices[ $index ] : 0,
+				);
+			}
+
+			update_post_meta( $post_id, '_ysf_sizes', ysf_sanitize_sizes( $rows ) );
+		}
 	} elseif ( 'ysf_campaign' === $post->post_type ) {
 		$groups[] = ysf_campaign_fields();
 	} elseif ( in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
@@ -670,7 +808,7 @@ function ysf_save_meta( $post_id, $post ) {
 	foreach ( $groups as $fields ) {
 		foreach ( $fields as $key => $field ) {
 			if ( 'checkbox' === $field['type'] ) {
-				update_post_meta( $post_id, $key, isset( $_POST[ $key ] ) ? 1 : 0 );
+				ysf_set_meta_flag( $post_id, $key, isset( $_POST[ $key ] ) );
 				continue;
 			}
 
@@ -722,6 +860,7 @@ function ysf_render_request_box( $post ) {
 		__( 'Adres', 'ysffoodlab' )         => get_post_meta( $post->ID, '_ysf_address', true ),
 		__( 'Masa no', 'ysffoodlab' )       => get_post_meta( $post->ID, '_ysf_table', true ),
 		__( 'Ara toplam', 'ysffoodlab' )    => get_post_meta( $post->ID, '_ysf_subtotal', true ),
+		__( 'Kampanya indirimi', 'ysffoodlab' ) => get_post_meta( $post->ID, '_ysf_discount', true ),
 		__( 'Teslimat ücreti', 'ysffoodlab' ) => get_post_meta( $post->ID, '_ysf_delivery_fee', true ),
 		__( 'Toplam', 'ysffoodlab' )        => get_post_meta( $post->ID, '_ysf_total', true ),
 		__( 'Not', 'ysffoodlab' )           => get_post_meta( $post->ID, '_ysf_note', true ),

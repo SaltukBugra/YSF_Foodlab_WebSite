@@ -345,7 +345,7 @@ add_filter( 'document_title_parts', 'ysf_document_title_parts' );
  * Rezervasyon ve sipariş kayıtlarını arama motorlarından uzak tutar.
  */
 function ysf_noindex_requests() {
-	if ( is_singular( array( 'ysf_reservation', 'ysf_order' ) ) ) {
+	if ( is_singular( array( 'ysf_reservation', 'ysf_order' ) ) || ysf_is_staff_app() ) {
 		echo '<meta name="robots" content="noindex,nofollow">' . "\n";
 	}
 }

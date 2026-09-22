@@ -9,19 +9,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.2.9' );
+define( 'YSF_VERSION', '1.4.39' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
+define( 'YSF_MAIL_FROM', 'info@ysffoodlab.com.tr' );
 
 require_once YSF_DIR . '/inc/i18n.php';
 require_once YSF_DIR . '/inc/post-types.php';
 require_once YSF_DIR . '/inc/meta.php';
 require_once YSF_DIR . '/inc/customizer.php';
 require_once YSF_DIR . '/inc/template-tags.php';
+require_once YSF_DIR . '/inc/campaigns.php';
+require_once YSF_DIR . '/inc/announcements.php';
 require_once YSF_DIR . '/inc/orders.php';
 require_once YSF_DIR . '/inc/reservations.php';
 require_once YSF_DIR . '/inc/accounts.php';
+require_once YSF_DIR . '/inc/two-factor.php';
 require_once YSF_DIR . '/inc/kitchen.php';
+require_once YSF_DIR . '/inc/floor.php';
 require_once YSF_DIR . '/inc/seo.php';
 require_once YSF_DIR . '/inc/setup-wizard.php';
 
@@ -53,6 +58,7 @@ function ysf_theme_setup() {
 	);
 
 	add_image_size( 'ysf-card', 720, 460, true );
+	add_image_size( 'ysf-menu', 960, 540, true );
 	add_image_size( 'ysf-thumb', 320, 320, true );
 	add_image_size( 'ysf-hero', 1920, 1100, true );
 
@@ -101,13 +107,37 @@ function ysf_enqueue_assets() {
 	if ( ysf_get_option( 'ysf_google_fonts', true ) ) {
 		wp_enqueue_style(
 			'ysf-fonts',
-			'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap',
+			'https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap',
 			array(),
 			null // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion
 		);
 	}
 
 	wp_enqueue_style( 'ysf-style', get_stylesheet_uri(), array(), $css_ver );
+
+	if ( ysf_is_staff_app() ) {
+		$staff_path = YSF_DIR . '/assets/js/staff.js';
+		$staff_ver  = file_exists( $staff_path ) ? (string) filemtime( $staff_path ) : YSF_VERSION;
+
+		wp_enqueue_script( 'ysf-staff', YSF_URI . '/assets/js/staff.js', array(), $staff_ver, true );
+
+		wp_localize_script(
+			'ysf-staff',
+			'YSF',
+			array(
+				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'ysf_public' ),
+				'lang'     => ysf_lang(),
+				'currency' => ysf_get_option( 'ysf_currency', '₺' ),
+				'pollMs'   => 4000,
+				'utcOffset'  => ysf_utc_offset(),
+				'i18n'       => ysf_staff_js_strings(),
+				'campaigns'  => function_exists( 'ysf_campaign_rules_for_js' ) ? ysf_campaign_rules_for_js() : array(),
+			)
+		);
+
+		return;
+	}
 
 	$js_path = YSF_DIR . '/assets/js/main.js';
 	$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : YSF_VERSION;
@@ -131,6 +161,7 @@ function ysf_enqueue_assets() {
 			'hours'        => ysf_get_hours(),
 			'utcOffset'    => ysf_utc_offset(),
 			'i18n'         => ysf_js_strings(),
+			'campaigns'    => function_exists( 'ysf_campaign_rules_for_js' ) ? ysf_campaign_rules_for_js() : array(),
 		)
 	);
 
@@ -278,7 +309,7 @@ add_filter( 'body_class', 'ysf_body_classes' );
  * iletişim sayfaları her zaman taze sunulur.
  */
 function ysf_no_cache_form_pages() {
-	$templates = array( 'template-order.php', 'template-reservation.php', 'template-contact.php', 'template-account.php' );
+	$templates = array( 'template-order.php', 'template-reservation.php', 'template-contact.php', 'template-account.php', 'template-waiter.php', 'template-kds.php', 'template-cashier.php' );
 	$is_form   = false;
 
 	foreach ( $templates as $template ) {
@@ -302,17 +333,53 @@ add_action( 'template_redirect', 'ysf_no_cache_form_pages', 20 );
  */
 function ysf_admin_assets() {
 	$css = '
-		.ysf-admin-note{background:#fff;border:1px solid #dcdcde;border-left:4px solid #d98324;padding:14px 18px;margin:16px 0;border-radius:4px;line-height:1.6}
-		.ysf-admin-note h2{margin-top:0;font-size:15px}
-		.ysf-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-		.ysf-meta-grid label{display:block;font-weight:600;margin-bottom:4px}
-		.ysf-meta-grid input[type=text],.ysf-meta-grid input[type=number],.ysf-meta-grid input[type=url],.ysf-meta-grid textarea,.ysf-meta-grid select{width:100%}
+		.ysf-admin-note{background:#fff;border:1px solid #dcdcde;border-left:4px solid #d98324;padding:16px 20px;margin:16px 0 20px;border-radius:4px;line-height:1.65}
+		.ysf-admin-note h2{margin:0 0 12px;font-size:16px}
+		.ysf-admin-note p{margin:0 0 10px}
+		.ysf-admin-note p:last-child{margin-bottom:0}
+		.ysf-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 22px}
+		.ysf-meta-grid label{display:block;font-weight:600;margin-bottom:6px}
+		.ysf-meta-grid input[type=text],.ysf-meta-grid input[type=number],.ysf-meta-grid input[type=date],.ysf-meta-grid input[type=time],.ysf-meta-grid input[type=url],.ysf-meta-grid textarea,.ysf-meta-grid select{width:100%}
+		.ysf-meta-grid .description{margin:8px 0 0;line-height:1.55}
 		.ysf-meta-full{grid-column:1/-1}
-		.ysf-badge-pending{background:#f0b849;color:#1d2327;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-		.ysf-badge-done{background:#68de7c;color:#1d2327;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+		.ysf-badge-pending{background:#f0b849;color:#1d2327;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600}
+		.ysf-badge-done{background:#68de7c;color:#1d2327;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600}
+		.ysf-badge-expired{background:#dcdcde;color:#1d2327;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600}
+		.ysf-camp-products{max-height:560px;overflow:auto;border:1px solid #dcdcde;background:#fff;padding:14px;border-radius:8px}
+		.ysf-camp-search{width:100%;margin:0 0 16px;padding:8px 10px}
+		.ysf-camp-groups{display:grid;gap:18px}
+		.ysf-camp-cat{margin:0 0 8px;font-size:14px}
+		.ysf-camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+		.ysf-camp-check{display:grid;grid-template-columns:18px 48px minmax(0,1fr);gap:8px;align-items:center;margin:0;padding:8px;border:1px solid #dcdcde;border-radius:8px;line-height:1.35}
+		.ysf-camp-check img{width:48px;height:48px;object-fit:cover;border-radius:6px}
+		.ysf-camp-check[hidden],.ysf-camp-group[hidden]{display:none !important}
+		.ysf-camp-label{display:block;font-weight:600;margin-bottom:8px}
+		.ysf-campaign-form{max-width:920px;margin-top:16px}
 	';
 	wp_register_style( 'ysf-admin', false, array(), YSF_VERSION ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.NotInFooter
 	wp_enqueue_style( 'ysf-admin' );
 	wp_add_inline_style( 'ysf-admin', $css );
 }
 add_action( 'admin_enqueue_scripts', 'ysf_admin_assets' );
+
+/**
+ * SMTP şifresi yoksa yönetim panelinde doğrudan özelleştir bağlantısı gösterir.
+ */
+function ysf_smtp_admin_notice() {
+	if ( ! current_user_can( 'customize' ) ) {
+		return;
+	}
+
+	if ( (string) get_theme_mod( 'ysf_smtp_pass', '' ) ) {
+		return;
+	}
+
+	$url = admin_url( 'customize.php?autofocus[control]=ysf_smtp_pass' );
+
+	echo '<div class="notice notice-warning"><p>';
+	echo esc_html__( 'Üye doğrulama mailleri için SMTP şifresi gerekli.', 'ysffoodlab' );
+	echo ' <a href="' . esc_url( $url ) . '">';
+	echo esc_html__( 'Görünüm → Özelleştir → YSF Food Lab Ayarları → İşletme Bilgileri', 'ysffoodlab' );
+	echo '</a></p></div>';
+}
+add_action( 'admin_notices', 'ysf_smtp_admin_notice' );

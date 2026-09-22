@@ -314,12 +314,15 @@ function ysf_ajax_kitchen_save() {
 	}
 
 	update_post_meta( $post_id, '_ysf_price', $price );
-	update_post_meta( $post_id, '_ysf_sold_out', $sold ? 1 : 0 );
-	update_post_meta( $post_id, '_ysf_orderable', $order ? 1 : 0 );
-	update_post_meta( $post_id, '_ysf_vegetarian', ! empty( $_POST['vegetarian'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_ysf_vegan', ! empty( $_POST['vegan'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_ysf_glutenfree', ! empty( $_POST['glutenfree'] ) ? 1 : 0 );
-	update_post_meta( $post_id, '_ysf_spicy', ! empty( $_POST['spicy'] ) ? 1 : 0 );
+	$raw_sizes = isset( $_POST['sizes'] ) ? wp_unslash( $_POST['sizes'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$decoded   = is_string( $raw_sizes ) ? json_decode( $raw_sizes, true ) : $raw_sizes;
+	update_post_meta( $post_id, '_ysf_sizes', ysf_sanitize_sizes( is_array( $decoded ) ? $decoded : array() ) );
+	ysf_set_meta_flag( $post_id, '_ysf_sold_out', $sold );
+	ysf_set_meta_flag( $post_id, '_ysf_orderable', $order );
+	ysf_set_meta_flag( $post_id, '_ysf_vegetarian', ! empty( $_POST['vegetarian'] ) );
+	ysf_set_meta_flag( $post_id, '_ysf_vegan', ! empty( $_POST['vegan'] ) );
+	ysf_set_meta_flag( $post_id, '_ysf_glutenfree', ! empty( $_POST['glutenfree'] ) );
+	ysf_set_meta_flag( $post_id, '_ysf_spicy', ! empty( $_POST['spicy'] ) );
 
 	$tags = isset( $_POST['tags'] ) ? wp_unslash( $_POST['tags'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	ysf_save_item_tags( $post_id, $tags );
@@ -367,12 +370,12 @@ function ysf_ajax_kitchen_action() {
 
 	switch ( $task ) {
 		case 'sold_out':
-			update_post_meta( $item->ID, '_ysf_sold_out', 1 );
+			ysf_set_meta_flag( $item->ID, '_ysf_sold_out', true );
 			$ok_msg = ysf_t( 'kit_marked_out' );
 			break;
 
 		case 'in_stock':
-			update_post_meta( $item->ID, '_ysf_sold_out', 0 );
+			ysf_set_meta_flag( $item->ID, '_ysf_sold_out', false );
 			$ok_msg = ysf_t( 'kit_marked_in' );
 			break;
 

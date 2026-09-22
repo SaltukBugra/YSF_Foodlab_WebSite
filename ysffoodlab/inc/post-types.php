@@ -78,14 +78,32 @@ function ysf_register_post_types() {
 				'featured_image'     => __( 'Kampanya Görseli', 'ysffoodlab' ),
 				'set_featured_image' => __( 'Kampanya görseli ekle', 'ysffoodlab' ),
 			),
-			'public'        => true,
-			'has_archive'   => false,
-			'menu_icon'     => 'dashicons-megaphone',
-			'menu_position' => 6,
-			'supports'      => array( 'title', 'editor', 'thumbnail', 'excerpt', 'page-attributes', 'custom-fields' ),
-			'rewrite'       => array( 'slug' => 'kampanya' ),
-			'show_in_rest'  => true,
-			'rest_base'     => 'ysf-campaigns',
+			'public'             => true,
+			'has_archive'        => false,
+			'show_ui'            => true,
+			'show_in_menu'       => false,
+			'show_in_admin_bar'  => false,
+			'menu_icon'          => 'dashicons-megaphone',
+			'menu_position'      => 6,
+			'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'page-attributes', 'custom-fields' ),
+			'rewrite'            => array( 'slug' => 'kampanya' ),
+			'show_in_rest'       => true,
+			'rest_base'          => 'ysf-campaigns',
+			'capability_type'    => 'post',
+			'map_meta_cap'       => true,
+			'capabilities'       => array(
+				'edit_posts'             => 'manage_options',
+				'edit_others_posts'      => 'manage_options',
+				'delete_posts'           => 'manage_options',
+				'publish_posts'          => 'manage_options',
+				'read_private_posts'     => 'manage_options',
+				'delete_private_posts'   => 'manage_options',
+				'delete_published_posts' => 'manage_options',
+				'delete_others_posts'    => 'manage_options',
+				'edit_private_posts'     => 'manage_options',
+				'edit_published_posts'   => 'manage_options',
+				'create_posts'           => 'manage_options',
+			),
 		)
 	);
 
@@ -197,6 +215,7 @@ function ysf_order_columns( $columns ) {
 		'cb'              => isset( $columns['cb'] ) ? $columns['cb'] : '',
 		'title'           => __( 'Sipariş', 'ysffoodlab' ),
 		'ysf_order_type'  => __( 'Tip', 'ysffoodlab' ),
+		'ysf_order_table' => __( 'Masa', 'ysffoodlab' ),
 		'ysf_order_total' => __( 'Tutar', 'ysffoodlab' ),
 		'ysf_res_phone'   => __( 'Telefon', 'ysffoodlab' ),
 		'ysf_status'      => __( 'Durum', 'ysffoodlab' ),
@@ -236,6 +255,10 @@ function ysf_render_admin_columns( $column, $post_id ) {
 
 		case 'ysf_order_type':
 			echo esc_html( (string) get_post_meta( $post_id, '_ysf_order_type', true ) );
+			break;
+
+		case 'ysf_order_table':
+			echo esc_html( (string) get_post_meta( $post_id, '_ysf_table', true ) );
 			break;
 
 		case 'ysf_order_total':

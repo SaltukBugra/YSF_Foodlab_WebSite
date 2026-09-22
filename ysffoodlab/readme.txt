@@ -32,6 +32,11 @@ gerekmez.
 * Rezervasyonlar ve Siparisler: formdan gelen her talep panele kaydedilir,
   yoneticiye e-posta gider ve durumu Bekliyor / Onaylandi / Tamamlandi /
   Iptal olarak guncellenebilir.
+* Masa servisi: /garson adresi garson telefonu icindir, /kasiyer kasa
+  telefonu icindir, /mutfak-ekrani mutfak tableti icindir. Yonetici,
+  Kullanicilar ekranindan personele Garson, Kasiyer veya Mutfak Sorumlusu
+  rolunu verir. Kasiyer sekmesi yalnizca kasiyer ve yonetici hesaplarinda
+  gorunur. Masa sayisi Ozellestir > Masa servisi bolumunden ayarlanir.
 
 == Cift dil ==
 
@@ -56,6 +61,154 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 * Google Fonts kullanimi Ozelestir > Gelismis bolumunden kapatilabilir.
 
 == Degisiklik gecmisi ==
+
+= 1.4.39 =
+* WordPress panelinde ve Hesabimda ayri Duyurular bolumu. Baslik, kisa aciklama, icerik, gorsel; yonetici silebilir.
+
+= 1.4.38 =
+* Saat araligi baslamadan once kampanya gizlenmez; "16:00'da basliyor" olarak gorunur.
+
+= 1.4.37 =
+* Kampanya urun listesi duzenli kart izgarasina alindi. Kampanya satirlarindaki yazi acildi. Kampanyaya gorsel eklenebilir.
+
+= 1.4.36 =
+* Adet esigi ucret esigine donustu. Secili urunlerin sepet tutari bu degeri gecince indirim uygulanir. Kampanya yazilarinin sikisik durusu acildi.
+
+= 1.4.35 =
+* Kampanyaya istege bagli saat araligi eklendi. Aralık bitince kampanya ertesi gune sarkiyorsa duyuruda "Yarin gene bekleriz" gorunur.
+
+= 1.4.34 =
+* Kampanyalar Hesabim sayfasinda da yonetilir. Sekme yalniz site yoneticisine aciktir.
+
+= 1.4.33 =
+* Kampanyalar sayfasi yonetici hesabina yeniden acildi.
+
+= 1.4.32 =
+* Yonetim panelinde Kampanyalar bolumu. Dort senaryo, tarih araligi, duyuru seridi ve ana sayfa. Suresi dolan kampanya "Suresi doldu" olarak kalir ve yalniz yonetici silebilir.
+
+= 1.4.31 =
+* Ebat girisi fiyat alaninin hemen altina alindi. Mutfak urun formunda da ebat eklenebilir.
+
+= 1.4.30 =
+* Urunlere ebat eklenebilir. Menude tek satir bilgi, online sipariste secim olarak gorunur.
+
+= 1.4.29 =
+* Online siparis ayni menu icerigini eski satir gorunumunde gosterir. S kivrimli duzen menude kalir.
+
+= 1.4.28 =
+* Menu kartlarindaki yan ve alt bosluk kalkti. Kategori basliklarina koyu zemin eklendi.
+
+= 1.4.27 =
+* Menu fotograflari ust uste ezilmeden, ortadaki S kivriminda ic ice gecmeli dizilir.
+
+= 1.4.26 =
+* Menu urunleri ortada S seklinde dalgalanan, ic ice binen tek serit halinde dizilir.
+
+= 1.4.25 =
+* Menu sayfasinda sepete ekle yok; urunler ic ice gommeli fotograflar. Fiyat, stok ve olumlu/olumsuz etiketler ayni.
+
+= 1.4.24 =
+* Menu urunleri genis fotografli kartlara donustu; gorseller alta dogru yumusakca solar. Fiyat, stok ve urun bilgisi ayni kalir.
+
+= 1.4.23 =
+* Authenticator karekodu yalnizca e-posta kodu dogrulandiktan sonra gosterilir. Yanlis kod veya sifre Hesabim girisine dondurur.
+
+= 1.4.22 =
+* Yonetici girisinde Authenticator karekodu ve elle anahtar her zaman gosterilir (hesapta 2FA kaydi olsa bile).
+
+= 1.4.21 =
+* Yonetici 2FA paneli giriste tekrar acilir; karekod ayri istekte gelir, elle anahtar JSON icinde kalir.
+
+= 1.4.20 =
+* Authenticator karekodu sitede uretilir; elle girilecek anahtar karekodun altinda buyuk yazilir.
+
+= 1.4.19 =
+* Yonetici girisinde Authenticator karekodu ve kod alani gorunmuyordu; panel zorla acilir, karekod yedek kaynaktan gelir.
+
+= 1.4.18 =
+* Kayitta telefon OTP/SMS dogrulamasi kaldirildi; uyelik e-posta kodu ile tamamlanir.
+
+= 1.4.17 =
+* Kayit OTP'si SMS yoksa e-postaya gider; kod ekranda gosterilmez.
+
+= 1.4.16 =
+* Yonetici sifresi dogruysa yalnizca Authenticator karekod ekrani acilir.
+* Kayit, telefona SMS gitmeden tamamlanmaz; ekranda kod gosterilmez.
+
+= 1.4.15 =
+* Kayit OTP: 6 haneli kod telefona SMS (Netgsm) ve e-postaya gider; hesap kod dogrulanmadan acilmaz.
+
+= 1.4.14 =
+* Instagram ve Facebook ana sayfada ve yüzen WhatsApp butonunun üstünde.
+
+= 1.4.13 =
+* Instagram @ysffoodlab ve Facebook YSF Foodlab ikonları üst bar, iletişim ve alt bilgide.
+
+= 1.4.12 =
+* Yönetici girişi artık şifreyle tamamlanmaz: authenticator kodu zorunlu. Kurulu değilse girişte karekod çıkar; mevcut oturum kurulum bitene kadar kilitlenir.
+
+= 1.4.11 =
+* Yönetici hesabına Google Authenticator uyumlu iki adımlı doğrulama. Personel ve üyeler etkilenmez.
+
+= 1.4.10 =
+* Logo varken yanındaki YSF Foodlab yazısı kaldırıldı.
+
+= 1.4.9 =
+* SMTP kimliği info@ysffoodlab.com.tr kutusuna çekilir; kayıt mail gitmese de ekrandaki kodla tamamlanır.
+
+= 1.4.8 =
+* Veridyen SMTP: port 465/SSL varsayılan, kimlik doğrulama LOGIN, alternatif sunucular denenir.
+
+= 1.4.7 =
+* SMTP mail ayarları Özelleştir > YSF Food Lab Ayarları > İşletme Bilgileri içine alındı.
+
+= 1.4.6 =
+* Kayıt hatası artık gerçek nedeni gösterir; tarayıcı otomatik doldurma bot tuzağını tetiklemez.
+
+= 1.4.5 =
+* Form hataları “çok fazla deneme” kilidini doldurmaz; kilit 15 dakikada açılır.
+
+= 1.4.4 =
+* Üye ol formunda adres otomatik doldurma “zorunlu alan” hatasını tetiklemez; eksik alan adı gösterilir.
+
+= 1.4.3 =
+* Kayıtta e-posta kullanıcı adı alanına yazılsa da kabul edilir; @ öncesi giriş adı olur.
+
+= 1.4.2 =
+* Giden e-posta adresi info@ysffoodlab.com.tr (gerçek MX kaydı). SMTP ayarları eklendi.
+
+= 1.4.1 =
+* Giden e-postalar info@ysffoodlab.com adresinden gönderilir.
+
+= 1.4.0 =
+* Giriş kullanıcı adı, e-posta veya telefonla yapılabilir.
+* Üyelik e-posta doğrulama kodu ile tamamlanır.
+* Şifremi unuttum bağlantısı Hesabım sayfasında yeni şifre belirletir.
+
+= 1.3.9 =
+* Kasiyer sekmesi yalnızca kasiyer ve yönetici hesaplarında görünür.
+* Kasiyer penceresi (/kasiyer): açık masa hesapları, nakit/kart tahsilat, günlük kasa.
+* Android YSF Kasiyer uygulaması eklendi.
+
+= 1.3.2 =
+* Personel ekranlarında sekme yok. Mutfak siparişleri sırayla kuyruğa düşer.
+* Garson masaları dolu/boş listeler; dolu masada önceki siparişler, Ekle ile yeni sipariş.
+
+= 1.3.1 =
+* Hesabım ve personel ekranlarında Mutfak / Garson sekmeleri.
+* Garson sayfası (/garson) ve mutfak ekranı (/mutfak-ekrani) tema açılınca oluşur.
+
+= 1.3.0 =
+* Garson uygulaması (mobil): masadan sipariş alma, mutfağa gönderme, masayı kapatma.
+* Mutfak ekranı: masa (ve isteğe bağlı online) biletlerini canlı kolonlarda gösterir.
+* Her iki uygulama da tarayıcıdan ana ekrana eklenebilir. Garson rolü Kullanıcılar’dan atanır.
+* Masa sayısı Görünüm > Özelleştir > Masa servisi bölümünden ayarlanır.
+
+= 1.2.11 =
+* Sepete ekleme yalnizca Online Siparis sayfasinda; Menü sayfasi sadece listeler.
+
+= 1.2.10 =
+* Header yazisi Great Vibes yerine Cinzel (Roman, iddiali) fonta gecildi.
 
 = 1.2.9 =
 * Header yazisi el yazisi font ve logo ile ayni siyah zeminde,

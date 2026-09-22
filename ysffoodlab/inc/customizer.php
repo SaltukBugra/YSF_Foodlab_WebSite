@@ -41,6 +41,12 @@ function ysf_add_setting( $wp_customize, $id, $args ) {
 			case 'email':
 				$args['sanitize'] = 'sanitize_email';
 				break;
+			case 'select':
+				$args['sanitize'] = 'sanitize_text_field';
+				break;
+			case 'password':
+				$args['sanitize'] = 'ysf_sanitize_smtp_pass';
+				break;
 			case 'textarea':
 				$args['sanitize'] = 'sanitize_textarea_field';
 				break;
@@ -111,6 +117,39 @@ function ysf_sanitize_float( $value ) {
 }
 
 /**
+ * Masa sayısı temizleme.
+ *
+ * @param mixed $value Değer.
+ * @return int
+ */
+function ysf_sanitize_table_count( $value ) {
+	return max( 1, min( 80, absint( $value ) ) );
+}
+
+/**
+ * SMTP şifresi: özel karakterleri silmez.
+ *
+ * @param mixed $value Değer.
+ * @return string
+ */
+function ysf_sanitize_smtp_pass( $value, $setting = null ) {
+	if ( ! is_string( $value ) ) {
+		$value = '';
+	}
+
+	$value = wp_unslash( $value );
+
+	if ( '' === $value ) {
+		$mods = get_option( 'theme_mods_' . get_stylesheet(), array() );
+		$key  = ( is_object( $setting ) && isset( $setting->id ) ) ? $setting->id : 'ysf_smtp_pass';
+
+		return isset( $mods[ $key ] ) ? (string) $mods[ $key ] : '';
+	}
+
+	return $value;
+}
+
+/**
  * Özelleştirici alanlarını kaydeder.
  *
  * @param WP_Customize_Manager $wp_customize Yönetici.
@@ -131,6 +170,7 @@ function ysf_customize_register( $wp_customize ) {
 		'ysf_home'        => __( 'Ana Sayfa', 'ysffoodlab' ),
 		'ysf_order'       => __( 'Online Sipariş', 'ysffoodlab' ),
 		'ysf_reservation' => __( 'Rezervasyon', 'ysffoodlab' ),
+		'ysf_floor'       => __( 'Masa servisi', 'ysffoodlab' ),
 		'ysf_social'      => __( 'Sosyal Medya', 'ysffoodlab' ),
 		'ysf_advanced'    => __( 'Gelişmiş', 'ysffoodlab' ),
 	);
@@ -161,8 +201,41 @@ function ysf_customize_register( $wp_customize ) {
 			'description' => __( 'Ülke kodu ile, boşluksuz: 905550000000', 'ysffoodlab' ),
 		),
 		'ysf_email'        => array(
-			'label' => __( 'E-posta', 'ysffoodlab' ),
-			'type'  => 'email',
+			'label'       => __( 'İletişim e-postası', 'ysffoodlab' ),
+			'type'        => 'email',
+			'default'     => 'info@ysffoodlab.com.tr',
+			'description' => __( 'Sitede görünen adres. Doğrulama ve şifre maillerinin gitmesi için hemen aşağıdaki SMTP şifresini de yazın.', 'ysffoodlab' ),
+		),
+		'ysf_smtp_user'    => array(
+			'label'       => __( 'Mail gönderen (SMTP kullanıcı)', 'ysffoodlab' ),
+			'default'     => 'info@ysffoodlab.com.tr',
+			'description' => __( 'cPanel’deki posta kutusu: info@ysffoodlab.com.tr (ysffoodlab.com değil).', 'ysffoodlab' ),
+		),
+		'ysf_smtp_pass'    => array(
+			'label'       => __( 'Mail şifresi (SMTP)', 'ysffoodlab' ),
+			'type'        => 'password',
+			'description' => __( 'cPanel > E-posta hesapları’nda info@ kutusu için koyduğunuz şifre. WordPress yönetici şifresi değil. Webmail’e bu şifreyle girebiliyorsanız doğrudur.', 'ysffoodlab' ),
+		),
+		'ysf_smtp_host'    => array(
+			'label'       => __( 'SMTP sunucu', 'ysffoodlab' ),
+			'default'     => 'mail.ysffoodlab.com.tr',
+			'description' => __( 'Genelde mail.ysffoodlab.com.tr — olmazsa mirel.veridyen.com', 'ysffoodlab' ),
+		),
+		'ysf_smtp_port'    => array(
+			'label'       => __( 'SMTP port', 'ysffoodlab' ),
+			'type'        => 'number',
+			'default'     => 465,
+			'description' => __( 'Veridyen için 465 (SSL). 587 (TLS) olmazsa bunu kullanın.', 'ysffoodlab' ),
+		),
+		'ysf_smtp_enc'     => array(
+			'label'   => __( 'SMTP şifreleme', 'ysffoodlab' ),
+			'type'    => 'select',
+			'default' => 'ssl',
+			'choices' => array(
+				'ssl'  => 'SSL (port 465) — önerilen',
+				'tls'  => 'TLS (port 587)',
+				'none' => __( 'Yok', 'ysffoodlab' ),
+			),
 		),
 		'ysf_address'      => array(
 			'label' => __( 'Adres', 'ysffoodlab' ),
@@ -422,6 +495,32 @@ function ysf_customize_register( $wp_customize ) {
 		ysf_add_setting( $wp_customize, $id, $args + array( 'section' => 'ysf_reservation' ) );
 	}
 
+	$floor = array(
+		'ysf_floor_enabled' => array(
+			'label'       => __( 'Masa servisini aç', 'ysffoodlab' ),
+			'type'        => 'checkbox',
+			'default'     => true,
+			'description' => __( 'Garson uygulaması, kasiyer kasası ve mutfak ekranı. Sayfalar: /garson, /kasiyer ve /mutfak-ekrani.', 'ysffoodlab' ),
+		),
+		'ysf_table_count'   => array(
+			'label'       => __( 'Masa sayısı', 'ysffoodlab' ),
+			'type'        => 'number',
+			'default'     => 16,
+			'sanitize'    => 'ysf_sanitize_table_count',
+			'description' => __( 'Garson uygulamasında görünen masa adedi (1–80).', 'ysffoodlab' ),
+		),
+		'ysf_kds_online'    => array(
+			'label'       => __( 'Mutfak ekranında online siparişleri de göster', 'ysffoodlab' ),
+			'type'        => 'checkbox',
+			'default'     => true,
+			'description' => __( 'Açıkken siteden (WhatsApp’a da giden) adrese teslim ve gel-al siparişleri mutfak kuyruğuna düşer. Kapatırsanız mutfak yalnızca masa biletlerini görür.', 'ysffoodlab' ),
+		),
+	);
+
+	foreach ( $floor as $id => $args ) {
+		ysf_add_setting( $wp_customize, $id, $args + array( 'section' => 'ysf_floor' ) );
+	}
+
 	// --- Üyelik -----------------------------------------------------------
 	ysf_add_setting(
 		$wp_customize,
@@ -437,19 +536,24 @@ function ysf_customize_register( $wp_customize ) {
 
 	// --- Sosyal medya -----------------------------------------------------
 	$social = array(
-		'ysf_social_instagram'   => __( 'Instagram', 'ysffoodlab' ),
-		'ysf_social_facebook'    => __( 'Facebook', 'ysffoodlab' ),
-		'ysf_social_x'           => __( 'X (Twitter)', 'ysffoodlab' ),
-		'ysf_social_youtube'     => __( 'YouTube', 'ysffoodlab' ),
-		'ysf_social_tripadvisor' => __( 'Tripadvisor', 'ysffoodlab' ),
+		'ysf_social_instagram'   => array(
+			'label'   => __( 'Instagram', 'ysffoodlab' ),
+			'default' => 'https://www.instagram.com/ysffoodlab/',
+		),
+		'ysf_social_facebook'    => array(
+			'label'   => __( 'Facebook', 'ysffoodlab' ),
+			'default' => 'https://www.facebook.com/ysffoodlab',
+		),
+		'ysf_social_x'           => array( 'label' => __( 'X (Twitter)', 'ysffoodlab' ) ),
+		'ysf_social_youtube'     => array( 'label' => __( 'YouTube', 'ysffoodlab' ) ),
+		'ysf_social_tripadvisor' => array( 'label' => __( 'Tripadvisor', 'ysffoodlab' ) ),
 	);
 
-	foreach ( $social as $id => $label ) {
+	foreach ( $social as $id => $args ) {
 		ysf_add_setting(
 			$wp_customize,
 			$id,
-			array(
-				'label'   => $label,
+			$args + array(
 				'section' => 'ysf_social',
 				'type'    => 'url',
 			)

@@ -13,7 +13,6 @@ $ysf_order_url = ysf_localize_url( ysf_get_page_url_by_template( 'template-order
 $ysf_res_url   = ysf_localize_url( ysf_get_page_url_by_template( 'template-reservation.php' ) );
 $ysf_menu_url  = ysf_localize_url( ysf_get_page_url_by_template( 'template-menu.php' ) );
 $ysf_wa        = ysf_whatsapp_url();
-$ysf_social    = ysf_social_links();
 $ysf_hours     = ysf_get_hours();
 $ysf_today     = ysf_today_key();
 $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
@@ -27,18 +26,7 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 				<h2 class="ysf-footer__title"><?php bloginfo( 'name' ); ?></h2>
 				<p><?php echo esc_html( ysf_option_i18n( 'ysf_about_text', get_bloginfo( 'description' ) ) ); ?></p>
 
-				<?php if ( $ysf_social ) : ?>
-					<div class="ysf-social">
-						<?php foreach ( $ysf_social as $ysf_key => $ysf_link ) : ?>
-							<a
-								href="<?php echo esc_url( $ysf_link['url'] ); ?>"
-								target="_blank"
-								rel="noopener noreferrer"
-								aria-label="<?php echo esc_attr( $ysf_link['label'] ); ?>"
-							><?php echo $ysf_link['icon']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></a>
-						<?php endforeach; ?>
-					</div>
-				<?php endif; ?>
+				<?php ysf_the_social_links(); ?>
 			</div>
 
 			<div>
@@ -157,6 +145,22 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 <?php endif; ?>
 
 <div class="ysf-float">
+	<?php
+	foreach ( ysf_social_links() as $ysf_key => $ysf_link ) {
+		if ( ! in_array( $ysf_key, array( 'instagram', 'facebook' ), true ) ) {
+			continue;
+		}
+		?>
+		<a
+			class="ysf-float--<?php echo esc_attr( $ysf_key ); ?>"
+			href="<?php echo esc_url( $ysf_link['url'] ); ?>"
+			target="_blank"
+			rel="noopener noreferrer"
+			aria-label="<?php echo esc_attr( $ysf_link['label'] ); ?>"
+		><?php echo $ysf_link['icon']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></a>
+		<?php
+	}
+	?>
 	<?php if ( $ysf_wa ) : ?>
 		<a href="<?php echo esc_url( $ysf_wa ); ?>" target="_blank" rel="noopener noreferrer" aria-label="<?php echo esc_attr( ysf_t( 'cta_whatsapp' ) ); ?>">
 			<?php echo ysf_icon( 'whatsapp' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>

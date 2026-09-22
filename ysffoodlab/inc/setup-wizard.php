@@ -69,6 +69,24 @@ function ysf_wizard_pages() {
 			'template' => 'template-account.php',
 			'content'  => '',
 		),
+		'garson'         => array(
+			'title'    => 'Garson',
+			'title_en' => 'Waiter',
+			'template' => 'template-waiter.php',
+			'content'  => '',
+		),
+		'mutfak-ekrani'  => array(
+			'title'    => 'Mutfak Ekranı',
+			'title_en' => 'Kitchen Display',
+			'template' => 'template-kds.php',
+			'content'  => '',
+		),
+		'kasiyer'        => array(
+			'title'    => 'Kasiyer',
+			'title_en' => 'Cashier',
+			'template' => 'template-cashier.php',
+			'content'  => '',
+		),
 	);
 }
 
@@ -530,7 +548,7 @@ function ysf_wizard_page() {
 		<div class="ysf-admin-note">
 			<h2><?php esc_html_e( 'Bu düğme ne yapıyor?', 'ysffoodlab' ); ?></h2>
 			<ol>
-				<li><?php esc_html_e( 'Ana Sayfa, Menü, Online Sipariş, Rezervasyon, Hakkımızda, İletişim ve Blog sayfalarını oluşturur.', 'ysffoodlab' ); ?></li>
+				<li><?php esc_html_e( 'Ana Sayfa, Menü, Online Sipariş, Rezervasyon, Hakkımızda, İletişim, Blog, Garson ve Mutfak Ekranı sayfalarını oluşturur.', 'ysffoodlab' ); ?></li>
 				<li><?php esc_html_e( 'Ana sayfa ve blog sayfasını WordPress ayarlarına bağlar.', 'ysffoodlab' ); ?></li>
 				<li><?php esc_html_e( 'Üst menüyü ve alt bilgi menüsünü kurar.', 'ysffoodlab' ); ?></li>
 				<li><?php esc_html_e( 'Menü kategorilerini (başlangıç, ana yemek, tatlı…) açar.', 'ysffoodlab' ); ?></li>
@@ -559,6 +577,7 @@ function ysf_wizard_page() {
 			<li><?php esc_html_e( 'Görünüm > Özelleştir > YSF Food Lab Ayarları bölümünden telefon, WhatsApp, adres ve çalışma saatlerini girin.', 'ysffoodlab' ); ?></li>
 			<li><?php esc_html_e( 'Menü Yönetimi bölümünden ürün fotoğraflarını ve gerçek fiyatları girin.', 'ysffoodlab' ); ?></li>
 			<li><?php esc_html_e( 'Ayarlar > Kalıcı Bağlantılar sayfasını bir kez kaydedin (bağlantı yapısının yenilenmesi için).', 'ysffoodlab' ); ?></li>
+			<li><?php esc_html_e( 'Kullanıcılar’dan garson hesaplarına Garson, kasa hesaplarına Kasiyer rolünü verin. Mutfak tableti /mutfak-ekrani, garson telefonu /garson, kasiyer telefonu /kasiyer adresini ana ekrana ekleyebilir.', 'ysffoodlab' ); ?></li>
 		</ol>
 	</div>
 	<?php
@@ -591,6 +610,10 @@ function ysf_wizard_run( $with_samples = true ) {
 				$report[] = sprintf( __( '“%s” sayfasına doğru şablon atandı.', 'ysffoodlab' ), $existing->post_title );
 			}
 
+			if ( in_array( $page['template'], array( 'template-waiter.php', 'template-kds.php', 'template-cashier.php' ), true ) ) {
+				update_post_meta( $existing->ID, '_ysf_staff_app', 1 );
+			}
+
 			if ( ! empty( $page['title_en'] ) && ! get_post_meta( $existing->ID, '_ysf_title_en', true ) ) {
 				update_post_meta( $existing->ID, '_ysf_title_en', $page['title_en'] );
 			}
@@ -618,12 +641,20 @@ function ysf_wizard_run( $with_samples = true ) {
 			update_post_meta( $id, '_wp_page_template', $page['template'] );
 		}
 
+		if ( in_array( $page['template'], array( 'template-waiter.php', 'template-kds.php', 'template-cashier.php' ), true ) ) {
+			update_post_meta( $id, '_ysf_staff_app', 1 );
+		}
+
 		if ( ! empty( $page['title_en'] ) ) {
 			update_post_meta( $id, '_ysf_title_en', $page['title_en'] );
 		}
 
 		/* translators: %s: sayfa başlığı. */
 		$report[] = sprintf( __( '“%s” sayfası oluşturuldu.', 'ysffoodlab' ), $page['title'] );
+	}
+
+	if ( isset( $page_ids['garson'] ) && isset( $page_ids['mutfak-ekrani'] ) && isset( $page_ids['kasiyer'] ) ) {
+		update_option( 'ysf_staff_pages_seeded', '1', false );
 	}
 
 	// 2. Ana sayfa ve blog sayfası ayarı.
