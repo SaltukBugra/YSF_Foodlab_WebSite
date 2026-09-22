@@ -21,38 +21,236 @@
 		return strings[ key ] || fallback || '';
 	}
 
-	function applyTwoFactorChallenge( form, payload ) {
-		var box = qs( '[data-ysf-2fa]', form );
-		var setup = qs( '[data-ysf-2fa-setup]', form );
-		var codeField = qs( '[name="ysf_2fa_code"]', form );
-		var ticket = qs( '[name="ysf_2fa_ticket"]', form );
-		var qr = qs( '[data-ysf-2fa-qr]', form );
-		var secret = qs( '[data-ysf-2fa-secret]', form );
-
-		if ( box ) {
-			box.hidden = false;
+	function revealEl( el ) {
+		if ( ! el ) {
+			return;
 		}
 
-		if ( ticket && payload.ticket ) {
+		el.hidden = false;
+		el.removeAttribute( 'hidden' );
+		el.classList.add( 'is-open' );
+	}
+
+	function hideEl( el ) {
+		if ( ! el ) {
+			return;
+		}
+
+		el.hidden = true;
+		el.setAttribute( 'hidden', '' );
+		el.classList.remove( 'is-open' );
+	}
+
+	function totpKey( payload ) {
+		if ( ! payload ) {
+			return '';
+		}
+
+		return String( payload.manual || payload.secret || '' );
+	}
+
+	function paintTwoFactorQr( form, payload ) {
+		var box = qs( '[data-ysf-2fa-qr-box]', form );
+		var secret = qs( '[data-ysf-2fa-secret]', form );
+		var key = totpKey( payload );
+		var src = payload && payload.qr ? String( payload.qr ) : '';
+
+		if ( secret ) {
+			secret.textContent = key;
+		}
+
+		if ( ! box ) {
+			return;
+		}
+
+		box.innerHTML = '';
+
+		if ( ! src && payload && payload.ticket && settings.ajaxUrl ) {
+			src = settings.ajaxUrl + ( settings.ajaxUrl.indexOf( '?' ) >= 0 ? '&' : '?' ) + 'action=ysf_2fa_qr&t=' + encodeURIComponent( payload.ticket );
+		}
+
+		if ( ! src ) {
+			return;
+		}
+
+		var img = document.createElement( 'img' );
+		img.width = 180;
+		img.height = 180;
+		img.alt = t( 'tfa_scan', 'Authenticator uygulamasıyla karekodu tarayın.' );
+		img.src = src;
+		box.appendChild( img );
+	}
+
+	function resetLoginChallenge( form, message ) {
+		var creds = qs( '[data-ysf-login-creds]', form );
+		var panel = qs( '[data-ysf-2fa-panel]', form );
+		var box = qs( '[data-ysf-2fa]', form );
+		var setup = qs( '[data-ysf-2fa-setup]', form );
+		var emailBox = qs( '[data-ysf-2fa-email]', form );
+		var codeField = qs( '[name="ysf_2fa_code"]', form );
+		var emailField = qs( '[name="ysf_2fa_email_code"]', form );
+		var ticket = qs( '[name="ysf_2fa_ticket"]', form );
+		var qrBox = qs( '[data-ysf-2fa-qr-box]', form );
+		var secret = qs( '[data-ysf-2fa-secret]', form );
+		var card = form.closest( '.ysf-staff-auth__card' );
+		var title = card ? qs( 'h1', card ) : null;
+		var pass = qs( '[name="password"]', form );
+		var button = qs( '[data-ysf-submit]', form );
+		var result = qs( '[data-ysf-result]', form );
+
+		form.removeAttribute( 'data-ysf-2fa-active' );
+
+		if ( creds ) {
+			creds.hidden = false;
+			creds.removeAttribute( 'hidden' );
+		}
+
+		qsa( '[name="login"], [name="password"]', form ).forEach( function ( field ) {
+			field.required = true;
+		} );
+
+		hideEl( panel );
+		hideEl( box );
+		hideEl( setup );
+		hideEl( emailBox );
+
+		if ( codeField ) {
+			codeField.required = false;
+			codeField.value = '';
+		}
+
+		if ( emailField ) {
+			emailField.required = false;
+			emailField.value = '';
+		}
+
+		if ( ticket ) {
+			ticket.value = '';
+		}
+
+		if ( qrBox ) {
+			qrBox.innerHTML = '';
+		}
+
+		if ( secret ) {
+			secret.textContent = '';
+		}
+
+		if ( title ) {
+			title.textContent = t( 'acc_login_title', 'Giriş yap' );
+		}
+
+		if ( button ) {
+			button.disabled = false;
+			button.textContent = t( 'acc_login_btn', 'Giriş yap' );
+		}
+
+		if ( pass ) {
+			pass.value = '';
+			pass.focus();
+		}
+
+		showFlash( result, message || t( 'tfa_or_pass_wrong', 'Kod veya şifre hatalı.' ), false );
+	}
+
+	function applyTwoFactorChallenge( form, payload ) {
+		var creds = qs( '[data-ysf-login-creds]', form );
+		var panel = qs( '[data-ysf-2fa-panel]', form );
+		var box = qs( '[data-ysf-2fa]', form );
+		var setup = qs( '[data-ysf-2fa-setup]', form );
+		var emailBox = qs( '[data-ysf-2fa-email]', form );
+		var codeField = qs( '[name="ysf_2fa_code"]', form );
+		var emailField = qs( '[name="ysf_2fa_email_code"]', form );
+		var ticket = qs( '[name="ysf_2fa_ticket"]', form );
+		var emailHint = qs( '[data-ysf-2fa-email-hint]', form );
+		var card = form.closest( '.ysf-staff-auth__card' );
+		var title = card ? qs( 'h1', card ) : null;
+		var submitBtn = qs( '[data-ysf-submit]', form );
+		var step = payload && payload.step ? payload.step : '';
+		var isEmail = '2fa_email' === step;
+		var isSetup = '2fa_setup' === step;
+
+		form.setAttribute( 'data-ysf-2fa-active', '1' );
+
+		if ( creds ) {
+			creds.hidden = true;
+		}
+
+		qsa( '[name="login"], [name="password"]', form ).forEach( function ( field ) {
+			field.required = false;
+		} );
+
+		revealEl( panel );
+
+		if ( ticket && payload && payload.ticket ) {
 			ticket.value = payload.ticket;
 		}
 
-		if ( '2fa_setup' === payload.step && setup ) {
-			setup.hidden = false;
+		if ( isEmail ) {
+			hideEl( setup );
+			hideEl( box );
+			revealEl( emailBox );
 
-			if ( qr && payload.qr ) {
-				qr.src = payload.qr;
-				qr.hidden = false;
+			if ( emailField ) {
+				emailField.required = true;
+				if ( payload.code ) {
+					emailField.value = payload.code;
+				}
+				emailField.focus();
 			}
 
-			if ( secret ) {
-				secret.textContent = payload.secret || '';
+			if ( codeField ) {
+				codeField.required = false;
+				codeField.value = '';
 			}
+
+			if ( emailHint ) {
+				emailHint.textContent = payload.email
+					? t( 'tfa_email_sent', 'Doğrulama kodu %s adresine gönderildi.' ).replace( '%s', payload.email )
+					: t( 'tfa_email_prompt', 'Şifre doğru. Karekod için e-postanıza gelen 6 haneli kodu yazın.' );
+			}
+
+			if ( title ) {
+				title.textContent = t( 'tfa_title', 'İki adımlı doğrulama' );
+			}
+
+			if ( submitBtn ) {
+				submitBtn.disabled = false;
+				submitBtn.textContent = t( 'tfa_email_continue', 'E-posta kodunu doğrula' );
+			}
+
+			return;
+		}
+
+		hideEl( emailBox );
+
+		if ( emailField ) {
+			emailField.required = false;
+		}
+
+		revealEl( box );
+
+		if ( isSetup && setup ) {
+			revealEl( setup );
+			paintTwoFactorQr( form, payload );
+		} else {
+			hideEl( setup );
+		}
+
+		if ( title ) {
+			title.textContent = isSetup
+				? t( 'tfa_scan', 'Authenticator uygulamasıyla karekodu tarayın.' )
+				: t( 'tfa_title', 'İki adımlı doğrulama' );
 		}
 
 		if ( codeField ) {
 			codeField.required = true;
 			codeField.focus();
+		}
+
+		if ( submitBtn ) {
+			submitBtn.disabled = false;
+			submitBtn.textContent = t( 'tfa_continue', 'Kodu doğrula' );
 		}
 	}
 
@@ -79,6 +277,187 @@
 		}
 
 		return formatted + ' ' + ( settings.currency || '₺' );
+	}
+
+	function campaignMoney( amount ) {
+		return Math.round( ( Number( amount ) + 1e-8 ) * 100 ) / 100;
+	}
+
+	function campaignDiscountUnit( base, kind, value ) {
+		base = Number( base ) || 0;
+		value = Number( value ) || 0;
+
+		if ( 'percent' === kind ) {
+			value = Math.min( 100, Math.max( 0, value ) );
+			return campaignMoney( base * ( 1 - ( value / 100 ) ) );
+		}
+
+		return campaignMoney( Math.max( 0, base - value ) );
+	}
+
+	function siteNow() {
+		var now = new Date();
+		var utcMs = now.getTime() + ( now.getTimezoneOffset() * 60000 );
+
+		return new Date( utcMs + ( ( Number( settings.utcOffset ) || 0 ) * 1000 ) );
+	}
+
+	function campaignPad( value ) {
+		return ( value < 10 ? '0' : '' ) + value;
+	}
+
+	function campaignRuleLive( rule ) {
+		var now = siteNow();
+		var date = now.getFullYear() + '-' + campaignPad( now.getMonth() + 1 ) + '-' + campaignPad( now.getDate() );
+		var hm = campaignPad( now.getHours() ) + ':' + campaignPad( now.getMinutes() );
+
+		if ( rule.start && date < rule.start ) {
+			return false;
+		}
+
+		if ( rule.end && date > rule.end ) {
+			return false;
+		}
+
+		if ( rule.timeStart && rule.timeEnd ) {
+			if ( rule.end && date === rule.end && hm > rule.timeEnd ) {
+				return false;
+			}
+
+			if ( hm < rule.timeStart || hm > rule.timeEnd ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	function applyCampaigns( lines ) {
+		var rules = ( Array.isArray( settings.campaigns ) ? settings.campaigns : [] ).filter( campaignRuleLive );
+		var next = ( lines || [] ).map( function ( line ) {
+			var base = Number( line.price ) || 0;
+
+			return {
+				id: Number( line.id ),
+				name: line.name,
+				qty: Number( line.qty ) || 0,
+				size: line.size || '',
+				base: base,
+				price: base,
+				offer: ''
+			};
+		} );
+
+		next.forEach( function ( line ) {
+			var best = line.base;
+			var label = '';
+
+			rules.forEach( function ( rule ) {
+				var products = ( rule.products || [] ).map( Number );
+
+				if ( products.indexOf( line.id ) === -1 ) {
+					return;
+				}
+
+				if ( 'direct' !== rule.scenario && 'qty' !== rule.scenario ) {
+					return;
+				}
+
+				if ( 'qty' === rule.scenario ) {
+					var sum = 0;
+
+					next.forEach( function ( other ) {
+						if ( products.indexOf( other.id ) !== -1 ) {
+							sum += ( Number( other.base ) || 0 ) * ( Number( other.qty ) || 0 );
+						}
+					} );
+
+					if ( sum <= Number( rule.minSpend || 0 ) + 0.001 ) {
+						return;
+					}
+				}
+
+				var priced = campaignDiscountUnit( line.base, rule.kind, rule.value );
+
+				if ( priced < best - 0.001 ) {
+					best = priced;
+					label = rule.label || '';
+				}
+			} );
+
+			line.price = best;
+			line.offer = label;
+		} );
+
+		rules.forEach( function ( rule ) {
+			if ( 'bundle' !== rule.scenario ) {
+				return;
+			}
+
+			var products = ( rule.products || [] ).map( Number );
+			var indexes = [];
+			var missing = false;
+
+			products.forEach( function ( pid ) {
+				var found = -1;
+
+				next.forEach( function ( line, index ) {
+					if ( found === -1 && line.id === pid && line.qty >= 1 && ! line.bundled ) {
+						found = index;
+					}
+				} );
+
+				if ( found === -1 ) {
+					missing = true;
+					return;
+				}
+
+				indexes.push( found );
+			} );
+
+			if ( missing || indexes.length < 2 ) {
+				return;
+			}
+
+			var sum = 0;
+
+			indexes.forEach( function ( index ) {
+				sum += Number( next[ index ].price ) || 0;
+			} );
+
+			var target = Number( rule.bundle ) || 0;
+
+			if ( target <= 0 || sum <= target + 0.001 ) {
+				return;
+			}
+
+			var left = target;
+
+			indexes.forEach( function ( index, position ) {
+				var line = next[ index ];
+				var unit = Number( line.price ) || 0;
+				var bundledUnit;
+
+				if ( position === indexes.length - 1 ) {
+					bundledUnit = campaignMoney( left );
+				} else {
+					bundledUnit = campaignMoney( unit / sum * target );
+					left = campaignMoney( left - bundledUnit );
+				}
+
+				var qty = Number( line.qty ) || 1;
+
+				line.price = campaignMoney( ( bundledUnit + ( ( qty - 1 ) * unit ) ) / qty );
+				line.offer = rule.label || line.offer;
+				line.bundled = true;
+			} );
+		} );
+
+		next.forEach( function ( line ) {
+			delete line.bundled;
+		} );
+
+		return next;
 	}
 
 	function request( action, data ) {
@@ -207,13 +586,12 @@
 			}
 
 			request( 'ysf_login', collectForm( form ) ).then( function ( response ) {
-				if ( response.ok && response.payload && ( '2fa' === response.payload.step || '2fa_setup' === response.payload.step ) ) {
+				if ( response.ok && response.payload && ( '2fa' === response.payload.step || '2fa_setup' === response.payload.step || '2fa_email' === response.payload.step || response.payload.ticket ) ) {
 					applyTwoFactorChallenge( form, response.payload );
-					showFlash( result, response.payload.message || t( 'tfa_setup_prompt', 'Authenticator kodunu yazın.' ), true );
+					showFlash( result, response.payload.message || t( 'tfa_prompt', 'Authenticator kodunu yazın.' ), true );
 
 					if ( button ) {
 						button.disabled = false;
-						button.textContent = t( 'tfa_continue', 'Kodu doğrula' );
 					}
 
 					return;
@@ -233,6 +611,11 @@
 
 					showFlash( result, okMessage, true );
 					window.location.href = response.payload.redirect || window.location.href;
+					return;
+				}
+
+				if ( response.payload && ( response.payload.reset || form.getAttribute( 'data-ysf-2fa-active' ) ) ) {
+					resetLoginChallenge( form, response.payload.message );
 					return;
 				}
 
@@ -316,7 +699,7 @@
 		}
 
 		function cartTotal() {
-			return cartLines().reduce( function ( sum, line ) {
+			return applyCampaigns( cartLines() ).reduce( function ( sum, line ) {
 				return sum + ( line.price * line.qty );
 			}, 0 );
 		}

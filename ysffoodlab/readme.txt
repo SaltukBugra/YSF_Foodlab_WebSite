@@ -62,6 +62,79 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.4.39 =
+* WordPress panelinde ve Hesabimda ayri Duyurular bolumu. Baslik, kisa aciklama, icerik, gorsel; yonetici silebilir.
+
+= 1.4.38 =
+* Saat araligi baslamadan once kampanya gizlenmez; "16:00'da basliyor" olarak gorunur.
+
+= 1.4.37 =
+* Kampanya urun listesi duzenli kart izgarasina alindi. Kampanya satirlarindaki yazi acildi. Kampanyaya gorsel eklenebilir.
+
+= 1.4.36 =
+* Adet esigi ucret esigine donustu. Secili urunlerin sepet tutari bu degeri gecince indirim uygulanir. Kampanya yazilarinin sikisik durusu acildi.
+
+= 1.4.35 =
+* Kampanyaya istege bagli saat araligi eklendi. Aralık bitince kampanya ertesi gune sarkiyorsa duyuruda "Yarin gene bekleriz" gorunur.
+
+= 1.4.34 =
+* Kampanyalar Hesabim sayfasinda da yonetilir. Sekme yalniz site yoneticisine aciktir.
+
+= 1.4.33 =
+* Kampanyalar sayfasi yonetici hesabina yeniden acildi.
+
+= 1.4.32 =
+* Yonetim panelinde Kampanyalar bolumu. Dort senaryo, tarih araligi, duyuru seridi ve ana sayfa. Suresi dolan kampanya "Suresi doldu" olarak kalir ve yalniz yonetici silebilir.
+
+= 1.4.31 =
+* Ebat girisi fiyat alaninin hemen altina alindi. Mutfak urun formunda da ebat eklenebilir.
+
+= 1.4.30 =
+* Urunlere ebat eklenebilir. Menude tek satir bilgi, online sipariste secim olarak gorunur.
+
+= 1.4.29 =
+* Online siparis ayni menu icerigini eski satir gorunumunde gosterir. S kivrimli duzen menude kalir.
+
+= 1.4.28 =
+* Menu kartlarindaki yan ve alt bosluk kalkti. Kategori basliklarina koyu zemin eklendi.
+
+= 1.4.27 =
+* Menu fotograflari ust uste ezilmeden, ortadaki S kivriminda ic ice gecmeli dizilir.
+
+= 1.4.26 =
+* Menu urunleri ortada S seklinde dalgalanan, ic ice binen tek serit halinde dizilir.
+
+= 1.4.25 =
+* Menu sayfasinda sepete ekle yok; urunler ic ice gommeli fotograflar. Fiyat, stok ve olumlu/olumsuz etiketler ayni.
+
+= 1.4.24 =
+* Menu urunleri genis fotografli kartlara donustu; gorseller alta dogru yumusakca solar. Fiyat, stok ve urun bilgisi ayni kalir.
+
+= 1.4.23 =
+* Authenticator karekodu yalnizca e-posta kodu dogrulandiktan sonra gosterilir. Yanlis kod veya sifre Hesabim girisine dondurur.
+
+= 1.4.22 =
+* Yonetici girisinde Authenticator karekodu ve elle anahtar her zaman gosterilir (hesapta 2FA kaydi olsa bile).
+
+= 1.4.21 =
+* Yonetici 2FA paneli giriste tekrar acilir; karekod ayri istekte gelir, elle anahtar JSON icinde kalir.
+
+= 1.4.20 =
+* Authenticator karekodu sitede uretilir; elle girilecek anahtar karekodun altinda buyuk yazilir.
+
+= 1.4.19 =
+* Yonetici girisinde Authenticator karekodu ve kod alani gorunmuyordu; panel zorla acilir, karekod yedek kaynaktan gelir.
+
+= 1.4.18 =
+* Kayitta telefon OTP/SMS dogrulamasi kaldirildi; uyelik e-posta kodu ile tamamlanir.
+
+= 1.4.17 =
+* Kayit OTP'si SMS yoksa e-postaya gider; kod ekranda gosterilmez.
+
+= 1.4.16 =
+* Yonetici sifresi dogruysa yalnizca Authenticator karekod ekrani acilir.
+* Kayit, telefona SMS gitmeden tamamlanmaz; ekranda kod gosterilmez.
+
 = 1.4.15 =
 * Kayit OTP: 6 haneli kod telefona SMS (Netgsm) ve e-postaya gider; hesap kod dogrulanmadan acilmaz.
 

@@ -534,37 +534,6 @@ function ysf_customize_register( $wp_customize ) {
 		)
 	);
 
-	ysf_add_setting(
-		$wp_customize,
-		'ysf_sms_usercode',
-		array(
-			'label'       => __( 'Netgsm kullanıcı kodu (kayıt OTP SMS)', 'ysffoodlab' ),
-			'section'     => 'ysf_advanced',
-			'description' => __( 'Kayıt OTP’sini telefon SMS’i olarak göndermek için. Üç alan da doluysa SMS + e-posta gider; boşsa yalnızca e-posta.', 'ysffoodlab' ),
-		)
-	);
-
-	ysf_add_setting(
-		$wp_customize,
-		'ysf_sms_pass',
-		array(
-			'label'       => __( 'Netgsm şifresi', 'ysffoodlab' ),
-			'section'     => 'ysf_advanced',
-			'type'        => 'password',
-			'description' => __( 'Netgsm panel şifresi. Boş kaydederseniz mevcut şifre korunur.', 'ysffoodlab' ),
-		)
-	);
-
-	ysf_add_setting(
-		$wp_customize,
-		'ysf_sms_header',
-		array(
-			'label'       => __( 'SMS başlığı (msgheader)', 'ysffoodlab' ),
-			'section'     => 'ysf_advanced',
-			'description' => __( 'Netgsm’de onaylı gönderici adı. Örn. YSFFOODLAB. Onaysız başlık SMS’i düşürür.', 'ysffoodlab' ),
-		)
-	);
-
 	// --- Sosyal medya -----------------------------------------------------
 	$social = array(
 		'ysf_social_instagram'   => array(

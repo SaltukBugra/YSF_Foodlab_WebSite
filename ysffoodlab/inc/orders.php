@@ -550,21 +550,56 @@ function ysf_ajax_submit_order() {
 			continue;
 		}
 
-		$price = (float) get_post_meta( $id, '_ysf_price', true );
-		$line  = array(
+		$price     = (float) get_post_meta( $id, '_ysf_price', true );
+		$item_name = ysf_field( $id, 'title' );
+		$sizes     = ysf_get_item_sizes( $id );
+		$size      = '';
+
+		if ( $sizes ) {
+			$picked   = $sizes[0];
+			$size_key = isset( $item['size'] ) ? sanitize_key( $item['size'] ) : '';
+
+			foreach ( $sizes as $option ) {
+				if ( $size_key && $option['key'] === $size_key ) {
+					$picked = $option;
+					break;
+				}
+			}
+
+			$price      = (float) $picked['price'];
+			$size       = $picked['key'];
+			$item_name .= ' (' . ysf_size_label( $picked ) . ')';
+		}
+
+		$lines[] = array(
 			'id'    => $id,
-			'name'  => get_the_title( $id ),
+			'name'  => $item_name,
 			'qty'   => $qty,
 			'price' => $price,
+			'size'  => $size,
 		);
-
-		$subtotal += $price * $qty;
-		$lines[]   = $line;
 	}
 
 	if ( empty( $lines ) ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'order_empty_error' ) ), 400 );
 	}
+
+	if ( function_exists( 'ysf_apply_campaign_prices' ) ) {
+		$lines = ysf_apply_campaign_prices( $lines );
+	}
+
+	$subtotal = 0.0;
+	$offers   = array();
+
+	foreach ( $lines as $line ) {
+		$subtotal += (float) $line['price'] * (int) $line['qty'];
+
+		if ( ! empty( $line['offer'] ) ) {
+			$offers[ $line['offer'] ] = $line['offer'];
+		}
+	}
+
+	$savings = function_exists( 'ysf_campaign_savings' ) ? ysf_campaign_savings( $lines ) : 0.0;
 
 	$min_order = (float) ysf_get_option( 'ysf_min_order', 0 );
 
@@ -612,6 +647,7 @@ function ysf_ajax_submit_order() {
 		'_ysf_note'         => $note,
 		'_ysf_items'        => $lines,
 		'_ysf_subtotal'     => ysf_price( $subtotal ),
+		'_ysf_discount'     => $savings > 0 ? ysf_price( $savings ) . ( $offers ? ' (' . implode( ', ', $offers ) . ')' : '' ) : '',
 		'_ysf_delivery_fee' => $fee > 0 ? ysf_price( $fee ) : ysf_t( 'free' ),
 		'_ysf_total'        => $total,
 		'_ysf_state'        => 'pending',
@@ -649,6 +685,7 @@ function ysf_ajax_submit_order() {
 			__( 'İstenen saat', 'ysffoodlab' )    => $time,
 			__( 'Ürünler', 'ysffoodlab' )         => implode( "\n", $item_lines ),
 			__( 'Ara toplam', 'ysffoodlab' )      => ysf_price( $subtotal ),
+			__( 'Kampanya indirimi', 'ysffoodlab' ) => $savings > 0 ? ysf_price( $savings ) : '',
 			__( 'Teslimat ücreti', 'ysffoodlab' ) => $meta['_ysf_delivery_fee'],
 			__( 'Toplam', 'ysffoodlab' )          => ysf_price( $total ),
 			__( 'Not', 'ysffoodlab' )             => $note,
@@ -709,10 +746,21 @@ function ysf_ajax_get_prices() {
 			continue;
 		}
 
+		$sizes = ysf_get_item_sizes( $id );
 		$out[ $id ] = array(
-			'price'     => (float) get_post_meta( $id, '_ysf_price', true ),
+			'price'     => $sizes ? (float) $sizes[0]['price'] : (float) get_post_meta( $id, '_ysf_price', true ),
 			'name'      => ysf_field( $id, 'title' ),
 			'orderable' => ysf_is_orderable( $id ),
+			'sizes'     => array_map(
+				function ( $size ) {
+					return array(
+						'key'   => $size['key'],
+						'label' => ysf_size_label( $size ),
+						'price' => (float) $size['price'],
+					);
+				},
+				$sizes
+			),
 		);
 	}
 

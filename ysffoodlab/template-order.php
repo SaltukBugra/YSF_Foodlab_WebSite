@@ -52,7 +52,7 @@ if ( ! empty( $ysf_me['addresses'] ) ) {
 			<div class="ysf-order-layout">
 				<div class="ysf-order-layout__main">
 					<h2><?php ysf_e( 'order_pick_menu' ); ?></h2>
-					<?php get_template_part( 'template-parts/menu-catalog', null, array( 'show_cart' => true ) ); ?>
+					<?php get_template_part( 'template-parts/menu-catalog', null, array( 'show_cart' => true, 'layout' => 'list' ) ); ?>
 
 					<h2 id="ysf-teslimat" class="ysf-order-layout__form-title"><?php ysf_e( 'order_step_info' ); ?></h2>
 

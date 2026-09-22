@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.4.15' );
+define( 'YSF_VERSION', '1.4.39' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 define( 'YSF_MAIL_FROM', 'info@ysffoodlab.com.tr' );
@@ -19,6 +19,8 @@ require_once YSF_DIR . '/inc/post-types.php';
 require_once YSF_DIR . '/inc/meta.php';
 require_once YSF_DIR . '/inc/customizer.php';
 require_once YSF_DIR . '/inc/template-tags.php';
+require_once YSF_DIR . '/inc/campaigns.php';
+require_once YSF_DIR . '/inc/announcements.php';
 require_once YSF_DIR . '/inc/orders.php';
 require_once YSF_DIR . '/inc/reservations.php';
 require_once YSF_DIR . '/inc/accounts.php';
@@ -56,6 +58,7 @@ function ysf_theme_setup() {
 	);
 
 	add_image_size( 'ysf-card', 720, 460, true );
+	add_image_size( 'ysf-menu', 960, 540, true );
 	add_image_size( 'ysf-thumb', 320, 320, true );
 	add_image_size( 'ysf-hero', 1920, 1100, true );
 
@@ -127,7 +130,9 @@ function ysf_enqueue_assets() {
 				'lang'     => ysf_lang(),
 				'currency' => ysf_get_option( 'ysf_currency', '₺' ),
 				'pollMs'   => 4000,
-				'i18n'     => ysf_staff_js_strings(),
+				'utcOffset'  => ysf_utc_offset(),
+				'i18n'       => ysf_staff_js_strings(),
+				'campaigns'  => function_exists( 'ysf_campaign_rules_for_js' ) ? ysf_campaign_rules_for_js() : array(),
 			)
 		);
 
@@ -156,6 +161,7 @@ function ysf_enqueue_assets() {
 			'hours'        => ysf_get_hours(),
 			'utcOffset'    => ysf_utc_offset(),
 			'i18n'         => ysf_js_strings(),
+			'campaigns'    => function_exists( 'ysf_campaign_rules_for_js' ) ? ysf_campaign_rules_for_js() : array(),
 		)
 	);
 
@@ -327,14 +333,28 @@ add_action( 'template_redirect', 'ysf_no_cache_form_pages', 20 );
  */
 function ysf_admin_assets() {
 	$css = '
-		.ysf-admin-note{background:#fff;border:1px solid #dcdcde;border-left:4px solid #d98324;padding:14px 18px;margin:16px 0;border-radius:4px;line-height:1.6}
-		.ysf-admin-note h2{margin-top:0;font-size:15px}
-		.ysf-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-		.ysf-meta-grid label{display:block;font-weight:600;margin-bottom:4px}
-		.ysf-meta-grid input[type=text],.ysf-meta-grid input[type=number],.ysf-meta-grid input[type=url],.ysf-meta-grid textarea,.ysf-meta-grid select{width:100%}
+		.ysf-admin-note{background:#fff;border:1px solid #dcdcde;border-left:4px solid #d98324;padding:16px 20px;margin:16px 0 20px;border-radius:4px;line-height:1.65}
+		.ysf-admin-note h2{margin:0 0 12px;font-size:16px}
+		.ysf-admin-note p{margin:0 0 10px}
+		.ysf-admin-note p:last-child{margin-bottom:0}
+		.ysf-meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 22px}
+		.ysf-meta-grid label{display:block;font-weight:600;margin-bottom:6px}
+		.ysf-meta-grid input[type=text],.ysf-meta-grid input[type=number],.ysf-meta-grid input[type=date],.ysf-meta-grid input[type=time],.ysf-meta-grid input[type=url],.ysf-meta-grid textarea,.ysf-meta-grid select{width:100%}
+		.ysf-meta-grid .description{margin:8px 0 0;line-height:1.55}
 		.ysf-meta-full{grid-column:1/-1}
-		.ysf-badge-pending{background:#f0b849;color:#1d2327;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
-		.ysf-badge-done{background:#68de7c;color:#1d2327;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+		.ysf-badge-pending{background:#f0b849;color:#1d2327;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600}
+		.ysf-badge-done{background:#68de7c;color:#1d2327;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600}
+		.ysf-badge-expired{background:#dcdcde;color:#1d2327;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600}
+		.ysf-camp-products{max-height:560px;overflow:auto;border:1px solid #dcdcde;background:#fff;padding:14px;border-radius:8px}
+		.ysf-camp-search{width:100%;margin:0 0 16px;padding:8px 10px}
+		.ysf-camp-groups{display:grid;gap:18px}
+		.ysf-camp-cat{margin:0 0 8px;font-size:14px}
+		.ysf-camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+		.ysf-camp-check{display:grid;grid-template-columns:18px 48px minmax(0,1fr);gap:8px;align-items:center;margin:0;padding:8px;border:1px solid #dcdcde;border-radius:8px;line-height:1.35}
+		.ysf-camp-check img{width:48px;height:48px;object-fit:cover;border-radius:6px}
+		.ysf-camp-check[hidden],.ysf-camp-group[hidden]{display:none !important}
+		.ysf-camp-label{display:block;font-weight:600;margin-bottom:8px}
+		.ysf-campaign-form{max-width:920px;margin-top:16px}
 	';
 	wp_register_style( 'ysf-admin', false, array(), YSF_VERSION ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.NotInFooter
 	wp_enqueue_style( 'ysf-admin' );

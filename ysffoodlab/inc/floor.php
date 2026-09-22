@@ -715,8 +715,7 @@ function ysf_floor_parse_items( $items ) {
 		return new WP_Error( 'empty', ysf_t( 'pos_cart_empty' ) );
 	}
 
-	$lines    = array();
-	$subtotal = 0.0;
+	$lines = array();
 
 	foreach ( $items as $item ) {
 		$id   = isset( $item['id'] ) ? (int) $item['id'] : 0;
@@ -739,12 +738,21 @@ function ysf_floor_parse_items( $items ) {
 			$line['note'] = $note;
 		}
 
-		$subtotal += $price * $qty;
-		$lines[]   = $line;
+		$lines[] = $line;
 	}
 
 	if ( empty( $lines ) ) {
 		return new WP_Error( 'empty', ysf_t( 'pos_cart_empty' ) );
+	}
+
+	if ( function_exists( 'ysf_apply_campaign_prices' ) ) {
+		$lines = ysf_apply_campaign_prices( $lines );
+	}
+
+	$subtotal = 0.0;
+
+	foreach ( $lines as $line ) {
+		$subtotal += (float) $line['price'] * (int) $line['qty'];
 	}
 
 	return array(
@@ -1046,6 +1054,7 @@ function ysf_ajax_floor_menu() {
 
 	foreach ( $items as $item ) {
 		$price = (float) get_post_meta( $item->ID, '_ysf_price', true );
+		$sale  = function_exists( 'ysf_campaign_unit_price' ) ? ysf_campaign_unit_price( $item->ID, $price ) : $price;
 
 		if ( $price <= 0 ) {
 			continue;
@@ -1060,7 +1069,7 @@ function ysf_ajax_floor_menu() {
 			'id'         => (int) $item->ID,
 			'name'       => ysf_field( $item->ID, 'title' ),
 			'price'      => $price,
-			'priceLabel' => ysf_price( $price ),
+			'priceLabel' => ysf_price( $sale ),
 			'cat'        => $cat_id,
 			'thumb'      => $thumb ? $thumb : '',
 			'sold'       => $sold,

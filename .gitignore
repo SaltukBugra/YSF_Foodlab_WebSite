@@ -1,2 +1,6 @@
 ysffoodlab.zip
 *.log
+android-apps/.gradle/
+android-apps/app/build/
+android-apps/build/
+android-apps/local.properties

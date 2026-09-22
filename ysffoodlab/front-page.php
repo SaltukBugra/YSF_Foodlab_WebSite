@@ -103,7 +103,7 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 
 <?php
 // --- Kampanyalar ve duyurular ---------------------------------------------
-$ysf_campaigns = ysf_get_campaigns( array( 'limit' => 3 ) );
+$ysf_campaigns = ysf_get_campaigns( array( 'limit' => 12, 'keep_expired' => true ) );
 
 if ( $ysf_campaigns ) :
 	?>
@@ -117,13 +117,39 @@ if ( $ysf_campaigns ) :
 			<div class="ysf-grid ysf-grid--3">
 				<?php foreach ( $ysf_campaigns as $ysf_campaign ) : ?>
 					<?php
-					$ysf_badge = 'en' === ysf_lang() && get_post_meta( $ysf_campaign->ID, '_ysf_badge_en', true )
+					$ysf_expired = function_exists( 'ysf_campaign_is_expired' ) && ysf_campaign_is_expired( $ysf_campaign->ID );
+					$ysf_waiting = ! $ysf_expired && function_exists( 'ysf_campaign_awaits_tomorrow' ) && ysf_campaign_awaits_tomorrow( $ysf_campaign->ID );
+					$ysf_pending = ! $ysf_expired && ! $ysf_waiting && function_exists( 'ysf_campaign_before_window' ) && ysf_campaign_before_window( $ysf_campaign->ID );
+					$ysf_bounds  = function_exists( 'ysf_campaign_time_bounds' ) ? ysf_campaign_time_bounds( $ysf_campaign->ID ) : null;
+					$ysf_live_badge = ( 'en' === ysf_lang() && get_post_meta( $ysf_campaign->ID, '_ysf_badge_en', true ) )
 						? get_post_meta( $ysf_campaign->ID, '_ysf_badge_en', true )
 						: get_post_meta( $ysf_campaign->ID, '_ysf_badge', true );
-					$ysf_link  = get_post_meta( $ysf_campaign->ID, '_ysf_link', true );
-					$ysf_end   = get_post_meta( $ysf_campaign->ID, '_ysf_end', true );
+					$ysf_badge   = $ysf_expired ? ysf_t( 'campaign_expired' ) : ( $ysf_waiting ? ysf_t( 'campaign_tomorrow' ) : ( $ysf_pending && $ysf_bounds ? sprintf( ysf_t( 'campaign_starts' ), $ysf_bounds['start'] ) : $ysf_live_badge ) );
+					$ysf_link    = ( $ysf_expired || $ysf_waiting ) ? '' : get_post_meta( $ysf_campaign->ID, '_ysf_link', true );
+					$ysf_end     = get_post_meta( $ysf_campaign->ID, '_ysf_end', true );
+					$ysf_meta    = '';
+
+					if ( $ysf_expired ) {
+						$ysf_meta = ysf_t( 'campaign_expired' );
+					} elseif ( $ysf_waiting ) {
+						$ysf_meta = ysf_t( 'campaign_tomorrow' );
+					} elseif ( $ysf_pending && $ysf_bounds ) {
+						$ysf_meta = sprintf( ysf_t( 'campaign_starts' ), $ysf_bounds['start'] );
+					} elseif ( $ysf_end ) {
+						$ysf_meta = ysf_t( 'valid_until' ) . ': ' . mysql2date( 'j F Y', $ysf_end );
+					}
 					?>
-					<article class="ysf-card">
+					<article
+						class="ysf-card<?php echo $ysf_expired ? ' is-expired' : ''; ?><?php echo $ysf_waiting ? ' is-waiting' : ''; ?><?php echo $ysf_pending ? ' is-pending' : ''; ?>"
+						data-ysf-camp-notice
+						data-title="<?php echo esc_attr( ysf_field( $ysf_campaign->ID, 'title' ) ); ?>"
+						data-badge="<?php echo esc_attr( (string) $ysf_live_badge ); ?>"
+						data-meta="<?php echo esc_attr( $ysf_end ? ysf_t( 'valid_until' ) . ': ' . mysql2date( 'j F Y', $ysf_end ) : '' ); ?>"
+						data-start="<?php echo esc_attr( (string) get_post_meta( $ysf_campaign->ID, '_ysf_start', true ) ); ?>"
+						data-end="<?php echo esc_attr( (string) $ysf_end ); ?>"
+						data-time-start="<?php echo esc_attr( $ysf_bounds ? $ysf_bounds['start'] : '' ); ?>"
+						data-time-end="<?php echo esc_attr( $ysf_bounds ? $ysf_bounds['end'] : '' ); ?>"
+					>
 						<?php if ( has_post_thumbnail( $ysf_campaign->ID ) ) : ?>
 							<div class="ysf-card__media">
 								<?php
@@ -138,24 +164,24 @@ if ( $ysf_campaigns ) :
 								);
 								?>
 								<?php if ( $ysf_badge ) : ?>
-									<span class="ysf-card__badge"><?php echo esc_html( $ysf_badge ); ?></span>
+									<span class="ysf-card__badge" data-ysf-camp-badge><?php echo esc_html( $ysf_badge ); ?></span>
 								<?php endif; ?>
 							</div>
 						<?php endif; ?>
 
 						<div class="ysf-card__body">
 							<?php if ( $ysf_badge && ! has_post_thumbnail( $ysf_campaign->ID ) ) : ?>
-								<span class="ysf-tag"><?php echo esc_html( $ysf_badge ); ?></span>
+								<span class="ysf-tag" data-ysf-camp-badge><?php echo esc_html( $ysf_badge ); ?></span>
 							<?php endif; ?>
 
 							<h3 class="ysf-card__title"><?php echo esc_html( ysf_field( $ysf_campaign->ID, 'title' ) ); ?></h3>
 							<p class="ysf-card__text"><?php echo esc_html( wp_strip_all_tags( ysf_field( $ysf_campaign->ID, 'excerpt' ) ) ); ?></p>
 
 							<div class="ysf-card__foot">
-								<?php if ( $ysf_end ) : ?>
-									<span class="ysf-card__meta"><?php echo esc_html( ysf_t( 'valid_until' ) . ': ' . mysql2date( 'j F Y', $ysf_end ) ); ?></span>
+								<?php if ( $ysf_meta ) : ?>
+									<span class="ysf-card__meta" data-ysf-camp-meta><?php echo esc_html( $ysf_meta ); ?></span>
 								<?php else : ?>
-									<span></span>
+									<span data-ysf-camp-meta></span>
 								<?php endif; ?>
 
 								<?php if ( $ysf_link ) : ?>
@@ -192,7 +218,7 @@ if ( $ysf_featured ) :
 				<h2><?php ysf_e( 'menu_title' ); ?></h2>
 			</div>
 
-			<div class="ysf-grid ysf-grid--3">
+			<div class="ysf-grid ysf-grid--2">
 				<?php
 				global $post;
 				foreach ( $ysf_featured as $ysf_featured_item ) :

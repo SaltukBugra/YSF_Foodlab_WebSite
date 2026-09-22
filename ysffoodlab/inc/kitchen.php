@@ -314,6 +314,9 @@ function ysf_ajax_kitchen_save() {
 	}
 
 	update_post_meta( $post_id, '_ysf_price', $price );
+	$raw_sizes = isset( $_POST['sizes'] ) ? wp_unslash( $_POST['sizes'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$decoded   = is_string( $raw_sizes ) ? json_decode( $raw_sizes, true ) : $raw_sizes;
+	update_post_meta( $post_id, '_ysf_sizes', ysf_sanitize_sizes( is_array( $decoded ) ? $decoded : array() ) );
 	ysf_set_meta_flag( $post_id, '_ysf_sold_out', $sold );
 	ysf_set_meta_flag( $post_id, '_ysf_orderable', $order );
 	ysf_set_meta_flag( $post_id, '_ysf_vegetarian', ! empty( $_POST['vegetarian'] ) );

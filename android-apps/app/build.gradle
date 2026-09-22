@@ -1,0 +1,56 @@
+plugins {
+	id "com.android.application"
+}
+
+android {
+	namespace "tr.com.ysffoodlab.staff"
+	compileSdk 34
+
+	defaultConfig {
+		minSdk 24
+		targetSdk 34
+		versionCode 4
+		versionName "1.4.2"
+	}
+
+	flavorDimensions "role"
+	productFlavors {
+		garson {
+			dimension "role"
+			applicationId "tr.com.ysffoodlab.garson"
+			resValue "string", "app_name", "YSF Garson"
+			buildConfigField "String", "START_URL", '"https://www.ysffoodlab.com.tr/garson/"'
+			buildConfigField "boolean", "KEEP_SCREEN_ON", "false"
+		}
+		mutfak {
+			dimension "role"
+			applicationId "tr.com.ysffoodlab.mutfak"
+			resValue "string", "app_name", "YSF Mutfak"
+			buildConfigField "String", "START_URL", '"https://www.ysffoodlab.com.tr/mutfak-ekrani/"'
+			buildConfigField "boolean", "KEEP_SCREEN_ON", "true"
+		}
+		kasiyer {
+			dimension "role"
+			applicationId "tr.com.ysffoodlab.kasiyer"
+			resValue "string", "app_name", "YSF Kasiyer"
+			buildConfigField "String", "START_URL", '"https://www.ysffoodlab.com.tr/kasiyer/"'
+			buildConfigField "boolean", "KEEP_SCREEN_ON", "true"
+		}
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled false
+			signingConfig signingConfigs.debug
+		}
+	}
+
+	buildFeatures {
+		buildConfig true
+	}
+
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
+	}
+}

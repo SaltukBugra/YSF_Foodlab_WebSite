@@ -9,7 +9,7 @@ $ysf_order_url = ysf_localize_url( ysf_get_page_url_by_template( 'template-order
 $ysf_res_url   = ysf_localize_url( ysf_get_page_url_by_template( 'template-reservation.php' ) );
 $ysf_menu_url  = ysf_localize_url( ysf_get_page_url_by_template( 'template-menu.php' ) );
 $ysf_phone     = ysf_get_option( 'ysf_phone', '' );
-$ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( array( 'bar_only' => true, 'limit' => 4 ) ) : array();
+$ysf_bar_items = ysf_get_option( 'ysf_show_bar', true ) ? ysf_get_campaigns( array( 'bar_only' => true, 'keep_expired' => true, 'limit' => 8 ) ) : array();
 $ysf_acc_url   = ysf_account_url();
 $ysf_acc_label = ysf_t( 'acc_login_cta' );
 
@@ -39,13 +39,41 @@ if ( is_user_logged_in() ) {
 			<div class="ysf-topbar__ticker">
 				<span class="ysf-topbar__badge"><?php ysf_e( 'announcements' ); ?></span>
 				<div class="ysf-topbar__items" data-ysf-ticker>
+					<?php $ysf_bar_picked = false; ?>
 					<?php foreach ( $ysf_bar_items as $ysf_index => $ysf_item ) : ?>
 						<?php
-						$ysf_bar_link = get_post_meta( $ysf_item->ID, '_ysf_link', true );
-						$ysf_bar_text = ysf_field( $ysf_item->ID, 'title' );
+						$ysf_bar_link    = get_post_meta( $ysf_item->ID, '_ysf_link', true );
+						$ysf_bar_text    = ysf_field( $ysf_item->ID, 'title' );
+						$ysf_bar_expired = function_exists( 'ysf_campaign_is_expired' ) && ysf_campaign_is_expired( $ysf_item->ID );
+						$ysf_bar_wait    = ! $ysf_bar_expired && function_exists( 'ysf_campaign_awaits_tomorrow' ) && ysf_campaign_awaits_tomorrow( $ysf_item->ID );
+						$ysf_bar_pending = ! $ysf_bar_expired && ! $ysf_bar_wait && function_exists( 'ysf_campaign_before_window' ) && ysf_campaign_before_window( $ysf_item->ID );
+						$ysf_bar_bounds  = function_exists( 'ysf_campaign_time_bounds' ) ? ysf_campaign_time_bounds( $ysf_item->ID ) : null;
+						$ysf_bar_shown   = $ysf_bar_text;
+
+						if ( $ysf_bar_expired ) {
+							$ysf_bar_shown .= ' — ' . ysf_t( 'campaign_expired' );
+						} elseif ( $ysf_bar_wait ) {
+							$ysf_bar_shown .= ' — ' . ysf_t( 'campaign_tomorrow' );
+						} elseif ( $ysf_bar_pending && $ysf_bar_bounds ) {
+							$ysf_bar_shown .= ' — ' . sprintf( ysf_t( 'campaign_starts' ), $ysf_bar_bounds['start'] );
+						}
+
+						$ysf_bar_active = ! $ysf_bar_picked;
+
+						if ( $ysf_bar_active ) {
+							$ysf_bar_picked = true;
+						}
 						?>
-						<div class="ysf-topbar__item <?php echo 0 === $ysf_index ? 'is-active' : ''; ?>">
-							<span><?php echo esc_html( $ysf_bar_text ); ?></span>
+						<div
+							class="ysf-topbar__item<?php echo $ysf_bar_active ? ' is-active' : ''; ?><?php echo $ysf_bar_expired ? ' is-expired' : ''; ?><?php echo $ysf_bar_wait ? ' is-waiting' : ''; ?><?php echo $ysf_bar_pending ? ' is-pending' : ''; ?>"
+							data-ysf-camp-notice
+							data-title="<?php echo esc_attr( $ysf_bar_text ); ?>"
+							data-start="<?php echo esc_attr( (string) get_post_meta( $ysf_item->ID, '_ysf_start', true ) ); ?>"
+							data-end="<?php echo esc_attr( (string) get_post_meta( $ysf_item->ID, '_ysf_end', true ) ); ?>"
+							data-time-start="<?php echo esc_attr( $ysf_bar_bounds ? $ysf_bar_bounds['start'] : '' ); ?>"
+							data-time-end="<?php echo esc_attr( $ysf_bar_bounds ? $ysf_bar_bounds['end'] : '' ); ?>"
+						>
+							<span><?php echo esc_html( $ysf_bar_shown ); ?></span>
 							<?php if ( $ysf_bar_link ) : ?>
 								<a href="<?php echo esc_url( ysf_localize_url( $ysf_bar_link ) ); ?>"><?php ysf_e( 'read_more' ); ?></a>
 							<?php endif; ?>

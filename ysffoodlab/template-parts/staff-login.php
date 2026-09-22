@@ -21,20 +21,22 @@ $ysf_acc      = ysf_account_url();
 				<input type="hidden" name="redirect" value="<?php echo esc_url( $ysf_redirect ); ?>">
 			<?php endif; ?>
 
-			<div class="ysf-field ysf-field--full">
-				<label for="ysf-login-user"><?php ysf_e( 'acc_login_or_phone' ); ?> <span class="ysf-req">*</span></label>
-				<input type="text" id="ysf-login-user" name="login" required autocomplete="username">
-			</div>
+			<div data-ysf-login-creds>
+				<div class="ysf-field ysf-field--full">
+					<label for="ysf-login-user"><?php ysf_e( 'acc_login_or_phone' ); ?> <span class="ysf-req">*</span></label>
+					<input type="text" id="ysf-login-user" name="login" required autocomplete="username">
+				</div>
 
-			<div class="ysf-field ysf-field--full">
-				<label for="ysf-login-pass"><?php ysf_e( 'acc_password' ); ?> <span class="ysf-req">*</span></label>
-				<input type="password" id="ysf-login-pass" name="password" required autocomplete="current-password">
-			</div>
+				<div class="ysf-field ysf-field--full">
+					<label for="ysf-login-pass"><?php ysf_e( 'acc_password' ); ?> <span class="ysf-req">*</span></label>
+					<input type="password" id="ysf-login-pass" name="password" required autocomplete="current-password">
+				</div>
 
-			<label class="ysf-check">
-				<input type="checkbox" name="remember" value="1" checked>
-				<span><?php ysf_e( 'acc_remember' ); ?></span>
-			</label>
+				<label class="ysf-check">
+					<input type="checkbox" name="remember" value="1" checked>
+					<span><?php ysf_e( 'acc_remember' ); ?></span>
+				</label>
+			</div>
 
 			<?php get_template_part( 'template-parts/login-2fa' ); ?>
 

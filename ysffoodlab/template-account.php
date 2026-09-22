@@ -72,20 +72,22 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 					<h2 class="ysf-auth__title"><?php ysf_e( 'acc_login_title' ); ?></h2>
 
 					<form class="ysf-form" data-ysf-form="login" novalidate>
-						<div class="ysf-field ysf-field--full">
-							<label for="ysf-login-user"><?php ysf_e( 'acc_login_or_phone' ); ?> <span class="ysf-req">*</span></label>
-							<input type="text" id="ysf-login-user" name="login" required autocomplete="username">
-						</div>
+						<div data-ysf-login-creds>
+							<div class="ysf-field ysf-field--full">
+								<label for="ysf-login-user"><?php ysf_e( 'acc_login_or_phone' ); ?> <span class="ysf-req">*</span></label>
+								<input type="text" id="ysf-login-user" name="login" required autocomplete="username">
+							</div>
 
-						<div class="ysf-field ysf-field--full">
-							<label for="ysf-login-pass"><?php ysf_e( 'acc_password' ); ?> <span class="ysf-req">*</span></label>
-							<input type="password" id="ysf-login-pass" name="password" required autocomplete="current-password">
-						</div>
+							<div class="ysf-field ysf-field--full">
+								<label for="ysf-login-pass"><?php ysf_e( 'acc_password' ); ?> <span class="ysf-req">*</span></label>
+								<input type="password" id="ysf-login-pass" name="password" required autocomplete="current-password">
+							</div>
 
-						<label class="ysf-check">
-							<input type="checkbox" name="remember" value="1" checked>
-							<span><?php ysf_e( 'acc_remember' ); ?></span>
-						</label>
+							<label class="ysf-check">
+								<input type="checkbox" name="remember" value="1" checked>
+								<span><?php ysf_e( 'acc_remember' ); ?></span>
+							</label>
+						</div>
 
 						<?php get_template_part( 'template-parts/login-2fa' ); ?>
 
@@ -103,7 +105,7 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 						</div>
 					</form>
 
-					<details class="ysf-details"<?php echo $ysf_reset['error'] ? ' open' : ''; ?>>
+					<details class="ysf-details" data-ysf-login-aside<?php echo $ysf_reset['error'] ? ' open' : ''; ?>>
 						<summary><?php ysf_e( 'acc_forgot' ); ?></summary>
 
 						<form class="ysf-form" data-ysf-form="lostpass" novalidate>
@@ -194,8 +196,6 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 
 								<div class="ysf-alert ysf-field--full" data-ysf-result hidden></div>
 
-								<p class="ysf-muted ysf-field--full"><?php ysf_e( 'acc_register_otp_hint' ); ?></p>
-
 								<div class="ysf-field ysf-field--full">
 									<button type="submit" class="ysf-btn ysf-btn--block" data-ysf-submit>
 										<?php ysf_e( 'acc_register_btn' ); ?>
@@ -207,7 +207,7 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 						<div data-ysf-verify-panel hidden>
 							<h3 class="ysf-auth__subtitle"><?php ysf_e( 'acc_verify_title' ); ?></h3>
 							<p class="ysf-muted"><?php ysf_e( 'acc_verify_lead' ); ?></p>
-							<p class="ysf-muted"><strong data-ysf-verify-dest></strong></p>
+							<p class="ysf-muted"><strong data-ysf-verify-email></strong></p>
 
 							<form class="ysf-form" data-ysf-form="verify" novalidate>
 								<input type="hidden" name="token" id="ysf-verify-token" value="">
@@ -254,17 +254,25 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 				</header>
 
 				<?php
-				$ysf_tab_kitchen = ysf_can_manage_menu() || ysf_can_view_kds();
-				$ysf_tab_waiter  = ysf_can_take_orders();
-				$ysf_tab_cashier = ysf_can_cashier();
-				$ysf_tabbed      = $ysf_tab_kitchen || $ysf_tab_waiter || $ysf_tab_cashier;
-				$ysf_tab_start   = $ysf_tab_kitchen ? 'kitchen' : ( $ysf_tab_waiter ? 'waiter' : ( $ysf_tab_cashier ? 'cashier' : 'profile' ) );
+				$ysf_tab_kitchen       = ysf_can_manage_menu() || ysf_can_view_kds();
+				$ysf_tab_campaigns     = current_user_can( 'manage_options' );
+				$ysf_tab_announcements = current_user_can( 'manage_options' );
+				$ysf_tab_waiter        = ysf_can_take_orders();
+				$ysf_tab_cashier       = ysf_can_cashier();
+				$ysf_tabbed            = $ysf_tab_kitchen || $ysf_tab_campaigns || $ysf_tab_announcements || $ysf_tab_waiter || $ysf_tab_cashier;
+				$ysf_tab_start         = $ysf_tab_kitchen ? 'kitchen' : ( $ysf_tab_campaigns ? 'campaigns' : ( $ysf_tab_announcements ? 'announcements' : ( $ysf_tab_waiter ? 'waiter' : ( $ysf_tab_cashier ? 'cashier' : 'profile' ) ) ) );
 				?>
 
 				<?php if ( $ysf_tabbed ) : ?>
 					<nav class="ysf-acc-tabs" data-ysf-acc-tabs aria-label="<?php echo esc_attr( ysf_t( 'staff_login' ) ); ?>">
 						<?php if ( $ysf_tab_kitchen ) : ?>
 							<button type="button" class="ysf-acc-tabs__tab<?php echo 'kitchen' === $ysf_tab_start ? ' is-active' : ''; ?>" data-ysf-acc-tab="kitchen"><?php ysf_e( 'kit_eyebrow' ); ?></button>
+						<?php endif; ?>
+						<?php if ( $ysf_tab_campaigns ) : ?>
+							<button type="button" class="ysf-acc-tabs__tab<?php echo 'campaigns' === $ysf_tab_start ? ' is-active' : ''; ?>" data-ysf-acc-tab="campaigns"><?php ysf_e( 'camp_tab' ); ?></button>
+						<?php endif; ?>
+						<?php if ( $ysf_tab_announcements ) : ?>
+							<button type="button" class="ysf-acc-tabs__tab<?php echo 'announcements' === $ysf_tab_start ? ' is-active' : ''; ?>" data-ysf-acc-tab="announcements"><?php ysf_e( 'ann_tab' ); ?></button>
 						<?php endif; ?>
 						<?php if ( $ysf_tab_waiter ) : ?>
 							<button type="button" class="ysf-acc-tabs__tab<?php echo 'waiter' === $ysf_tab_start ? ' is-active' : ''; ?>" data-ysf-acc-tab="waiter"><?php ysf_e( 'pos_name' ); ?></button>
@@ -288,6 +296,22 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 								<?php get_template_part( 'template-parts/kitchen-desk' ); ?>
 							</div>
 						<?php endif; ?>
+					</div>
+				<?php endif; ?>
+
+				<?php if ( $ysf_tab_campaigns ) : ?>
+					<div class="ysf-acc-panel" data-ysf-acc-panel="campaigns" <?php echo ( $ysf_tabbed && 'campaigns' !== $ysf_tab_start ) ? 'hidden' : ''; ?>>
+						<div class="ysf-card-panel ysf-card-panel--kitchen">
+							<?php get_template_part( 'template-parts/account-campaigns' ); ?>
+						</div>
+					</div>
+				<?php endif; ?>
+
+				<?php if ( $ysf_tab_announcements ) : ?>
+					<div class="ysf-acc-panel" data-ysf-acc-panel="announcements" <?php echo ( $ysf_tabbed && 'announcements' !== $ysf_tab_start ) ? 'hidden' : ''; ?>>
+						<div class="ysf-card-panel ysf-card-panel--kitchen">
+							<?php get_template_part( 'template-parts/account-announcements' ); ?>
+						</div>
 					</div>
 				<?php endif; ?>
 

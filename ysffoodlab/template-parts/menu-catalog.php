@@ -5,12 +5,18 @@
  * @package ysffoodlab
  *
  * @var array $args {
- *     @type bool $show_cart Sepete ekle butonu gösterilsin mi.
+ *     @type bool   $show_cart Sepete ekle butonu gösterilsin mi.
+ *     @type string $layout    embed (menü) veya list (online siparişin eski satır görünümü).
  * }
  */
 
 $ysf_show_cart = ! empty( $args['show_cart'] );
-$ysf_item_args = array( 'show_cart' => $ysf_show_cart );
+$ysf_layout    = ( isset( $args['layout'] ) && 'list' === $args['layout'] ) ? 'list' : 'embed';
+$ysf_item_args = array(
+	'show_cart' => $ysf_show_cart,
+	'layout'    => $ysf_layout,
+);
+$ysf_grid_class = ( 'list' === $ysf_layout ) ? 'ysf-grid' : 'ysf-grid ysf-grid--menu';
 
 $ysf_terms = get_terms(
 	array(
@@ -48,6 +54,21 @@ if ( is_wp_error( $ysf_terms ) ) {
 
 	<p class="ysf-empty" data-ysf-menu-empty hidden><?php ysf_e( 'menu_no_result' ); ?></p>
 
+	<div class="ysf-menu ysf-menu--<?php echo esc_attr( $ysf_layout ); ?>">
+
+	<?php if ( 'embed' === $ysf_layout ) : ?>
+	<svg class="ysf-menu-clips" width="0" height="0" aria-hidden="true" focusable="false">
+		<defs>
+			<clipPath id="ysf-s-left" clipPathUnits="objectBoundingBox">
+				<path d="M0.04,0 H0.88 C0.88,0.083 1,0.167 1,0.25 C1,0.333 0.88,0.417 0.88,0.5 C0.88,0.583 0.76,0.667 0.76,0.75 C0.76,0.833 0.88,0.917 0.88,1 H0.04 C0,1 0,0.99 0,0.96 V0.04 C0,0.01 0,0 0.04,0 Z" />
+			</clipPath>
+			<clipPath id="ysf-s-right" clipPathUnits="objectBoundingBox">
+				<path d="M0.12,0 H0.96 C1,0 1,0.01 1,0.04 V0.96 C1,0.99 1,1 0.96,1 H0.12 C0.12,0.917 0,0.833 0,0.75 C0,0.667 0.12,0.583 0.12,0.5 C0.12,0.417 0.24,0.333 0.24,0.25 C0.24,0.167 0.12,0.083 0.12,0 Z" />
+			</clipPath>
+		</defs>
+	</svg>
+	<?php endif; ?>
+
 	<?php foreach ( $ysf_terms as $ysf_term ) : ?>
 		<?php $ysf_items = ysf_get_menu_items( array( 'category' => $ysf_term->term_id ) ); ?>
 
@@ -65,7 +86,7 @@ if ( is_wp_error( $ysf_terms ) ) {
 				<p class="ysf-lead" style="margin-top:-12px"><?php echo esc_html( $ysf_term->description ); ?></p>
 			<?php endif; ?>
 
-			<div class="ysf-grid">
+			<div class="<?php echo esc_attr( $ysf_grid_class ); ?>">
 				<?php
 				global $post;
 				foreach ( $ysf_items as $ysf_item ) :
@@ -105,7 +126,7 @@ if ( is_wp_error( $ysf_terms ) ) {
 				<h2><?php esc_html_e( 'Diğer', 'ysffoodlab' ); ?></h2>
 				<span class="ysf-menu-group__rule"></span>
 			</div>
-			<div class="ysf-grid">
+			<div class="<?php echo esc_attr( $ysf_grid_class ); ?>">
 				<?php
 				global $post;
 				foreach ( $ysf_uncategorized as $ysf_item ) :
@@ -118,6 +139,7 @@ if ( is_wp_error( $ysf_terms ) ) {
 			</div>
 		</div>
 	<?php endif; ?>
+	</div>
 
 <?php else : ?>
 	<div class="ysf-empty">

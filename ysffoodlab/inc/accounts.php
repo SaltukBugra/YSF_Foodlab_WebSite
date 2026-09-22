@@ -735,7 +735,7 @@ function ysf_clear_pending_reg( $token, $email = '', $phone = '' ) {
 }
 
 /**
- * 6 haneli OTP üretir.
+ * 6 haneli doğrulama kodu üretir.
  *
  * @return string
  */
@@ -744,153 +744,10 @@ function ysf_otp_make() {
 }
 
 /**
- * OTP özeti.
- *
- * @param string $code Düz kod.
- * @return string
- */
-function ysf_otp_hash( $code ) {
-	return hash_hmac( 'sha256', (string) $code, wp_salt( 'auth' ) );
-}
-
-/**
- * OTP eşleşmesi.
- *
- * @param string $code Düz kod.
- * @param string $hash Saklanan özet.
- * @return bool
- */
-function ysf_otp_matches( $code, $hash ) {
-	if ( ! $code || ! $hash ) {
-		return false;
-	}
-
-	return hash_equals( (string) $hash, ysf_otp_hash( $code ) );
-}
-
-/**
- * Bekleyen kayıttaki OTP geçerli mi.
- *
- * @param array  $pending Bekleyen kayıt.
- * @param string $code    Girilen kod.
- * @return true|WP_Error
- */
-function ysf_pending_otp_ok( $pending, $code ) {
-	if ( isset( $pending['code_expires'] ) && time() > (int) $pending['code_expires'] ) {
-		return new WP_Error( 'otp_expired', ysf_t( 'acc_verify_code_exp' ) );
-	}
-
-	$ok = false;
-
-	if ( ! empty( $pending['code_hash'] ) ) {
-		$ok = ysf_otp_matches( $code, $pending['code_hash'] );
-	} elseif ( isset( $pending['code'] ) ) {
-		$ok = hash_equals( (string) $pending['code'], (string) $code );
-	}
-
-	if ( ! $ok ) {
-		return new WP_Error( 'otp_wrong', ysf_t( 'acc_verify_wrong' ) );
-	}
-
-	return true;
-}
-
-/**
- * Netgsm SMS bilgileri dolu mu.
- *
- * @return bool
- */
-function ysf_sms_configured() {
-	return (bool) ysf_get_option( 'ysf_sms_usercode', '' )
-		&& (bool) ysf_get_option( 'ysf_sms_pass', '' )
-		&& (bool) ysf_get_option( 'ysf_sms_header', '' );
-}
-
-/**
- * SMS için ülke kodlu numara (90555...).
- *
- * @param string $phone Normalize telefon.
- * @return string
- */
-function ysf_sms_msisdn( $phone ) {
-	$phone = ysf_normalize_phone( $phone );
-
-	if ( ! $phone ) {
-		return '';
-	}
-
-	return ltrim( $phone, '+' );
-}
-
-/**
- * OTP SMS gönderir (Netgsm).
- *
- * @param string $phone Normalize telefon.
- * @param string $code  OTP.
- * @return bool
- */
-function ysf_send_otp_sms( $phone, $code ) {
-	if ( ! $code || ! ysf_sms_configured() ) {
-		return false;
-	}
-
-	$msisdn = ysf_sms_msisdn( $phone );
-
-	if ( ! $msisdn ) {
-		return false;
-	}
-
-	$phone_key = 'ysf_smsn_' . md5( $msisdn );
-	$sent_n    = (int) get_transient( $phone_key );
-
-	if ( $sent_n >= 6 || ysf_rate_limited( 'otp_sms_ip', 10, 30 * MINUTE_IN_SECONDS ) ) {
-		return false;
-	}
-
-	$header  = sanitize_text_field( ysf_get_option( 'ysf_sms_header', '' ) );
-	$message = sprintf(
-		'YSF Foodlab OTP kodunuz: %s. 10 dk gecerlidir. Kimseyle paylasmayin.',
-		$code
-	);
-
-	$response = wp_remote_post(
-		'https://api.netgsm.com.tr/sms/send/get',
-		array(
-			'timeout' => 12,
-			'headers' => array(
-				'Accept' => 'text/plain',
-			),
-			'body'    => array(
-				'usercode'  => ysf_get_option( 'ysf_sms_usercode', '' ),
-				'password'  => ysf_get_option( 'ysf_sms_pass', '' ),
-				'gsmno'     => $msisdn,
-				'message'   => $message,
-				'msgheader' => $header,
-				'dil'       => 'TR',
-			),
-		)
-	);
-
-	if ( is_wp_error( $response ) ) {
-		return false;
-	}
-
-	$body = trim( (string) wp_remote_retrieve_body( $response ) );
-
-	if ( ! preg_match( '/^(00|01|02)\b/', $body ) ) {
-		return false;
-	}
-
-	set_transient( $phone_key, $sent_n + 1, 30 * MINUTE_IN_SECONDS );
-
-	return true;
-}
-
-/**
  * Doğrulama kodu e-postası gönderir.
  *
  * @param array  $pending Bekleyen kayıt.
- * @param string $code    Düz OTP.
+ * @param string $code    Düz kod.
  * @return bool
  */
 function ysf_send_verify_email( $pending, $code = '' ) {
@@ -908,7 +765,7 @@ function ysf_send_verify_email( $pending, $code = '' ) {
 		$email,
 		sprintf(
 			/* translators: %s: site adı. */
-			__( '%s — OTP doğrulama kodu', 'ysffoodlab' ),
+			__( '%s — e-posta doğrulama kodu', 'ysffoodlab' ),
 			get_bloginfo( 'name' )
 		),
 		array(
@@ -920,69 +777,31 @@ function ysf_send_verify_email( $pending, $code = '' ) {
 }
 
 /**
- * Kayıt OTP’sini SMS ve e-posta ile gönderir.
+ * Kayıt doğrulama ekranı cevabı (mail gitmese de kod gösterilir).
  *
- * @param array  $pending Bekleyen kayıt.
- * @param string $code    Düz OTP.
- * @return array{mail:bool,sms:bool}
- */
-function ysf_send_register_otp( $pending, $code ) {
-	$mail = ysf_send_verify_email( $pending, $code );
-	$sms  = false;
-
-	if ( ! empty( $pending['phone'] ) ) {
-		$sms = ysf_send_otp_sms( $pending['phone'], $code );
-	}
-
-	return array(
-		'mail' => (bool) $mail,
-		'sms'  => (bool) $sms,
-	);
-}
-
-/**
- * Kayıt doğrulama ekranı cevabı.
- *
- * @param string $token     Jeton.
- * @param array  $pending   Bekleyen kayıt.
- * @param array  $sent      mail/sms bayrakları.
- * @param string $plain_code Düz kod (yalnızca her iki kanal da düşerse).
+ * @param string $token      Jeton.
+ * @param array  $pending    Bekleyen kayıt.
+ * @param bool   $sent       Mail gitti mi.
+ * @param string $plain_code Düz kod.
  * @return array
  */
 function ysf_register_verify_payload( $token, $pending, $sent, $plain_code = '' ) {
 	$email = isset( $pending['email'] ) ? $pending['email'] : '';
-	$phone = isset( $pending['phone'] ) ? ysf_phone_display( $pending['phone'] ) : '';
-	$mail  = ! empty( $sent['mail'] );
-	$sms   = ! empty( $sent['sms'] );
+	$code  = $plain_code ? $plain_code : ( isset( $pending['code'] ) ? $pending['code'] : '' );
 	$out   = array(
-		'step'     => 'verify',
-		'token'    => $token,
-		'email'    => $email,
-		'phone'    => $phone,
-		'mailSent' => $mail,
-		'smsSent'  => $sms,
+		'step'  => 'verify',
+		'token' => $token,
+		'email' => $email,
 	);
 
-	if ( $sms && $mail ) {
-		$out['message'] = sprintf( ysf_t( 'acc_verify_sent_both' ), $phone, $email );
+	if ( $sent ) {
+		$out['message'] = sprintf( ysf_t( 'acc_verify_sent' ), $email );
 
 		return $out;
 	}
 
-	if ( $sms ) {
-		$out['message'] = sprintf( ysf_t( 'acc_verify_sent_sms' ), $phone );
-
-		return $out;
-	}
-
-	if ( $mail ) {
-		$out['message'] = sprintf( ysf_t( 'acc_verify_sent_mail' ), $email );
-
-		return $out;
-	}
-
-	$out['message']    = sprintf( ysf_t( 'acc_verify_onscreen' ), $plain_code );
-	$out['code']       = $plain_code;
+	$out['message']    = sprintf( ysf_t( 'acc_verify_onscreen' ), $code );
+	$out['code']       = $code;
 	$out['mailFailed'] = true;
 
 	return $out;
@@ -1185,26 +1004,24 @@ function ysf_ajax_register() {
 	$token   = wp_generate_password( 32, false );
 	$code    = ysf_otp_make();
 	$pending = array(
-		'name'         => $name,
-		'username'     => $username,
-		'email'        => $email,
-		'phone'        => $phone,
-		'pass'         => $pass,
-		'address'      => $address,
-		'code_hash'    => ysf_otp_hash( $code ),
-		'code_expires' => time() + 10 * MINUTE_IN_SECONDS,
-		'tries'        => 0,
-		'lang'         => ysf_lang(),
+		'name'     => $name,
+		'username' => $username,
+		'email'    => $email,
+		'phone'    => $phone,
+		'pass'     => $pass,
+		'address'  => $address,
+		'code'     => $code,
+		'tries'    => 0,
+		'lang'     => ysf_lang(),
 	);
 
 	set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
 	set_transient( ysf_pending_reg_mail_key( $email ), $token, 30 * MINUTE_IN_SECONDS );
 	set_transient( ysf_pending_reg_phone_key( $phone ), $token, 30 * MINUTE_IN_SECONDS );
 
-	$sent  = ysf_send_register_otp( $pending, $code );
-	$plain = ( empty( $sent['mail'] ) && empty( $sent['sms'] ) ) ? $code : '';
+	$sent = ysf_send_verify_email( $pending, $code );
 
-	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $plain ) );
+	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $code ) );
 }
 add_action( 'wp_ajax_nopriv_ysf_register', 'ysf_ajax_register' );
 add_action( 'wp_ajax_ysf_register', 'ysf_ajax_register' );
@@ -1226,17 +1043,13 @@ function ysf_ajax_resend_verify() {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
 	}
 
-	$code                    = ysf_otp_make();
-	$pending['code_hash']    = ysf_otp_hash( $code );
-	$pending['code_expires'] = time() + 10 * MINUTE_IN_SECONDS;
-	$pending['tries']        = 0;
-	unset( $pending['code'] );
+	$pending['code']  = ysf_otp_make();
+	$pending['tries'] = 0;
 	set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
 
-	$sent  = ysf_send_register_otp( $pending, $code );
-	$plain = ( empty( $sent['mail'] ) && empty( $sent['sms'] ) ) ? $code : '';
+	$sent = ysf_send_verify_email( $pending, $pending['code'] );
 
-	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $plain ) );
+	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $pending['code'] ) );
 }
 add_action( 'wp_ajax_nopriv_ysf_resend_verify', 'ysf_ajax_resend_verify' );
 add_action( 'wp_ajax_ysf_resend_verify', 'ysf_ajax_resend_verify' );
@@ -1263,22 +1076,16 @@ function ysf_ajax_verify_register() {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
 	}
 
-	$otp_ok = ysf_pending_otp_ok( $pending, $code );
+	$pending['tries'] = isset( $pending['tries'] ) ? (int) $pending['tries'] + 1 : 1;
 
-	if ( is_wp_error( $otp_ok ) ) {
-		if ( 'otp_expired' === $otp_ok->get_error_code() ) {
-			wp_send_json_error( array( 'message' => $otp_ok->get_error_message() ), 400 );
-		}
+	if ( $pending['tries'] > 8 ) {
+		ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_locked' ) ), 400 );
+	}
 
-		$pending['tries'] = isset( $pending['tries'] ) ? (int) $pending['tries'] + 1 : 1;
-
-		if ( $pending['tries'] > 8 ) {
-			ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
-			wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_locked' ) ), 400 );
-		}
-
+	if ( ! hash_equals( (string) $pending['code'], (string) $code ) ) {
 		set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
-		wp_send_json_error( array( 'message' => $otp_ok->get_error_message() ), 400 );
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_wrong' ) ), 400 );
 	}
 
 	if ( email_exists( $pending['email'] ) ) {
@@ -1307,7 +1114,6 @@ function ysf_ajax_verify_register() {
 	}
 
 	update_user_meta( $user_id, YSF_META_PHONE, $pending['phone'] );
-	update_user_meta( $user_id, '_ysf_verified_phone', '1' );
 	update_user_meta( $user_id, '_ysf_lang', isset( $pending['lang'] ) ? $pending['lang'] : ysf_lang() );
 	ysf_save_user_address( $user_id, 'home', isset( $pending['address'] ) ? $pending['address'] : array() );
 	ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
@@ -1386,7 +1192,7 @@ function ysf_ajax_login() {
 	$found = ysf_find_user_by_login( $login );
 
 	if ( ! $found ) {
-		wp_send_json_error( array( 'message' => ysf_t( 'acc_login_error' ) ), 401 );
+		wp_send_json_error( array( 'message' => ysf_t( 'tfa_or_pass_wrong' ), 'reset' => true ), 401 );
 	}
 
 	$user = wp_signon(
@@ -1398,26 +1204,86 @@ function ysf_ajax_login() {
 		is_ssl()
 	);
 
+	if ( ysf_user_needs_2fa( $found ) && wp_check_password( $pass, $found->user_pass, $found->ID ) ) {
+		$setup      = ! ysf_2fa_enabled( $found->ID );
+		$ticket     = isset( $_POST['ysf_2fa_ticket'] ) ? sanitize_text_field( wp_unslash( $_POST['ysf_2fa_ticket'] ) ) : '';
+		$email_code = isset( $_POST['ysf_2fa_email_code'] ) ? preg_replace( '/\D+/', '', (string) wp_unslash( $_POST['ysf_2fa_email_code'] ) ) : '';
+
+		if ( '' === $ticket ) {
+			$last   = ysf_2fa_last_challenge();
+			$ticket = isset( $last['ticket'] ) ? (string) $last['ticket'] : '';
+		}
+
+		$data = ysf_2fa_ticket_get( $ticket );
+
+		if ( is_wp_error( $user ) && 'ysf_2fa_locked' === $user->get_error_code() ) {
+			wp_send_json_error( array( 'message' => $user->get_error_message(), 'reset' => true ), 429 );
+		}
+
+		if ( is_wp_error( $user ) && 'ysf_2fa_fail' === $user->get_error_code() ) {
+			ysf_2fa_ticket_abort( $ticket );
+			wp_send_json_error( array( 'message' => ysf_t( 'tfa_or_pass_wrong' ), 'reset' => true ), 401 );
+		}
+
+		if ( ! ( $user instanceof WP_User ) ) {
+			if ( $setup && ! empty( $data['email_ok'] ) ) {
+				$payload            = ysf_2fa_client_payload( $found );
+				$payload['step']    = '2fa_setup';
+				$payload['message'] = ysf_t( 'tfa_setup_prompt' );
+
+				wp_send_json_success( $payload );
+			}
+
+			if ( $setup ) {
+				if ( '' !== $email_code ) {
+					ysf_2fa_ticket_abort( $ticket );
+					wp_send_json_error( array( 'message' => ysf_t( 'tfa_or_pass_wrong' ), 'reset' => true ), 401 );
+				}
+
+				if ( empty( $data['email_ok'] ) ) {
+					if ( ! $data || empty( $data['email_code'] ) ) {
+						$started = ysf_2fa_start_email_challenge( $found );
+						$ticket  = $started['ticket'];
+						$sent    = $started['sent'];
+						$code    = $started['code'];
+					} else {
+						$sent = true;
+						$code = '';
+					}
+
+					$masked = ysf_mask_email( $found->user_email );
+					$out    = array(
+						'step'    => '2fa_email',
+						'ticket'  => $ticket,
+						'email'   => $masked,
+						'message' => $sent
+							? sprintf( ysf_t( 'tfa_email_sent' ), $masked )
+							: sprintf( ysf_t( 'acc_verify_onscreen' ), $code ),
+					);
+
+					if ( ! $sent && $code ) {
+						$out['code']       = $code;
+						$out['mailFailed'] = true;
+					}
+
+					wp_send_json_success( $out );
+				}
+			}
+
+			if ( empty( ysf_2fa_last_challenge()['ticket'] ) ) {
+				ysf_2fa_remember_challenge( $found, false );
+			}
+
+			$payload            = ysf_2fa_client_payload( $found );
+			$payload['step']    = '2fa';
+			$payload['message'] = ysf_t( 'tfa_prompt' );
+
+			wp_send_json_success( $payload );
+		}
+	}
+
 	if ( is_wp_error( $user ) ) {
-		$code = $user->get_error_code();
-
-		if ( 'ysf_2fa' === $code || 'ysf_2fa_setup' === $code ) {
-			wp_send_json_success(
-				array_merge(
-					array(
-						'step'    => 'ysf_2fa_setup' === $code ? '2fa_setup' : '2fa',
-						'message' => $user->get_error_message(),
-					),
-					ysf_2fa_client_payload( $found )
-				)
-			);
-		}
-
-		if ( 'ysf_2fa_locked' === $code ) {
-			wp_send_json_error( array( 'message' => $user->get_error_message() ), 429 );
-		}
-
-		wp_send_json_error( array( 'message' => ysf_t( 'acc_login_error' ) ), 401 );
+		wp_send_json_error( array( 'message' => ysf_t( 'tfa_or_pass_wrong' ), 'reset' => true ), 401 );
 	}
 
 	wp_set_current_user( $user->ID );

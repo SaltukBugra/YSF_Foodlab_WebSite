@@ -70,6 +70,14 @@ foreach ( $ysf_items as $ysf_item ) {
 			<input type="number" id="ysf-kit-price" name="price" min="0" step="0.01" inputmode="decimal">
 		</div>
 
+		<div class="ysf-field ysf-field--full" data-ysf-kit-sizes>
+			<label><?php ysf_e( 'kit_sizes' ); ?></label>
+			<p class="ysf-muted"><?php ysf_e( 'kit_sizes_hint' ); ?></p>
+			<div class="ysf-kit-sizes__rows" data-ysf-size-rows></div>
+			<button type="button" class="ysf-btn ysf-btn--sm ysf-btn--ghost" data-ysf-size-add><?php ysf_e( 'kit_size_add' ); ?></button>
+			<input type="hidden" name="sizes" value="[]">
+		</div>
+
 		<div class="ysf-field ysf-field--full">
 			<label for="ysf-kit-excerpt"><?php ysf_e( 'kit_desc' ); ?></label>
 			<textarea id="ysf-kit-excerpt" name="excerpt" rows="3" maxlength="400"></textarea>
@@ -174,6 +182,7 @@ foreach ( $ysf_items as $ysf_item ) {
 			$ysf_gf     = ysf_meta_flag( $ysf_id, '_ysf_glutenfree' );
 			$ysf_spicy  = ysf_meta_flag( $ysf_id, '_ysf_spicy' );
 			$ysf_tags   = ysf_get_item_tags( $ysf_id );
+			$ysf_sizes  = ysf_get_item_sizes( $ysf_id );
 			?>
 			<article
 				class="ysf-kitchen__row<?php echo $ysf_sold ? ' is-soldout' : ''; ?>"
@@ -190,6 +199,7 @@ foreach ( $ysf_items as $ysf_item ) {
 				data-glutenfree="<?php echo $ysf_gf ? '1' : '0'; ?>"
 				data-spicy="<?php echo $ysf_spicy ? '1' : '0'; ?>"
 				data-tags="<?php echo esc_attr( wp_json_encode( $ysf_tags ) ); ?>"
+				data-sizes="<?php echo esc_attr( wp_json_encode( $ysf_sizes ) ); ?>"
 				data-search="<?php echo esc_attr( strtolower( $ysf_item->post_title . ' ' . $ysf_desc ) ); ?>"
 			>
 				<?php if ( $ysf_thumb ) : ?>
