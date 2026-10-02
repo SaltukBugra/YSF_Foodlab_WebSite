@@ -182,10 +182,16 @@ if ( is_user_logged_in() ) {
 		</nav>
 
 		<div class="ysf-header__actions">
+			<?php if ( ysf_get_option( 'ysf_dark_mode', true ) ) : ?>
+				<button type="button" class="ysf-theme-btn" data-ysf-theme-toggle aria-pressed="false" aria-label="<?php echo esc_attr( ysf_t( 'theme_dark' ) ); ?>">
+					<svg class="ysf-theme-btn__moon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+					<svg class="ysf-theme-btn__sun" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+				</button>
+			<?php endif; ?>
 			<?php if ( ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url ) : ?>
-				<button type="button" class="ysf-cart-btn" data-ysf-cart-open hidden>
+				<button type="button" class="ysf-cart-btn" data-ysf-cart-open aria-controls="ysf-cart" aria-expanded="false" aria-label="<?php echo esc_attr( ysf_t( 'cart_title' ) ); ?>" hidden>
 					<?php echo ysf_icon( 'cart' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<span class="ysf-cart-btn__count" data-ysf-cart-count>0</span>
+					<span class="ysf-cart-btn__count" data-ysf-cart-count aria-hidden="true">0</span>
 				</button>
 				<a class="ysf-btn ysf-btn--sm" href="<?php echo esc_url( $ysf_order_url ); ?>">
 					<?php ysf_e( 'cta_order' ); ?>

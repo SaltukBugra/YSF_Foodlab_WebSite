@@ -63,6 +63,7 @@ $ysf_logo_id  = get_theme_mod( 'custom_logo' );
 		<?php get_template_part( 'template-parts/staff-tabs', null, array( 'current' => 'cashier' ) ); ?>
 
 		<div class="ysf-pos__flash" data-ysf-pos-flash hidden></div>
+		<div class="ysf-pos__calls" data-ysf-calls role="status" aria-live="polite" hidden></div>
 
 		<section class="ysf-pos__view is-active" data-ysf-view="floor">
 			<div class="ysf-cash__summary" data-ysf-cash-summary>

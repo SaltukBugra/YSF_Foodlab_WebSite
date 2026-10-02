@@ -13,7 +13,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * İstemci IP adresi.
+ *
+ * Site bir CDN / ters vekil arkasındaysa REMOTE_ADDR vekilin adresidir ve
+ * tüm ziyaretçiler aynı sayacı paylaşır. Bu durumda wp-config.php içinde
+ * vekilin güvenilir başlığı tanımlanır, örn.:
+ * define( 'YSF_TRUSTED_IP_HEADER', 'HTTP_CF_CONNECTING_IP' );
+ *
+ * @return string
+ */
+function ysf_client_ip() {
+	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+
+	if ( defined( 'YSF_TRUSTED_IP_HEADER' ) && YSF_TRUSTED_IP_HEADER && ! empty( $_SERVER[ YSF_TRUSTED_IP_HEADER ] ) ) {
+		$raw   = sanitize_text_field( wp_unslash( $_SERVER[ YSF_TRUSTED_IP_HEADER ] ) );
+		$first = trim( (string) strtok( $raw, ',' ) );
+
+		if ( filter_var( $first, FILTER_VALIDATE_IP ) ) {
+			$ip = $first;
+		}
+	}
+
+	return $ip ? $ip : 'unknown';
+}
+
+/**
  * Aynı IP'den kısa sürede tekrarlanan gönderimleri engeller.
+ *
+ * Sabit pencere kullanır: ilk denemeden itibaren $window saniye içinde en
+ * fazla $limit istek. Her istek süreyi uzatmaz.
  *
  * @param string $bucket Sayaç adı.
  * @param int    $limit  İzin verilen gönderim sayısı.
@@ -21,16 +49,23 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return bool Sınır aşıldıysa true.
  */
 function ysf_rate_limited( $bucket, $limit = 5, $window = 600 ) {
-	$ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-	$key = 'ysf_rl_' . $bucket . '_' . md5( $ip );
+	$key  = 'ysf_rl_' . $bucket . '_' . md5( ysf_client_ip() );
+	$now  = time();
+	$data = get_transient( $key );
 
-	$count = (int) get_transient( $key );
+	if ( ! is_array( $data ) || empty( $data['start'] ) || ( $now - (int) $data['start'] ) >= $window ) {
+		$data = array(
+			'count' => 0,
+			'start' => $now,
+		);
+	}
 
-	if ( $count >= $limit ) {
+	if ( (int) $data['count'] >= $limit ) {
 		return true;
 	}
 
-	set_transient( $key, $count + 1, $window );
+	$data['count'] = (int) $data['count'] + 1;
+	set_transient( $key, $data, max( 1, $window - ( $now - (int) $data['start'] ) ) );
 
 	return false;
 }
@@ -225,6 +260,10 @@ add_filter( 'wp_mail_from_name', 'ysf_filter_mail_from_name' );
  * @return string
  */
 function ysf_smtp_password() {
+	if ( defined( 'YSF_SMTP_PASS' ) && '' !== (string) YSF_SMTP_PASS ) {
+		return (string) YSF_SMTP_PASS;
+	}
+
 	$pass = (string) ysf_get_option( 'ysf_smtp_pass', '' );
 	$pass = wp_unslash( $pass );
 	$pass = html_entity_decode( $pass, ENT_QUOTES, 'UTF-8' );
@@ -503,8 +542,7 @@ function ysf_ajax_submit_order() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 403 );
 	}
 
-	// Bot tuzağı: gizli alan doldurulmuşsa sessizce reddet.
-	if ( ! empty( $_POST['ysf_hp'] ) ) {
+	if ( ysf_honeypot_tripped() ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
@@ -524,6 +562,10 @@ function ysf_ajax_submit_order() {
 
 	if ( ! $name || ! ysf_valid_phone( $phone ) ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_required' ) ), 400 );
+	}
+
+	if ( empty( $_POST['consent'] ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'form_need_consent' ) ), 400 );
 	}
 
 	if ( ! is_array( $items ) || empty( $items ) ) {
@@ -662,6 +704,9 @@ function ysf_ajax_submit_order() {
 	}
 
 	ysf_attach_user_to_record( $order_id );
+	ysf_record_consent( $order_id );
+
+	$track_url = function_exists( 'ysf_order_tracking_url' ) ? ysf_order_tracking_url( $order_id ) : '';
 
 	// Bildirim e-postası.
 	$item_lines = array();
@@ -726,6 +771,7 @@ function ysf_ajax_submit_order() {
 			'orderId'  => $order_id,
 			'total'    => ysf_price( $total ),
 			'whatsapp' => $wa_url,
+			'trackUrl' => $track_url,
 		)
 	);
 }
@@ -733,12 +779,34 @@ add_action( 'wp_ajax_ysf_submit_order', 'ysf_ajax_submit_order' );
 add_action( 'wp_ajax_nopriv_ysf_submit_order', 'ysf_ajax_submit_order' );
 
 /**
+ * Önbellekten gelen sayfalar için taze genel güvenlik anahtarı.
+ *
+ * Yalnızca ziyaretçinin kendi oturumuna ait anahtarı döndürür; yetki vermez.
+ */
+function ysf_ajax_nonce() {
+	nocache_headers();
+
+	if ( ysf_rate_limited( 'nonce', 30, 300 ) ) {
+		wp_send_json_error( array(), 429 );
+	}
+
+	wp_send_json_success( array( 'nonce' => wp_create_nonce( 'ysf_public' ) ) );
+}
+add_action( 'wp_ajax_ysf_nonce', 'ysf_ajax_nonce' );
+add_action( 'wp_ajax_nopriv_ysf_nonce', 'ysf_ajax_nonce' );
+
+/**
  * Menü fiyatlarını istemciye veren yardımcı uç (sepet tutarlılığı için).
  */
 function ysf_ajax_get_prices() {
 	check_ajax_referer( 'ysf_public', 'nonce' );
 
+	if ( ysf_rate_limited( 'prices', 60, 300 ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
 	$ids = isset( $_POST['ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) : array();
+	$ids = array_slice( array_unique( array_filter( $ids ) ), 0, 100 );
 	$out = array();
 
 	foreach ( $ids as $id ) {

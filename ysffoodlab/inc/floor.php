@@ -906,6 +906,7 @@ function ysf_floor_table_status( $tickets ) {
  * @return array
  */
 function ysf_floor_tables_payload() {
+	$rev     = ysf_floor_rev();
 	$open    = ysf_floor_open_tickets();
 	$grouped = array();
 
@@ -958,6 +959,8 @@ function ysf_floor_tables_payload() {
 		'openCount' => $open_n,
 		'openTotal' => $open_t,
 		'openLabel' => ysf_price( $open_t ),
+		'calls'     => ysf_table_calls_payload(),
+		'rev'       => $rev,
 		'stamp'     => time(),
 	);
 }
@@ -968,6 +971,7 @@ function ysf_floor_tables_payload() {
 function ysf_ajax_floor_tables() {
 	check_ajax_referer( 'ysf_public', 'nonce' );
 	ysf_floor_guard( 'tables' );
+	ysf_floor_maybe_unchanged();
 
 	wp_send_json_success( ysf_floor_tables_payload() );
 }
@@ -1181,15 +1185,35 @@ function ysf_ajax_floor_close() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
+	if ( ! ysf_can_cashier() ) {
+		if ( ! ysf_floor_open_tickets( $table ) ) {
+			wp_send_json_error( array( 'message' => ysf_t( 'pos_no_tickets' ) ), 400 );
+		}
+
+		ysf_add_table_call( $table, 'bill', 'waiter' );
+
+		wp_send_json_success(
+			array(
+				'message'   => ysf_t( 'pos_bill_requested' ),
+				'requested' => true,
+			)
+		);
+	}
+
+	$lock    = ysf_lock_table_or_fail( $table );
 	$tickets = ysf_floor_open_tickets( $table );
 
 	if ( ! $tickets ) {
+		ysf_unlock( $lock );
 		wp_send_json_error( array( 'message' => ysf_t( 'pos_no_tickets' ) ), 400 );
 	}
 
 	foreach ( $tickets as $ticket ) {
 		ysf_cashier_mark_paid( $ticket->ID, '' );
 	}
+
+	ysf_unlock( $lock );
+	ysf_clear_table_calls( $table );
 
 	wp_send_json_success( array( 'message' => ysf_t( 'pos_closed' ) ) );
 }
@@ -1240,9 +1264,16 @@ function ysf_ajax_floor_move() {
 		wp_send_json_error( array( 'message' => ysf_t( 'pos_move_same' ) ), 400 );
 	}
 
+	$pair  = array( $from, $to );
+	sort( $pair, SORT_STRING );
+	$lock1 = ysf_lock_table_or_fail( $pair[0] );
+	$lock2 = ysf_lock_table_or_fail( $pair[1] );
+
 	$tickets = ysf_floor_open_tickets( $from );
 
 	if ( ! $tickets ) {
+		ysf_unlock( $lock2 );
+		ysf_unlock( $lock1 );
 		wp_send_json_error( array( 'message' => ysf_t( 'pos_no_tickets' ) ), 400 );
 	}
 
@@ -1253,6 +1284,9 @@ function ysf_ajax_floor_move() {
 
 		ysf_floor_reassign_table( $ticket->ID, $to );
 	}
+
+	ysf_unlock( $lock2 );
+	ysf_unlock( $lock1 );
 
 	wp_send_json_success(
 		array(
@@ -1281,14 +1315,17 @@ function ysf_ajax_floor_cancel() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
+	$lock    = ysf_lock_order_or_fail( $id );
 	$kitchen = ysf_order_kitchen_state( $id );
 
-	if ( 'queued' !== $kitchen ) {
+	if ( 'queued' !== $kitchen || ! in_array( get_post_meta( $id, '_ysf_state', true ), array( 'pending', 'confirmed', '' ), true ) ) {
+		ysf_unlock( $lock );
 		wp_send_json_error( array( 'message' => ysf_t( 'pos_cancel_late' ) ), 400 );
 	}
 
 	update_post_meta( $id, '_ysf_state', 'cancelled' );
 	update_post_meta( $id, '_ysf_kitchen_state', 'served' );
+	ysf_unlock( $lock );
 
 	wp_send_json_success( array( 'message' => ysf_t( 'pos_cancelled' ) ) );
 }
@@ -1305,6 +1342,10 @@ function ysf_cashier_mark_paid( $order_id, $method = '' ) {
 	$user     = wp_get_current_user();
 	$methods  = ysf_cashier_pay_methods();
 
+	if ( in_array( get_post_meta( $order_id, '_ysf_state', true ), array( 'done', 'cancelled' ), true ) ) {
+		return false;
+	}
+
 	update_post_meta( $order_id, '_ysf_state', 'done' );
 	update_post_meta( $order_id, '_ysf_kitchen_state', 'served' );
 	update_post_meta( $order_id, '_ysf_paid_at', time() );
@@ -1317,6 +1358,8 @@ function ysf_cashier_mark_paid( $order_id, $method = '' ) {
 		update_post_meta( $order_id, '_ysf_cashier_id', (int) $user->ID );
 		update_post_meta( $order_id, '_ysf_cashier_name', $user->display_name );
 	}
+
+	return true;
 }
 
 /**
@@ -1388,6 +1431,7 @@ function ysf_cashier_today_summary() {
 function ysf_ajax_cashier_tables() {
 	check_ajax_referer( 'ysf_public', 'nonce' );
 	ysf_floor_guard( 'cashier' );
+	ysf_floor_maybe_unchanged();
 
 	$payload            = ysf_floor_tables_payload();
 	$payload['summary'] = ysf_cashier_today_summary();
@@ -1449,15 +1493,20 @@ function ysf_ajax_cashier_pay() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
+	$lock    = ysf_lock_table_or_fail( $table );
 	$tickets = ysf_floor_open_tickets( $table );
 
 	if ( ! $tickets ) {
+		ysf_unlock( $lock );
 		wp_send_json_error( array( 'message' => ysf_t( 'pos_no_tickets' ) ), 400 );
 	}
 
 	foreach ( $tickets as $ticket ) {
 		ysf_cashier_mark_paid( $ticket->ID, $method );
 	}
+
+	ysf_unlock( $lock );
+	ysf_clear_table_calls( $table );
 
 	wp_send_json_success(
 		array(
@@ -1474,6 +1523,10 @@ add_action( 'wp_ajax_ysf_cashier_pay', 'ysf_ajax_cashier_pay' );
 function ysf_ajax_kds_tickets() {
 	check_ajax_referer( 'ysf_public', 'nonce' );
 	ysf_floor_guard( 'kds' );
+	ysf_floor_maybe_unchanged();
+
+	$rev     = ysf_floor_rev();
+	$private = ! ysf_can_cashier() && ! ysf_can_take_orders();
 
 	$include_online = ysf_is_flag_value( ysf_get_option( 'ysf_kds_online', true ), true );
 	$posts = get_posts(
@@ -1509,6 +1562,10 @@ function ysf_ajax_kds_tickets() {
 
 		$row = ysf_floor_ticket_payload( $post );
 
+		if ( $row && $private ) {
+			unset( $row['phone'], $row['address'] );
+		}
+
 		if ( $row ) {
 			$tickets[] = $row;
 		}
@@ -1517,6 +1574,7 @@ function ysf_ajax_kds_tickets() {
 	wp_send_json_success(
 		array(
 			'tickets' => $tickets,
+			'rev'     => $rev,
 			'stamp'   => time(),
 		)
 	);
@@ -1538,11 +1596,27 @@ function ysf_ajax_kds_state() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
+	$lock  = ysf_lock_order_or_fail( $id );
+	$order = array_keys( ysf_kitchen_states() );
+
+	if ( array_search( $state, $order, true ) <= array_search( ysf_order_kitchen_state( $id ), $order, true ) ) {
+		ysf_unlock( $lock );
+		wp_send_json_success(
+			array(
+				'message' => ysf_t( 'kit_saved' ),
+				'ticket'  => ysf_floor_ticket_payload( $id ),
+			)
+		);
+	}
+
 	update_post_meta( $id, '_ysf_kitchen_state', $state );
+	update_post_meta( $id, '_ysf_kitchen_' . $state . '_at', time() );
 
 	if ( 'served' === $state && 'table' !== ysf_order_channel( $id ) ) {
 		update_post_meta( $id, '_ysf_state', 'done' );
 	}
+
+	ysf_unlock( $lock );
 
 	wp_send_json_success(
 		array(
@@ -1571,13 +1645,17 @@ function ysf_ajax_kds_close() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
+	$lock = ysf_lock_order_or_fail( $id );
+
 	if ( 'queued' !== ysf_order_kitchen_state( $id ) ) {
+		ysf_unlock( $lock );
 		wp_send_json_error( array( 'message' => ysf_t( 'pos_cancel_late' ) ), 400 );
 	}
 
 	update_post_meta( $id, '_ysf_state', 'cancelled' );
 	update_post_meta( $id, '_ysf_kitchen_state', 'served' );
 	update_post_meta( $id, '_ysf_close_reason', 'whatsapp_undelivered' );
+	ysf_unlock( $lock );
 
 	wp_send_json_success( array( 'message' => ysf_t( 'kds_closed' ) ) );
 }

@@ -219,6 +219,7 @@ function ysf_order_columns( $columns ) {
 		'ysf_order_total' => __( 'Tutar', 'ysffoodlab' ),
 		'ysf_res_phone'   => __( 'Telefon', 'ysffoodlab' ),
 		'ysf_status'      => __( 'Durum', 'ysffoodlab' ),
+		'ysf_rating'      => __( 'Puan', 'ysffoodlab' ),
 		'date'            => __( 'Geliş', 'ysffoodlab' ),
 	);
 }
@@ -264,6 +265,19 @@ function ysf_render_admin_columns( $column, $post_id ) {
 		case 'ysf_order_total':
 			$total = (float) get_post_meta( $post_id, '_ysf_total', true );
 			echo esc_html( ysf_price( $total ) );
+			break;
+
+		case 'ysf_rating':
+			$stars = (int) get_post_meta( $post_id, '_ysf_rating', true );
+			$note  = (string) get_post_meta( $post_id, '_ysf_rating_note', true );
+
+			if ( $stars ) {
+				printf(
+					'<span title="%1$s" style="color:#e7a417;letter-spacing:1px">%2$s</span>',
+					esc_attr( $note ),
+					esc_html( str_repeat( '★', $stars ) . str_repeat( '☆', 5 - $stars ) )
+				);
+			}
 			break;
 
 		case 'ysf_status':

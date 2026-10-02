@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), masa servisi (garson uygulaması + kasiyer kasası + mutfak ekrani), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.4.39
+Version: 1.5.0
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -32,6 +32,12 @@ Tags: restaurant, food, custom-menu, custom-logo, featured-images, translation-r
 	--ysf-green: #3f6b4f;
 	--ysf-muted: #6d635b;
 	--ysf-muted-dark: rgba(251, 247, 241, 0.66);
+
+	--ysf-bg: var(--ysf-cream);
+	--ysf-bg-2: var(--ysf-cream-2);
+	--ysf-card: #fff;
+	--ysf-fg: var(--ysf-ink);
+	--ysf-header-bg: rgba(251, 247, 241, 0.92);
 
 	--ysf-font-head: "Playfair Display", "Georgia", "Times New Roman", serif;
 	--ysf-font-brand: "Cinzel", "Times New Roman", serif;
@@ -62,8 +68,8 @@ html {
 
 body {
 	margin: 0;
-	background: var(--ysf-cream);
-	color: var(--ysf-ink);
+	background: var(--ysf-bg);
+	color: var(--ysf-fg);
 	font-family: var(--ysf-font-body);
 	font-size: 1rem;
 	line-height: 1.65;
@@ -150,7 +156,7 @@ code,
 pre {
 	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 	font-size: 0.9em;
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 	border-radius: 6px;
 }
 
@@ -220,7 +226,7 @@ pre {
 }
 
 .ysf-section--soft {
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 }
 
 .ysf-section--dark h1,
@@ -346,12 +352,12 @@ pre {
 .ysf-btn--ghost {
 	background: transparent;
 	border-color: currentColor;
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-btn--ghost:hover {
 	background: var(--ysf-ink);
-	border-color: var(--ysf-ink);
+	border-color: var(--ysf-fg);
 	color: var(--ysf-cream);
 }
 
@@ -572,7 +578,7 @@ pre {
 	position: sticky;
 	top: 0;
 	z-index: 50;
-	background: rgba(251, 247, 241, 0.92);
+	background: var(--ysf-header-bg);
 	backdrop-filter: saturate(180%) blur(12px);
 	border-bottom: 1px solid var(--ysf-line);
 	transition: box-shadow 0.25s ease;
@@ -596,7 +602,7 @@ pre {
 	flex: none;
 	margin-block: -10px;
 	text-decoration: none;
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-brand img {
@@ -682,7 +688,7 @@ pre {
 .ysf-nav a {
 	display: block;
 	padding: 9px 4px;
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 	font-size: 0.94rem;
 	font-weight: 500;
 	text-decoration: none;
@@ -715,7 +721,7 @@ pre {
 	align-items: stretch;
 	gap: 0;
 	padding: 8px;
-	background: var(--ysf-cream);
+	background: var(--ysf-bg);
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius);
 	box-shadow: var(--ysf-shadow);
@@ -760,8 +766,8 @@ pre {
 	padding: 10px 18px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-pill);
-	background: #fff;
-	color: var(--ysf-ink);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
 	font-size: 0.88rem;
 	font-weight: 600;
 	text-decoration: none;
@@ -797,7 +803,7 @@ pre {
 	padding: 0;
 	border: 1px solid var(--ysf-line);
 	border-radius: 12px;
-	background: #fff;
+	background: var(--ysf-card);
 	cursor: pointer;
 }
 
@@ -838,7 +844,7 @@ pre {
 	   görünüp menünün içinde elle kaydırma gerektiriyor. */
 	.ysf-header {
 		backdrop-filter: none;
-		background: var(--ysf-cream);
+		background: var(--ysf-bg);
 	}
 
 	.ysf-brand img {
@@ -875,7 +881,7 @@ pre {
 		/* Üst şerit + başlık yüksekliği kadar boşluk: ilk bağlantı logonun ve
 		   kapatma düğmesinin altında kalır. */
 		padding: 148px 24px 32px;
-		background: var(--ysf-cream);
+		background: var(--ysf-bg);
 		border-left: 1px solid var(--ysf-line);
 		box-shadow: var(--ysf-shadow-lg);
 		transform: translateX(100%);
@@ -1090,7 +1096,7 @@ body.ysf-no-scroll {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-	background: #fff;
+	background: var(--ysf-card);
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-lg);
 	overflow: hidden;
@@ -1106,7 +1112,7 @@ body.ysf-no-scroll {
 .ysf-card__media {
 	position: relative;
 	aspect-ratio: 16 / 10;
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 	overflow: hidden;
 }
 
@@ -1251,7 +1257,7 @@ body.ysf-no-scroll {
 	font-family: var(--ysf-font-head);
 	font-size: 1.3rem;
 	font-weight: 700;
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 	white-space: nowrap;
 }
 
@@ -1305,8 +1311,8 @@ body.ysf-no-scroll {
 	padding: 6px 8px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 8px;
-	background: #fff;
-	color: var(--ysf-ink);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
 	font: inherit;
 	font-size: 0.82rem;
 }
@@ -1323,7 +1329,7 @@ body.ysf-no-scroll {
 	gap: 8px;
 	margin-bottom: clamp(24px, 4vw, 40px);
 	padding-block: 14px;
-	background: var(--ysf-cream);
+	background: var(--ysf-bg);
 	overflow-x: auto;
 	scrollbar-width: none;
 }
@@ -1337,8 +1343,8 @@ body.ysf-no-scroll {
 	padding: 9px 18px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-pill);
-	background: #fff;
-	color: var(--ysf-ink);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
 	font-family: inherit;
 	font-size: 0.88rem;
 	font-weight: 600;
@@ -1353,7 +1359,7 @@ body.ysf-no-scroll {
 
 .ysf-filter.is-active {
 	background: var(--ysf-ink);
-	border-color: var(--ysf-ink);
+	border-color: var(--ysf-fg);
 	color: var(--ysf-cream);
 }
 
@@ -1405,7 +1411,7 @@ body.ysf-no-scroll {
 
 .ysf-item--noimg {
 	padding: 18px 18px 16px;
-	background: #fff;
+	background: var(--ysf-card);
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-lg);
 }
@@ -1469,7 +1475,7 @@ body.ysf-no-scroll {
 	position: relative;
 	aspect-ratio: 4 / 3;
 	overflow: hidden;
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 }
 
 .ysf-grid--menu > .ysf-item--embed .ysf-item__media {
@@ -1645,7 +1651,7 @@ body.ysf-no-scroll {
 	gap: 18px;
 	align-items: center;
 	padding: 16px;
-	background: #fff;
+	background: var(--ysf-card);
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius);
 	overflow: visible;
@@ -1716,7 +1722,7 @@ body.ysf-no-scroll {
 }
 
 .ysf-menu--list .ysf-price {
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 	font-size: 1.3rem;
 }
 
@@ -1762,7 +1768,7 @@ body.ysf-no-scroll {
 	display: flex;
 	flex-direction: column;
 	width: min(94vw, 420px);
-	background: var(--ysf-cream);
+	background: var(--ysf-bg);
 	box-shadow: var(--ysf-shadow-lg);
 	transform: translateX(100%);
 	transition: transform 0.3s ease;
@@ -1791,7 +1797,7 @@ body.ysf-no-scroll {
 	height: 38px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 50%;
-	background: #fff;
+	background: var(--ysf-card);
 	font-size: 1.1rem;
 	line-height: 1;
 	cursor: pointer;
@@ -1806,7 +1812,7 @@ body.ysf-no-scroll {
 .ysf-cart__foot {
 	padding: 18px 22px 22px;
 	border-top: 1px solid var(--ysf-line);
-	background: #fff;
+	background: var(--ysf-card);
 }
 
 .ysf-cart-line {
@@ -1834,7 +1840,7 @@ body.ysf-no-scroll {
 	gap: 2px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-pill);
-	background: #fff;
+	background: var(--ysf-card);
 	overflow: hidden;
 }
 
@@ -1843,7 +1849,7 @@ body.ysf-no-scroll {
 	height: 30px;
 	border: 0;
 	background: none;
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 	font-size: 1rem;
 	line-height: 1;
 	cursor: pointer;
@@ -1878,7 +1884,7 @@ body.ysf-no-scroll {
 	margin-top: 6px;
 	padding-top: 10px;
 	border-top: 1px solid var(--ysf-line);
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 	font-family: var(--ysf-font-head);
 	font-size: 1.2rem;
 	font-weight: 700;
@@ -1924,8 +1930,8 @@ body.ysf-no-scroll {
 	padding: 12px 14px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 12px;
-	background: #fff;
-	color: var(--ysf-ink);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
 	font-family: inherit;
 	font-size: 0.95rem;
 	transition: border-color 0.18s ease, box-shadow 0.18s ease;
@@ -1968,7 +1974,7 @@ body.ysf-no-scroll {
 	padding: 6px 10px;
 	border: 0;
 	border-radius: 999px;
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 	color: var(--ysf-ink-soft);
 	font-family: inherit;
 	font-size: 0.75rem;
@@ -1980,7 +1986,7 @@ body.ysf-no-scroll {
 .ysf-pass__toggle:hover,
 .ysf-pass__toggle:focus-visible {
 	background: var(--ysf-accent-soft);
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 	outline: none;
 }
 
@@ -2017,7 +2023,7 @@ body.ysf-no-scroll {
 	padding: 12px 16px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 12px;
-	background: #fff;
+	background: var(--ysf-card);
 	font-size: 0.9rem;
 	font-weight: 600;
 	text-align: center;
@@ -2119,7 +2125,7 @@ body.ysf-no-scroll {
 }
 
 .ysf-link-btn:hover {
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-link-btn--danger {
@@ -2184,7 +2190,7 @@ body.ysf-no-scroll {
 	padding: clamp(20px, 3vw, 32px);
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-lg);
-	background: #fff;
+	background: var(--ysf-card);
 	box-shadow: var(--ysf-shadow);
 }
 
@@ -2240,7 +2246,7 @@ body.ysf-no-scroll {
 	gap: 6px;
 	padding: 4px;
 	margin: 0 0 var(--ysf-gap);
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 	border-radius: var(--ysf-radius-pill);
 }
 
@@ -2274,8 +2280,8 @@ body.ysf-no-scroll {
 .ysf-acc-tabs__tab.is-active,
 .ysf-staff-tabs__tab.is-active,
 .ysf-staff-tabs__tab[aria-current="page"] {
-	background: #fff;
-	color: var(--ysf-ink);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
 	box-shadow: var(--ysf-shadow);
 }
 
@@ -2309,7 +2315,7 @@ body.ysf-no-scroll {
 	padding: 18px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius);
-	background: var(--ysf-cream);
+	background: var(--ysf-bg);
 }
 
 .ysf-addr-card__head {
@@ -2397,7 +2403,7 @@ body.ysf-no-scroll {
 	padding: 14px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 12px;
-	background: #fff;
+	background: var(--ysf-card);
 }
 
 .ysf-camp-search {
@@ -2438,7 +2444,7 @@ body.ysf-no-scroll {
 	padding: 8px 10px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 12px;
-	background: #fff;
+	background: var(--ysf-card);
 	line-height: 1.35;
 }
 
@@ -2488,7 +2494,7 @@ body.ysf-no-scroll {
 	padding: 18px 20px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius);
-	background: #fff;
+	background: var(--ysf-card);
 }
 
 .ysf-camp-row__thumb {
@@ -2496,7 +2502,7 @@ body.ysf-no-scroll {
 	height: 80px;
 	object-fit: cover;
 	border-radius: 12px;
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 }
 
 .ysf-camp-row__body h4 {
@@ -2523,7 +2529,7 @@ body.ysf-no-scroll {
 }
 
 .ysf-camp-row__meta strong {
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-camp-row__actions {
@@ -2580,7 +2586,7 @@ body.ysf-no-scroll {
 	padding: 18px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius);
-	background: var(--ysf-cream);
+	background: var(--ysf-bg);
 }
 
 .ysf-kitchen__form[hidden] {
@@ -2671,7 +2677,7 @@ body.ysf-no-scroll {
 	padding: 10px 14px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 999px;
-	background: #fff;
+	background: var(--ysf-card);
 }
 
 .ysf-kitchen__list {
@@ -2687,7 +2693,7 @@ body.ysf-no-scroll {
 	padding: 12px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius);
-	background: var(--ysf-cream);
+	background: var(--ysf-bg);
 }
 
 .ysf-kitchen__row.is-soldout {
@@ -2703,7 +2709,7 @@ body.ysf-no-scroll {
 	height: 72px;
 	border-radius: 12px;
 	object-fit: cover;
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 }
 
 .ysf-kitchen__info h4 {
@@ -2721,7 +2727,7 @@ body.ysf-no-scroll {
 }
 
 .ysf-kitchen__state {
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 	font-weight: 700;
 }
 
@@ -2879,7 +2885,7 @@ body.ysf-no-scroll {
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-lg);
 	padding: 22px;
-	background: #fff;
+	background: var(--ysf-card);
 }
 
 @media (min-width: 900px) {
@@ -2935,8 +2941,8 @@ body.ysf-no-scroll {
 	padding: 0 12px;
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-pill);
-	background: #fff;
-	color: var(--ysf-ink);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
 	font-size: 0.9rem;
 	font-weight: 600;
 	text-decoration: none;
@@ -2945,7 +2951,7 @@ body.ysf-no-scroll {
 .ysf-pagination .page-numbers:hover,
 .ysf-pagination .page-numbers.current {
 	background: var(--ysf-ink);
-	border-color: var(--ysf-ink);
+	border-color: var(--ysf-fg);
 	color: var(--ysf-cream);
 }
 
@@ -2965,7 +2971,7 @@ body.ysf-no-scroll {
 
 .ysf-fact {
 	padding: 26px 22px;
-	background: #fff;
+	background: var(--ysf-card);
 }
 
 .ysf-fact__num {
@@ -3189,7 +3195,7 @@ body.ysf-no-scroll {
 .ysf-social--contact a,
 .ysf-social--home a {
 	border-color: var(--ysf-line);
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-social--home {
@@ -3263,8 +3269,8 @@ body.ysf-no-scroll {
 .ysf-mobilebar a {
 	flex: 1 1 0;
 	padding: 11px 4px;
-	background: var(--ysf-cream);
-	color: var(--ysf-ink);
+	background: var(--ysf-bg);
+	color: var(--ysf-fg);
 	font-size: 0.72rem;
 	font-weight: 600;
 	text-align: center;
@@ -3459,7 +3465,7 @@ body.ysf-no-scroll {
 		border-bottom: 0;
 		border-top: 1px solid var(--ysf-line);
 		font-weight: 600;
-		color: var(--ysf-ink);
+		color: var(--ysf-fg);
 		text-decoration: none;
 	}
 
@@ -3492,7 +3498,7 @@ body.ysf-no-scroll {
 /* Kartlarin ve butonlarin uzerine gelindiginde canlanmasi */
 .ysf-card__media,
 .ysf-item__thumb {
-	background-image: linear-gradient(120deg, var(--ysf-cream-2), #e6ded2);
+	background-image: linear-gradient(120deg, var(--ysf-bg-2), #e6ded2);
 	background-size: cover;
 	background-position: center;
 }
@@ -3580,7 +3586,7 @@ body.ysf-no-scroll {
    ========================================================================== */
 
 body.ysf-staff-app {
-	background: var(--ysf-cream);
+	background: var(--ysf-bg);
 	min-height: 100dvh;
 }
 
@@ -3608,7 +3614,7 @@ body.ysf-staff-app .ysf-scrim {
 
 .ysf-staff-auth__card {
 	width: min(420px, 100%);
-	background: #fff;
+	background: var(--ysf-card);
 	border: 1px solid var(--ysf-line);
 	border-radius: var(--ysf-radius-lg);
 	padding: 28px 24px;
@@ -3771,7 +3777,7 @@ body.ysf-staff-app .ysf-scrim {
 	padding: 12px;
 	border: 1px solid var(--ysf-line);
 	border-radius: 16px;
-	background: #fff;
+	background: var(--ysf-card);
 	text-align: left;
 	font: inherit;
 	cursor: pointer;
@@ -3820,7 +3826,7 @@ body.ysf-staff-app .ysf-scrim {
 .ysf-pos__back {
 	flex: none;
 	border: 0;
-	background: var(--ysf-cream-2);
+	background: var(--ysf-bg-2);
 	border-radius: var(--ysf-radius-pill);
 	padding: 8px 12px;
 	font: inherit;
@@ -3835,7 +3841,7 @@ body.ysf-staff-app .ysf-scrim {
 }
 
 .ysf-pos__ticket {
-	background: #fff;
+	background: var(--ysf-card);
 	border: 1px solid var(--ysf-line);
 	border-radius: 16px;
 	padding: 14px;
@@ -3901,7 +3907,7 @@ body.ysf-staff-app .ysf-scrim {
 }
 
 .ysf-pos__table.is-current strong {
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-pos__table-actions {
@@ -3911,7 +3917,7 @@ body.ysf-staff-app .ysf-scrim {
 	position: sticky;
 	bottom: 0;
 	padding-top: 16px;
-	background: linear-gradient(transparent, var(--ysf-cream) 20%);
+	background: linear-gradient(transparent, var(--ysf-bg) 20%);
 }
 
 .ysf-pos__search {
@@ -3940,7 +3946,7 @@ body.ysf-staff-app .ysf-scrim {
 	grid-template-columns: 56px 1fr auto;
 	gap: 10px;
 	align-items: center;
-	background: #fff;
+	background: var(--ysf-card);
 	border: 1px solid var(--ysf-line);
 	border-radius: 14px;
 	padding: 8px;
@@ -4028,7 +4034,7 @@ body.ysf-staff-app--kds {
 }
 
 body.ysf-staff-app--kds .ysf-staff-auth__card {
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-kds__clock {
@@ -4218,7 +4224,7 @@ body.ysf-staff-app .ysf-staff-tabs {
 }
 
 .ysf-cash__summary div {
-	background: #fff;
+	background: var(--ysf-card);
 	border: 1px solid var(--ysf-line);
 	border-radius: 14px;
 	padding: 10px 12px;
@@ -4249,7 +4255,7 @@ body.ysf-staff-app .ysf-staff-tabs {
 }
 
 .ysf-pos__table.is-bill strong {
-	color: var(--ysf-ink);
+	color: var(--ysf-fg);
 }
 
 .ysf-2fa-panel[hidden] {
@@ -4317,6 +4323,787 @@ body.ysf-staff-app .ysf-staff-tabs {
 	letter-spacing: 0.08em;
 	word-break: break-all;
 	user-select: all;
-	background: #fff;
+	background: var(--ysf-card);
 	border-radius: 8px;
+}
+
+/* ==========================================================================
+   Müşteri ekleri: favori, diyet filtresi, ürün detayı, masa servisi,
+   sipariş takibi, damga kartı, karanlık mod
+   ========================================================================== */
+
+.ysf-item__open {
+	all: unset;
+	cursor: pointer;
+	font: inherit;
+	color: inherit;
+	text-align: inherit;
+}
+
+.ysf-item__open:focus-visible {
+	outline: 2px solid var(--ysf-accent);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+.ysf-item__media {
+	cursor: zoom-in;
+}
+
+.ysf-fav {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	z-index: 4;
+	display: grid;
+	place-items: center;
+	width: 38px;
+	height: 38px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(20, 16, 13, 0.45);
+	color: #fff;
+	cursor: pointer;
+	backdrop-filter: blur(6px);
+	transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.ysf-fav svg {
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+}
+
+.ysf-fav.is-on {
+	color: #ff5a5f;
+	background: rgba(255, 255, 255, 0.92);
+}
+
+.ysf-fav.is-on svg {
+	fill: currentColor;
+}
+
+.ysf-fav:active {
+	transform: scale(0.9);
+}
+
+.ysf-fav:focus-visible {
+	outline: 2px solid var(--ysf-accent);
+	outline-offset: 2px;
+}
+
+.ysf-grid--menu > .ysf-item--embed:nth-child(even) .ysf-fav {
+	left: auto;
+	right: 12px;
+}
+
+.ysf-item--noimg .ysf-fav,
+.ysf-menu--list .ysf-fav {
+	position: static;
+	order: -1;
+	align-self: flex-end;
+	background: var(--ysf-bg-2);
+	color: var(--ysf-fg);
+}
+
+.ysf-menu--list .ysf-item .ysf-fav {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	left: auto;
+	width: 32px;
+	height: 32px;
+}
+
+.ysf-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 4px 0 6px;
+}
+
+.ysf-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 6px 14px;
+	border: 1px dashed var(--ysf-line);
+	border-radius: var(--ysf-radius-pill);
+	background: transparent;
+	color: var(--ysf-fg);
+	font: inherit;
+	font-size: 0.88rem;
+	cursor: pointer;
+}
+
+.ysf-chip svg {
+	fill: currentColor;
+}
+
+.ysf-chip.is-active {
+	border-style: solid;
+	border-color: var(--ysf-green);
+	background: var(--ysf-green);
+	color: #fff;
+}
+
+.ysf-chip--fav.is-active {
+	border-color: #d9474c;
+	background: #d9474c;
+}
+
+.ysf-chips__note {
+	margin: 0 0 18px;
+	color: var(--ysf-muted);
+	font-size: 0.8rem;
+}
+
+/* Ürün detayı */
+.ysf-detail {
+	width: min(560px, calc(100vw - 24px));
+	max-height: calc(100dvh - 24px);
+	padding: 0;
+	border: 0;
+	border-radius: var(--ysf-radius-lg);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
+	box-shadow: var(--ysf-shadow-lg);
+	overflow: auto;
+}
+
+.ysf-detail::backdrop {
+	background: rgba(20, 16, 13, 0.6);
+	backdrop-filter: blur(3px);
+}
+
+.ysf-detail__close-form {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	height: 0;
+}
+
+.ysf-detail__close {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 40px;
+	height: 40px;
+	border: 0;
+	border-radius: 50%;
+	background: rgba(20, 16, 13, 0.55);
+	color: #fff;
+	font-size: 1.5rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.ysf-detail__media img {
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	object-fit: cover;
+}
+
+.ysf-detail__body {
+	padding: 20px 22px 24px;
+}
+
+.ysf-detail__body h2 {
+	margin-bottom: 8px;
+	font-size: 1.5rem;
+}
+
+.ysf-detail__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 10px;
+}
+
+.ysf-detail__desc {
+	color: var(--ysf-muted);
+}
+
+.ysf-detail__buy {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin: 16px 0 4px;
+}
+
+.ysf-detail__buy .ysf-price {
+	color: var(--ysf-fg);
+	font-size: 1.4rem;
+}
+
+.ysf-detail__buy select {
+	min-height: 44px;
+	padding: 8px 12px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
+	font: inherit;
+}
+
+.ysf-detail__pairs {
+	margin-top: 20px;
+	padding-top: 16px;
+	border-top: 1px solid var(--ysf-line);
+}
+
+.ysf-detail__pairs h3 {
+	font-size: 1.05rem;
+}
+
+.ysf-detail__pairs ul {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ysf-detail__pair {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--ysf-fg);
+	font: inherit;
+	font-size: 0.85rem;
+	text-align: left;
+	cursor: pointer;
+}
+
+.ysf-detail__pair img {
+	width: 100%;
+	aspect-ratio: 1;
+	object-fit: cover;
+	border-radius: var(--ysf-radius);
+}
+
+.ysf-detail__pair small {
+	color: var(--ysf-muted);
+}
+
+/* Masa servisi şeridi */
+.ysf-tablebar {
+	position: fixed;
+	left: 12px;
+	right: 84px;
+	bottom: 14px;
+	z-index: 63;
+	max-width: 620px;
+}
+
+.ysf-tablebar__inner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	padding: 10px 14px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
+	box-shadow: var(--ysf-shadow-lg);
+}
+
+.ysf-tablebar__label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.88rem;
+	font-weight: 600;
+}
+
+.ysf-tablebar__label select {
+	min-height: 40px;
+	padding: 6px 10px;
+	border: 1px solid var(--ysf-line);
+	border-radius: 10px;
+	background: var(--ysf-bg);
+	color: var(--ysf-fg);
+	font: inherit;
+}
+
+.ysf-tablebar__actions {
+	display: flex;
+	gap: 8px;
+}
+
+.ysf-tablebar__msg {
+	flex-basis: 100%;
+	margin: 0;
+	color: var(--ysf-muted);
+	font-size: 0.85rem;
+}
+
+.ysf-tablebar__msg:empty {
+	display: none;
+}
+
+body.has-tablebar {
+	padding-bottom: 96px;
+}
+
+@media (max-width: 700px) {
+	.ysf-tablebar {
+		left: 8px;
+		right: 8px;
+		bottom: 70px;
+	}
+
+	body.has-tablebar {
+		padding-bottom: 170px;
+	}
+
+	body.has-tablebar .ysf-float {
+		bottom: 168px;
+	}
+}
+
+/* Aktif sipariş kısayolu */
+.ysf-track-chip {
+	position: fixed;
+	left: 14px;
+	bottom: 18px;
+	z-index: 62;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	border-radius: var(--ysf-radius-pill);
+	background: var(--ysf-ink);
+	color: var(--ysf-cream);
+	font-weight: 600;
+	text-decoration: none;
+	box-shadow: var(--ysf-shadow-lg);
+}
+
+.ysf-track-chip:hover {
+	color: #fff;
+}
+
+.ysf-track-chip__dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--ysf-accent);
+	animation: ysf-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ysf-pulse {
+	50% {
+		opacity: 0.35;
+		transform: scale(0.75);
+	}
+}
+
+@media (max-width: 700px) {
+	.ysf-track-chip {
+		bottom: 72px;
+	}
+
+	body.has-tablebar .ysf-track-chip {
+		display: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ysf-track-chip__dot {
+		animation: none;
+	}
+}
+
+/* Sipariş takip sayfası */
+.ysf-wrap--narrow {
+	max-width: 640px;
+}
+
+.ysf-track h1 {
+	font-size: clamp(1.7rem, 4vw, 2.4rem);
+}
+
+.ysf-track__steps {
+	display: grid;
+	gap: 0;
+	margin: 18px 0;
+	padding: 0;
+	list-style: none;
+	counter-reset: ysf-step;
+}
+
+.ysf-track__steps li {
+	position: relative;
+	padding: 0 0 22px 44px;
+	color: var(--ysf-muted);
+	counter-increment: ysf-step;
+}
+
+.ysf-track__steps li::before {
+	content: counter(ysf-step);
+	position: absolute;
+	left: 0;
+	top: -2px;
+	display: grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	border: 2px solid var(--ysf-line);
+	border-radius: 50%;
+	background: var(--ysf-card);
+	font-size: 0.85rem;
+	font-weight: 700;
+}
+
+.ysf-track__steps li::after {
+	content: "";
+	position: absolute;
+	left: 14px;
+	top: 30px;
+	bottom: 2px;
+	width: 2px;
+	background: var(--ysf-line);
+}
+
+.ysf-track__steps li:last-child {
+	padding-bottom: 0;
+}
+
+.ysf-track__steps li:last-child::after {
+	display: none;
+}
+
+.ysf-track__steps li.is-done {
+	color: var(--ysf-fg);
+}
+
+.ysf-track__steps li.is-done::before {
+	content: "✓";
+	border-color: var(--ysf-green);
+	background: var(--ysf-green);
+	color: #fff;
+}
+
+.ysf-track__steps li.is-done::after {
+	background: var(--ysf-green);
+}
+
+.ysf-track__steps li.is-current {
+	color: var(--ysf-fg);
+	font-weight: 700;
+}
+
+.ysf-track__steps li.is-current::before {
+	border-color: var(--ysf-accent);
+	background: var(--ysf-accent);
+	color: #fff;
+	box-shadow: 0 0 0 6px var(--ysf-accent-soft);
+}
+
+.ysf-track__cancelled {
+	padding: 12px 14px;
+	border-radius: var(--ysf-radius);
+	background: #fdecec;
+	color: #8a1f1f;
+}
+
+.ysf-track__actions,
+.ysf-track__again {
+	margin: 12px 0;
+}
+
+.ysf-track__summary {
+	margin: 16px 0;
+	padding: 12px 14px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+}
+
+.ysf-track__summary summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.ysf-track__rate {
+	margin-top: 20px;
+	padding-top: 16px;
+	border-top: 1px solid var(--ysf-line);
+}
+
+.ysf-track__rate h2 {
+	font-size: 1.25rem;
+}
+
+.ysf-stars {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.ysf-stars button {
+	width: 48px;
+	height: 48px;
+	padding: 0;
+	border: 1px solid var(--ysf-line);
+	border-radius: 12px;
+	background: var(--ysf-card);
+	color: var(--ysf-line);
+	font-size: 1.6rem;
+	line-height: 1;
+	cursor: pointer;
+	transition: transform 0.15s ease;
+}
+
+.ysf-stars button.is-on {
+	border-color: #e7a417;
+	color: #e7a417;
+}
+
+.ysf-stars button:hover:not(:disabled) {
+	transform: scale(1.08);
+}
+
+.ysf-track__note {
+	display: grid;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.ysf-track__note textarea {
+	padding: 10px 12px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
+	font: inherit;
+}
+
+.ysf-track__note .ysf-btn {
+	justify-self: start;
+}
+
+/* Damga kartı */
+.ysf-loyalty {
+	margin: 0 0 18px;
+	padding: 14px 16px;
+	border-radius: var(--ysf-radius);
+	background: linear-gradient(135deg, #2a1f18, var(--ysf-ink));
+	color: var(--ysf-cream);
+}
+
+.ysf-loyalty__head {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 6px;
+	margin-bottom: 10px;
+	font-size: 0.92rem;
+}
+
+.ysf-loyalty__stamps {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ysf-loyalty__stamps li {
+	aspect-ratio: 1;
+	border: 2px dashed rgba(251, 247, 241, 0.35);
+	border-radius: 50%;
+}
+
+.ysf-loyalty__stamps li.is-on {
+	border: 0;
+	background: var(--ysf-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.2 4.2L19 7' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 60% no-repeat;
+}
+
+.ysf-loyalty__reward {
+	margin: 10px 0 0;
+	color: var(--ysf-muted-dark);
+	font-size: 0.85rem;
+}
+
+.ysf-record-list__actions {
+	display: inline-flex;
+	gap: 12px;
+	margin-left: auto;
+}
+
+/* Personel: masa çağrıları */
+.ysf-pos__calls {
+	display: grid;
+	gap: 8px;
+	margin: 0 0 14px;
+}
+
+.ysf-pos__call {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 14px;
+	border-radius: var(--ysf-radius);
+	background: #fff4e0;
+	border-left: 5px solid var(--ysf-accent);
+	color: var(--ysf-ink);
+	font-weight: 600;
+	animation: ysf-call-in 0.35s ease;
+}
+
+.ysf-pos__call.is-bill {
+	background: #e6f1e8;
+	border-left-color: var(--ysf-green);
+}
+
+.ysf-pos__call button {
+	min-height: 40px;
+	padding: 6px 14px;
+	border: 0;
+	border-radius: 10px;
+	background: var(--ysf-ink);
+	color: #fff;
+	font: inherit;
+	cursor: pointer;
+}
+
+@keyframes ysf-call-in {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+}
+
+/* Karanlık mod düğmesi */
+.ysf-theme-btn {
+	display: grid;
+	place-items: center;
+	width: 42px;
+	height: 42px;
+	padding: 0;
+	border: 1px solid var(--ysf-line);
+	border-radius: 50%;
+	background: transparent;
+	color: var(--ysf-fg);
+	cursor: pointer;
+}
+
+.ysf-theme-btn svg {
+	fill: currentColor;
+}
+
+.ysf-theme-btn__sun,
+html[data-theme="dark"] .ysf-theme-btn__moon {
+	display: none;
+}
+
+html[data-theme="dark"] .ysf-theme-btn__sun {
+	display: block;
+}
+
+/* ==========================================================================
+   Karanlık mod
+   ========================================================================== */
+
+html[data-theme="dark"] {
+	color-scheme: dark;
+	--ysf-bg: #120e0b;
+	--ysf-bg-2: #1b1511;
+	--ysf-card: #211a15;
+	--ysf-fg: #f4ebdd;
+	--ysf-line: rgba(251, 247, 241, 0.14);
+	--ysf-muted: rgba(244, 235, 221, 0.68);
+	--ysf-accent-soft: rgba(217, 131, 36, 0.18);
+	--ysf-header-bg: rgba(18, 14, 11, 0.9);
+	--ysf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+	--ysf-shadow-lg: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+}
+
+html[data-theme="dark"] :where(main) a:not([class]) {
+	color: #f0a650;
+}
+
+html[data-theme="dark"] :where(main) a:not([class]):hover {
+	color: #ffc98a;
+}
+
+html[data-theme="dark"] .ysf-btn--ghost {
+	color: var(--ysf-fg);
+	border-color: var(--ysf-line);
+}
+
+html[data-theme="dark"] .ysf-btn--ghost:hover,
+html[data-theme="dark"] .ysf-filter.is-active,
+html[data-theme="dark"] .ysf-pagination .page-numbers.current,
+html[data-theme="dark"] .ysf-tag--new,
+html[data-theme="dark"] .ysf-card__badge.ysf-tag--info {
+	background: var(--ysf-accent);
+	border-color: var(--ysf-accent);
+	color: #14100d;
+}
+
+html[data-theme="dark"] .ysf-section--dark,
+html[data-theme="dark"] .ysf-page-hero,
+html[data-theme="dark"] .ysf-footer,
+html[data-theme="dark"] .ysf-topbar {
+	background: #0b0806;
+}
+
+html[data-theme="dark"] .ysf-card--dish .ysf-card__media::after {
+	background: linear-gradient(180deg, rgba(33, 26, 21, 0) 0%, rgba(33, 26, 21, 0.62) 48%, var(--ysf-card) 100%);
+}
+
+html[data-theme="dark"] .ysf-burger span {
+	background: var(--ysf-fg);
+}
+
+html[data-theme="dark"] .ysf-field input,
+html[data-theme="dark"] .ysf-field select,
+html[data-theme="dark"] .ysf-field textarea {
+	background: var(--ysf-card);
+	color: var(--ysf-fg);
+}
+
+html[data-theme="dark"] .ysf-field input::placeholder,
+html[data-theme="dark"] .ysf-field textarea::placeholder {
+	color: rgba(244, 235, 221, 0.45);
+}
+
+html[data-theme="dark"] .ysf-alert--ok {
+	background: rgba(63, 107, 79, 0.25);
+	color: #bfe3c9;
+}
+
+html[data-theme="dark"] .ysf-alert--err {
+	background: rgba(160, 44, 44, 0.25);
+	color: #ffc7c7;
+}
+
+html[data-theme="dark"] .ysf-alert--info {
+	color: var(--ysf-fg);
+}
+
+html[data-theme="dark"] .ysf-track__cancelled {
+	background: rgba(160, 44, 44, 0.25);
+	color: #ffc7c7;
+}
+
+html[data-theme="dark"] .ysf-item__thumb {
+	filter: brightness(0.92);
+}
+
+html[data-theme="dark"] img.custom-logo {
+	filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.35));
 }

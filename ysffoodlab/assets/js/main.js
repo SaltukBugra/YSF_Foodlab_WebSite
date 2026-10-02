@@ -208,9 +208,6 @@
 
 			if ( emailField ) {
 				emailField.required = true;
-				if ( payload.code ) {
-					emailField.value = payload.code;
-				}
 				emailField.focus();
 			}
 
@@ -485,7 +482,30 @@
 		document.body.removeChild( link );
 	}
 
-	function request( action, data ) {
+	function refreshNonce() {
+		var body = new FormData();
+
+		body.append( 'action', 'ysf_nonce' );
+
+		return fetch( settings.ajaxUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			body: body
+		} ).then( function ( response ) {
+			return response.json();
+		} ).then( function ( json ) {
+			if ( json && json.success && json.data && json.data.nonce ) {
+				settings.nonce = json.data.nonce;
+				return true;
+			}
+
+			return false;
+		} ).catch( function () {
+			return false;
+		} );
+	}
+
+	function request( action, data, retried ) {
 		var body = new FormData();
 
 		body.append( 'action', action );
@@ -511,6 +531,16 @@
 		} ).then( function ( response ) {
 			return response.text().then( function ( text ) {
 				var json = null;
+
+				// Önbellekteki sayfanın güvenlik anahtarı eskidiyse yenileyip bir kez daha dene.
+				if ( 403 === response.status && '-1' === String( text ).trim() && ! retried ) {
+					return refreshNonce().then( function ( fresh ) {
+						return fresh ? request( action, data, true ) : {
+							ok: false,
+							payload: { message: t( 'form_error', 'Bir sorun oluştu. Lütfen tekrar deneyin veya bizi arayın.' ) }
+						};
+					} );
+				}
 
 				try {
 					json = text ? JSON.parse( text ) : null;
@@ -839,36 +869,110 @@
 		writeCart( cart );
 	}
 
+	var cartReturnFocus = null;
+
+	function focusables( scope ) {
+		return qsa( 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', scope ).filter( function ( el ) {
+			return ! el.hidden && null !== el.offsetParent;
+		} );
+	}
+
+	function cartKeydown( event ) {
+		var panel = qs( '[data-ysf-cart]' );
+
+		if ( ! panel || ! panel.classList.contains( 'is-open' ) ) {
+			return;
+		}
+
+		if ( 'Escape' === event.key ) {
+			event.preventDefault();
+			closeCart();
+			return;
+		}
+
+		if ( 'Tab' !== event.key ) {
+			return;
+		}
+
+		var list = focusables( panel );
+
+		if ( ! list.length ) {
+			event.preventDefault();
+			panel.focus();
+			return;
+		}
+
+		var first = list[ 0 ];
+		var last = list[ list.length - 1 ];
+
+		if ( event.shiftKey && ( document.activeElement === first || document.activeElement === panel ) ) {
+			event.preventDefault();
+			last.focus();
+		} else if ( ! event.shiftKey && document.activeElement === last ) {
+			event.preventDefault();
+			first.focus();
+		}
+	}
+
 	function openCart() {
 		var panel = qs( '[data-ysf-cart]' );
 		var scrim = qs( '[data-ysf-scrim]' );
+		var button = qs( '[data-ysf-cart-open]' );
 
 		if ( ! panel ) {
 			return;
 		}
 
+		if ( ! panel.classList.contains( 'is-open' ) ) {
+			cartReturnFocus = document.activeElement;
+		}
+
 		panel.classList.add( 'is-open' );
 		panel.setAttribute( 'aria-hidden', 'false' );
+		document.addEventListener( 'keydown', cartKeydown );
+
+		if ( button ) {
+			button.setAttribute( 'aria-expanded', 'true' );
+		}
 
 		if ( scrim ) {
 			scrim.classList.add( 'is-visible' );
 		}
+
+		window.setTimeout( function () {
+			var close = qs( '[data-ysf-cart-close]', panel );
+			( close || panel ).focus();
+		}, 60 );
 	}
 
 	function closeCart() {
 		var panel = qs( '[data-ysf-cart]' );
 		var scrim = qs( '[data-ysf-scrim]' );
+		var button = qs( '[data-ysf-cart-open]' );
 
 		if ( ! panel ) {
 			return;
 		}
 
+		var wasOpen = panel.classList.contains( 'is-open' );
+
 		panel.classList.remove( 'is-open' );
 		panel.setAttribute( 'aria-hidden', 'true' );
+		document.removeEventListener( 'keydown', cartKeydown );
+
+		if ( button ) {
+			button.setAttribute( 'aria-expanded', 'false' );
+		}
 
 		if ( scrim ) {
 			scrim.classList.remove( 'is-visible' );
 		}
+
+		if ( wasOpen && cartReturnFocus && 'function' === typeof cartReturnFocus.focus && document.contains( cartReturnFocus ) ) {
+			cartReturnFocus.focus();
+		}
+
+		cartReturnFocus = null;
 	}
 
 	function qtyControl( line ) {
@@ -878,18 +982,19 @@
 		var minus = document.createElement( 'button' );
 		minus.type = 'button';
 		minus.textContent = '−';
-		minus.setAttribute( 'aria-label', '-' );
+		minus.setAttribute( 'aria-label', t( 'qty_less', 'Bir azalt: %s' ).replace( '%s', line.name ) );
 		minus.addEventListener( 'click', function () {
 			setQty( lineKey( line ), Number( line.qty ) - 1 );
 		} );
 
 		var output = document.createElement( 'output' );
 		output.textContent = String( line.qty );
+		output.setAttribute( 'aria-label', t( 'qty_label', 'Adet' ) );
 
 		var plus = document.createElement( 'button' );
 		plus.type = 'button';
 		plus.textContent = '+';
-		plus.setAttribute( 'aria-label', '+' );
+		plus.setAttribute( 'aria-label', t( 'qty_more', 'Bir artır: %s' ).replace( '%s', line.name ) );
 		plus.addEventListener( 'click', function () {
 			setQty( lineKey( line ), Number( line.qty ) + 1 );
 		} );
@@ -1229,6 +1334,15 @@
 			input.addEventListener( 'change', toggleOrderFields );
 		} );
 
+		var seatedAt = currentTable();
+		var tableRadio = qs( 'input[name="type"][value="table"]', form );
+		var tableInput = qs( '[name="table"]', form );
+
+		if ( seatedAt && tableRadio && tableInput ) {
+			tableRadio.checked = true;
+			tableInput.value = seatedAt;
+		}
+
 		toggleOrderFields();
 
 		form.addEventListener( 'submit', function ( event ) {
@@ -1255,6 +1369,11 @@
 
 			submitForm( form, 'ysf_submit_order', data, function ( payload ) {
 				writeCart( [] );
+
+				if ( payload.trackUrl ) {
+					rememberOrder( payload.orderId, payload.trackUrl );
+					appendTrackLink( qs( '[data-ysf-result]', form ), payload.trackUrl );
+				}
 
 				if ( payload.whatsapp ) {
 					openWhatsApp( payload.whatsapp );
@@ -1410,7 +1529,11 @@
 					return;
 				}
 
-				submitForm( form, map[ name ], collectForm( form ) );
+				submitForm( form, map[ name ], collectForm( form ), function ( payload ) {
+					if ( 'reservation' === name && payload.calendar ) {
+						appendCalendarButton( result, payload.calendar );
+					}
+				} );
 			} );
 		} );
 	}
@@ -1586,12 +1709,12 @@
 		}
 
 		if ( codeField ) {
-			codeField.value = payload && payload.code ? payload.code : '';
+			codeField.value = '';
 			codeField.focus();
 		}
 
 		if ( verifyResult && payload && payload.message ) {
-			showResult( verifyResult, payload.message, true );
+			showResult( verifyResult, payload.message, ! payload.mailFailed );
 		}
 	}
 
@@ -3025,11 +3148,31 @@
 		var items = qsa( '[data-ysf-item]' );
 		var emptyBox = qs( '[data-ysf-menu-empty]' );
 
-		if ( ! filters.length && ! search ) {
+		if ( ! filters.length && ! search && ! qsa( '[data-ysf-diet]' ).length ) {
 			return;
 		}
 
 		var active = 'all';
+		var diets = [];
+		var favOnly = false;
+		var dietButtons = qsa( '[data-ysf-diet]' );
+		var favButton = qs( '[data-ysf-fav-filter]' );
+
+		function matchesExtras( item ) {
+			var tags = ( item.getAttribute( 'data-diet' ) || '' ).split( ' ' );
+
+			for ( var i = 0; i < diets.length; i++ ) {
+				if ( 'nospicy' === diets[ i ] ) {
+					if ( tags.indexOf( 'spicy' ) > -1 ) {
+						return false;
+					}
+				} else if ( tags.indexOf( diets[ i ] ) === -1 ) {
+					return false;
+				}
+			}
+
+			return ! favOnly || isFavorite( item.getAttribute( 'data-id' ) );
+		}
 
 		/**
 		 * Ürünü/grubu yumuşak geçişle gösterir veya gizler.
@@ -3091,7 +3234,7 @@
 				qsa( '[data-ysf-item]', group ).forEach( function ( item ) {
 					var matchesCat = 'all' === active || ( item.getAttribute( 'data-cats' ) || '' ).split( ' ' ).indexOf( active ) > -1 || slug === active;
 					var matchesTerm = ! term || ( item.getAttribute( 'data-search' ) || '' ).indexOf( term ) > -1;
-					var visible = matchesCat && matchesTerm;
+					var visible = matchesCat && matchesTerm && matchesExtras( item );
 
 					// Görünen ürünler sırayla belirsin.
 					toggle( item, visible, visible ? Math.min( shown * 40, 320 ) : 0 );
@@ -3109,7 +3252,7 @@
 			// Grup dışında duran ürünler (ana sayfa kartları vb.).
 			if ( ! groups.length ) {
 				items.forEach( function ( item ) {
-					var matchesTerm = ! term || ( item.getAttribute( 'data-search' ) || '' ).indexOf( term ) > -1;
+					var matchesTerm = ( ! term || ( item.getAttribute( 'data-search' ) || '' ).indexOf( term ) > -1 ) && matchesExtras( item );
 
 					toggle( item, matchesTerm, matchesTerm ? Math.min( shown * 40, 320 ) : 0 );
 
@@ -3129,13 +3272,59 @@
 			button.addEventListener( 'click', function () {
 				filters.forEach( function ( other ) {
 					other.classList.remove( 'is-active' );
+					other.setAttribute( 'aria-pressed', 'false' );
 				} );
 
 				button.classList.add( 'is-active' );
+				button.setAttribute( 'aria-pressed', 'true' );
 				active = button.getAttribute( 'data-ysf-filter' );
 				apply();
 			} );
 		} );
+
+		dietButtons.forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				var key = button.getAttribute( 'data-ysf-diet' );
+				var on = diets.indexOf( key ) === -1;
+
+				diets = diets.filter( function ( d ) {
+					return d !== key;
+				} );
+
+				if ( on ) {
+					diets.push( key );
+				}
+
+				button.classList.toggle( 'is-active', on );
+				button.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+				apply();
+			} );
+		} );
+
+		if ( favButton ) {
+			favButton.hidden = ! readFavorites().length;
+
+			favButton.addEventListener( 'click', function () {
+				favOnly = ! favOnly;
+				favButton.classList.toggle( 'is-active', favOnly );
+				favButton.setAttribute( 'aria-pressed', favOnly ? 'true' : 'false' );
+				apply();
+			} );
+
+			document.addEventListener( 'ysf:favorites', function () {
+				favButton.hidden = ! readFavorites().length;
+
+				if ( favButton.hidden && favOnly ) {
+					favOnly = false;
+					favButton.classList.remove( 'is-active' );
+					favButton.setAttribute( 'aria-pressed', 'false' );
+				}
+
+				if ( favOnly ) {
+					apply();
+				}
+			} );
+		}
 
 		if ( search ) {
 			var timer = null;
@@ -3261,6 +3450,884 @@
 	}
 
 	/* ------------------------------------------------------------------ *
+	 * Küçük depolama yardımcıları
+	 * ------------------------------------------------------------------ */
+
+	function storeGet( key, fallback, session ) {
+		try {
+			var raw = ( session ? window.sessionStorage : window.localStorage ).getItem( key );
+			return raw ? JSON.parse( raw ) : fallback;
+		} catch ( e ) {
+			return fallback;
+		}
+	}
+
+	function storeSet( key, value, session ) {
+		try {
+			( session ? window.sessionStorage : window.localStorage ).setItem( key, JSON.stringify( value ) );
+		} catch ( e ) {
+			// Depolama kapalıysa sessizce devam et.
+		}
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Favoriler
+	 * ------------------------------------------------------------------ */
+
+	var FAV_KEY = 'ysf_favs_v1';
+
+	function readFavorites() {
+		var list = storeGet( FAV_KEY, [] );
+
+		return Array.isArray( list ) ? list.map( String ) : [];
+	}
+
+	function isFavorite( id ) {
+		return !! id && readFavorites().indexOf( String( id ) ) > -1;
+	}
+
+	function paintFavorite( button ) {
+		var on = isFavorite( button.getAttribute( 'data-ysf-fav' ) );
+		var card = button.closest( '[data-ysf-item]' );
+		var title = card ? qs( '.ysf-item__title', card ) : null;
+		var name = title ? ( qs( '.ysf-item__open', title ) || title ).textContent.trim() : '';
+
+		button.classList.toggle( 'is-on', on );
+		button.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+		button.setAttribute( 'aria-label', ( on ? t( 'fav_remove', '%s favorilerden çıkar' ) : t( 'fav_add', '%s favorilere ekle' ) ).replace( '%s', name ) );
+	}
+
+	function initFavorites() {
+		var buttons = qsa( '[data-ysf-fav]' );
+
+		buttons.forEach( function ( button ) {
+			paintFavorite( button );
+
+			button.addEventListener( 'click', function ( event ) {
+				event.preventDefault();
+				event.stopPropagation();
+
+				var id = String( button.getAttribute( 'data-ysf-fav' ) );
+				var list = readFavorites().filter( function ( entry ) {
+					return entry !== id;
+				} );
+
+				if ( ! button.classList.contains( 'is-on' ) ) {
+					list.unshift( id );
+				}
+
+				storeSet( FAV_KEY, list.slice( 0, 200 ) );
+
+				qsa( '[data-ysf-fav="' + id + '"]' ).forEach( paintFavorite );
+				document.dispatchEvent( new window.CustomEvent( 'ysf:favorites' ) );
+			} );
+		} );
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Ürün detayı + yanında iyi gider
+	 * ------------------------------------------------------------------ */
+
+	var PAIR_HINTS = /icecek|içecek|drink|kahve|coffee|tatli|tatlı|dessert|sicak|soguk|sıcak|soğuk|beverage|cay|çay/i;
+
+	function cardInfo( card ) {
+		var title = qs( '.ysf-item__title', card );
+		var open = title ? qs( '.ysf-item__open', title ) : null;
+		var img = qs( '.ysf-item__thumb', card );
+		var add = qs( '.ysf-add', card );
+
+		return {
+			id: card.getAttribute( 'data-id' ),
+			name: open ? open.textContent.trim() : ( title ? title.textContent.trim() : '' ),
+			img: card.getAttribute( 'data-full' ) || ( img ? img.currentSrc || img.src : '' ),
+			cats: ( card.getAttribute( 'data-cats' ) || '' ).split( ' ' ).filter( Boolean ),
+			orderable: !! add && ! card.classList.contains( 'ysf-item--soldout' ),
+			price: qs( '.ysf-price', card ),
+			card: card
+		};
+	}
+
+	function pairsFor( info ) {
+		var pool = qsa( '[data-ysf-item]' ).map( cardInfo ).filter( function ( other ) {
+			return other.id !== info.id && other.orderable && ! other.cats.some( function ( cat ) {
+				return info.cats.indexOf( cat ) > -1;
+			} );
+		} );
+
+		var hinted = pool.filter( function ( other ) {
+			return other.cats.some( function ( cat ) {
+				return PAIR_HINTS.test( cat );
+			} );
+		} );
+
+		var list = ( hinted.length >= 2 ? hinted : pool ).slice();
+		var seed = Number( info.id ) || 1;
+
+		list.sort( function ( a, b ) {
+			return ( ( Number( a.id ) * 7919 + seed ) % 101 ) - ( ( Number( b.id ) * 7919 + seed ) % 101 );
+		} );
+
+		var seen = {};
+
+		return list.filter( function ( other ) {
+			var key = other.cats[ 0 ] || other.id;
+
+			if ( seen[ key ] ) {
+				return false;
+			}
+
+			seen[ key ] = true;
+			return true;
+		} ).slice( 0, 3 );
+	}
+
+	function initProductDetail() {
+		var dialog = qs( '[data-ysf-detail-dialog]' );
+
+		if ( ! dialog || 'function' !== typeof dialog.showModal ) {
+			return;
+		}
+
+		var media = qs( '[data-ysf-detail-media]', dialog );
+		var titleEl = qs( '[data-ysf-detail-title]', dialog );
+		var tagsEl = qs( '[data-ysf-detail-tags]', dialog );
+		var descEl = qs( '[data-ysf-detail-desc]', dialog );
+		var metaEl = qs( '[data-ysf-detail-meta]', dialog );
+		var buyEl = qs( '[data-ysf-detail-buy]', dialog );
+		var pairsBox = qs( '[data-ysf-detail-pairs]', dialog );
+		var pairList = qs( '[data-ysf-detail-pair-list]', dialog );
+
+		function fill( card ) {
+			var info = cardInfo( card );
+			var desc = qs( '.ysf-item__desc', card );
+			var meta = qs( '.ysf-card__meta', card );
+			var side = qs( '.ysf-item__side', card );
+
+			media.textContent = '';
+
+			if ( info.img ) {
+				var img = document.createElement( 'img' );
+				img.src = info.img;
+				img.alt = info.name;
+				img.decoding = 'async';
+				media.appendChild( img );
+			}
+
+			media.hidden = ! info.img;
+			titleEl.textContent = info.name;
+			tagsEl.textContent = '';
+
+			qsa( '.ysf-item__title .ysf-tag', card ).forEach( function ( tag ) {
+				tagsEl.appendChild( tag.cloneNode( true ) );
+			} );
+
+			descEl.textContent = desc ? desc.textContent.trim() : '';
+			descEl.hidden = ! descEl.textContent;
+			metaEl.innerHTML = meta ? meta.innerHTML : '';
+			metaEl.hidden = ! meta;
+
+			// Satın alma alanı: kartın kendi düğmeleri taşınmaz, kopyası yerine karta yönlendirilir.
+			buyEl.textContent = '';
+
+			if ( side ) {
+				var price = qs( '.ysf-price, .ysf-sizes', side );
+
+				if ( price ) {
+					buyEl.appendChild( price.cloneNode( true ) );
+				}
+			}
+
+			var cardSelect = qs( '[data-ysf-size]', card );
+			var cardAdd = qs( '.ysf-add', card );
+
+			if ( cardAdd && info.orderable ) {
+				var select = null;
+
+				if ( cardSelect ) {
+					select = cardSelect.cloneNode( true );
+					select.removeAttribute( 'id' );
+					select.value = cardSelect.value;
+					select.setAttribute( 'aria-label', t( 'size_pick', 'Boy seçin' ) );
+					buyEl.appendChild( select );
+				}
+
+				var add = document.createElement( 'button' );
+				add.type = 'button';
+				add.className = 'ysf-btn';
+				add.textContent = cardAdd.textContent.trim() || t( 'add_to_cart', 'Sepete ekle' );
+				add.addEventListener( 'click', function () {
+					if ( select && cardSelect ) {
+						cardSelect.value = select.value;
+					}
+
+					dialog.close();
+					cardAdd.click();
+				} );
+				buyEl.appendChild( add );
+			}
+
+			pairList.textContent = '';
+			var pairs = pairsFor( info );
+
+			pairs.forEach( function ( pair ) {
+				var li = document.createElement( 'li' );
+				var open = document.createElement( 'button' );
+				open.type = 'button';
+				open.className = 'ysf-detail__pair';
+
+				var thumb = qs( '.ysf-item__thumb', pair.card );
+
+				if ( thumb ) {
+					var pic = document.createElement( 'img' );
+					pic.src = thumb.currentSrc || thumb.src;
+					pic.alt = '';
+					pic.loading = 'lazy';
+					open.appendChild( pic );
+				}
+
+				var label = document.createElement( 'span' );
+				label.textContent = pair.name;
+				open.appendChild( label );
+
+				if ( pair.price ) {
+					var cost = document.createElement( 'small' );
+					cost.textContent = pair.price.textContent.replace( /\s+/g, ' ' ).trim();
+					open.appendChild( cost );
+				}
+
+				open.addEventListener( 'click', function () {
+					fill( pair.card );
+					dialog.scrollTop = 0;
+				} );
+
+				li.appendChild( open );
+				pairList.appendChild( li );
+			} );
+
+			pairsBox.hidden = ! pairs.length;
+		}
+
+		document.addEventListener( 'click', function ( event ) {
+			var trigger = event.target.closest( '[data-ysf-detail], .ysf-item__media' );
+
+			if ( ! trigger ) {
+				return;
+			}
+
+			var card = trigger.closest( '[data-ysf-item]' );
+
+			if ( ! card ) {
+				return;
+			}
+
+			event.preventDefault();
+			fill( card );
+			dialog.showModal();
+		} );
+
+		dialog.addEventListener( 'click', function ( event ) {
+			if ( event.target === dialog ) {
+				dialog.close();
+			}
+		} );
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Masa servisi: garson çağır / hesap iste
+	 * ------------------------------------------------------------------ */
+
+	var TABLE_KEY = 'ysf_table_v1';
+
+	function currentTable() {
+		var params = new window.URLSearchParams( window.location.search );
+		var fromUrl = params.get( 'masa' );
+		var saved = storeGet( TABLE_KEY, null, true );
+
+		if ( fromUrl ) {
+			storeSet( TABLE_KEY, { table: fromUrl, at: Date.now() }, true );
+			return fromUrl;
+		}
+
+		if ( saved && saved.table && Date.now() - saved.at < 4 * 3600 * 1000 ) {
+			return String( saved.table );
+		}
+
+		return '';
+	}
+
+	function initTableBar() {
+		var bar = qs( '[data-ysf-tablebar]' );
+
+		if ( ! bar ) {
+			return;
+		}
+
+		var select = qs( '[data-ysf-tablebar-select]', bar );
+		var msg = qs( '[data-ysf-tablebar-msg]', bar );
+		var tables = [];
+
+		try {
+			tables = JSON.parse( bar.getAttribute( 'data-tables' ) || '[]' ).map( String );
+		} catch ( e ) {
+			tables = [];
+		}
+
+		var seated = currentTable();
+
+		if ( seated && tables.indexOf( seated ) > -1 ) {
+			select.value = seated;
+		}
+
+		bar.hidden = false;
+		document.body.classList.add( 'has-tablebar' );
+
+		select.addEventListener( 'change', function () {
+			if ( select.value ) {
+				storeSet( TABLE_KEY, { table: select.value, at: Date.now() }, true );
+			}
+		} );
+
+		qsa( '[data-ysf-call]', bar ).forEach( function ( button ) {
+			button.addEventListener( 'click', function () {
+				var type = button.getAttribute( 'data-ysf-call' );
+
+				if ( ! select.value ) {
+					msg.textContent = t( 'call_pick_first', 'Önce masa numaranızı seçin.' );
+					select.focus();
+					return;
+				}
+
+				button.disabled = true;
+				msg.textContent = t( 'form_sending', 'Gönderiliyor…' );
+
+				request( 'ysf_table_call', { table: select.value, type: type } ).then( function ( response ) {
+					msg.textContent = response.payload.message || ( response.ok ? '' : t( 'form_error', 'Bir sorun oluştu.' ) );
+				} ).catch( function () {
+					msg.textContent = t( 'form_error', 'Bir sorun oluştu.' );
+				} ).then( function () {
+					window.setTimeout( function () {
+						button.disabled = false;
+					}, 20000 );
+				} );
+			} );
+		} );
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Sipariş takibi
+	 * ------------------------------------------------------------------ */
+
+	var ORDERS_KEY = 'ysf_orders_v1';
+
+	function rememberOrder( id, url ) {
+		var list = storeGet( ORDERS_KEY, [] );
+
+		list = ( Array.isArray( list ) ? list : [] ).filter( function ( entry ) {
+			return entry && String( entry.id ) !== String( id );
+		} );
+
+		list.unshift( { id: id, url: url, at: Date.now(), done: false } );
+		storeSet( ORDERS_KEY, list.slice( 0, 5 ) );
+	}
+
+	function markOrderDone( id ) {
+		var list = storeGet( ORDERS_KEY, [] );
+
+		if ( ! Array.isArray( list ) ) {
+			return;
+		}
+
+		storeSet( ORDERS_KEY, list.map( function ( entry ) {
+			if ( entry && String( entry.id ) === String( id ) ) {
+				entry.done = true;
+			}
+
+			return entry;
+		} ) );
+	}
+
+	function appendTrackLink( box, url ) {
+		if ( ! box ) {
+			return;
+		}
+
+		var link = document.createElement( 'a' );
+		link.className = 'ysf-btn ysf-btn--sm';
+		link.href = url;
+		link.textContent = t( 'trk_follow', 'Siparişini takip et' );
+
+		var wrap = document.createElement( 'p' );
+		wrap.className = 'ysf-alert__hint';
+		wrap.appendChild( link );
+		box.appendChild( wrap );
+	}
+
+	function initTrackChip() {
+		var chip = qs( '[data-ysf-track-chip]' );
+
+		if ( ! chip || qs( '[data-ysf-track]' ) ) {
+			return;
+		}
+
+		var list = storeGet( ORDERS_KEY, [] );
+		var live = ( Array.isArray( list ) ? list : [] ).filter( function ( entry ) {
+			return entry && ! entry.done && entry.url && Date.now() - entry.at < 3 * 3600 * 1000;
+		} );
+
+		if ( ! live.length ) {
+			return;
+		}
+
+		chip.href = live[ 0 ].url;
+		chip.hidden = false;
+	}
+
+	function beepTone() {
+		try {
+			var Ctx = window.AudioContext || window.webkitAudioContext;
+			var ctx = new Ctx();
+			var osc = ctx.createOscillator();
+			var gain = ctx.createGain();
+
+			osc.type = 'sine';
+			osc.frequency.value = 880;
+			gain.gain.setValueAtTime( 0.0001, ctx.currentTime );
+			gain.gain.exponentialRampToValueAtTime( 0.3, ctx.currentTime + 0.02 );
+			gain.gain.exponentialRampToValueAtTime( 0.0001, ctx.currentTime + 0.9 );
+			osc.connect( gain );
+			gain.connect( ctx.destination );
+			osc.start();
+			osc.stop( ctx.currentTime + 0.95 );
+		} catch ( e ) {
+			// Ses desteklenmiyorsa sessiz geç.
+		}
+	}
+
+	function addLinesToCart( lines ) {
+		if ( ! Array.isArray( lines ) || ! lines.length ) {
+			return;
+		}
+
+		var cart = readCart();
+
+		lines.forEach( function ( line ) {
+			var key = lineKey( line );
+			var found = false;
+
+			cart.forEach( function ( existing ) {
+				if ( lineKey( existing ) === key ) {
+					existing.qty = Math.min( 50, Number( existing.qty ) + Number( line.qty ) );
+					found = true;
+				}
+			} );
+
+			if ( ! found ) {
+				cart.push( {
+					id: Number( line.id ),
+					name: line.name,
+					price: Number( line.price ),
+					qty: Math.max( 1, Math.min( 50, Number( line.qty ) || 1 ) ),
+					size: line.size || ''
+				} );
+			}
+		} );
+
+		writeCart( cart );
+		syncPrices();
+		openCart();
+	}
+
+	function initReorder() {
+		document.addEventListener( 'click', function ( event ) {
+			var button = event.target.closest( '[data-ysf-reorder]' );
+
+			if ( ! button ) {
+				return;
+			}
+
+			var raw = button.getAttribute( 'data-ysf-reorder' );
+			var lines = [];
+
+			try {
+				lines = raw ? JSON.parse( raw ) : ( button.ysfLines || [] );
+			} catch ( e ) {
+				lines = [];
+			}
+
+			if ( ! lines.length && button.ysfLines ) {
+				lines = button.ysfLines;
+			}
+
+			event.preventDefault();
+			addLinesToCart( lines );
+		} );
+	}
+
+	function initTracking() {
+		var root = qs( '[data-ysf-track]' );
+
+		if ( ! root ) {
+			return;
+		}
+
+		var id = root.getAttribute( 'data-id' );
+		var key = root.getAttribute( 'data-k' );
+		var stepsEl = qs( '[data-ysf-track-steps]', root );
+		var headline = qs( '[data-ysf-track-headline]', root );
+		var cancelled = qs( '[data-ysf-track-cancelled]', root );
+		var notifyBtn = qs( '[data-ysf-track-notify]', root );
+		var linesEl = qs( '[data-ysf-track-lines]', root );
+		var totalEl = qs( '[data-ysf-track-total]', root );
+		var rateBox = qs( '[data-ysf-track-rate]', root );
+		var noteBox = qs( '[data-ysf-track-note]', root );
+		var rateResult = qs( '[data-ysf-result]', rateBox );
+		var again = qs( '[data-ysf-track-again]', root );
+		var againBtn = again ? qs( '[data-ysf-reorder]', again ) : null;
+		var state = null;
+		var lastStep = null;
+		var timer = null;
+		var stars = 0;
+
+		try {
+			state = JSON.parse( root.getAttribute( 'data-state' ) || 'null' );
+		} catch ( e ) {
+			state = null;
+		}
+
+		function notifyReady( label ) {
+			beepTone();
+
+			if ( navigator.vibrate ) {
+				navigator.vibrate( [ 200, 100, 200 ] );
+			}
+
+			if ( 'Notification' in window && 'granted' === window.Notification.permission ) {
+				try {
+					new window.Notification( document.title, { body: label, tag: 'ysf-order-' + id } );
+				} catch ( e ) {
+					// Bazı tarayıcılar yalnızca servis işçisi üzerinden bildirim gösterir.
+				}
+			}
+		}
+
+		function render( data ) {
+			if ( ! data ) {
+				return;
+			}
+
+			state = data;
+			stepsEl.textContent = '';
+
+			( data.labels || [] ).forEach( function ( label, index ) {
+				var li = document.createElement( 'li' );
+				li.textContent = label;
+
+				if ( ! data.cancelled ) {
+					if ( index < data.step ) {
+						li.className = 'is-done';
+					} else if ( index === data.step ) {
+						li.className = 4 === index ? 'is-done' : 'is-current';
+						li.setAttribute( 'aria-current', 'step' );
+					}
+				}
+
+				stepsEl.appendChild( li );
+			} );
+
+			cancelled.hidden = ! data.cancelled;
+			stepsEl.hidden = !! data.cancelled;
+
+			if ( ! data.cancelled && data.labels && data.labels[ data.step ] ) {
+				headline.textContent = data.labels[ data.step ];
+			}
+
+			linesEl.textContent = '';
+
+			( data.lines || [] ).forEach( function ( line ) {
+				var li = document.createElement( 'li' );
+				li.textContent = line;
+				linesEl.appendChild( li );
+			} );
+
+			totalEl.textContent = data.total || '';
+
+			if ( null !== lastStep && data.step !== lastStep && 3 === data.step ) {
+				notifyReady( data.labels[ 3 ] );
+			}
+
+			lastStep = data.step;
+
+			if ( notifyBtn ) {
+				notifyBtn.hidden = ! ( 'Notification' in window ) || 'default' !== window.Notification.permission || data.step >= 3 || data.cancelled;
+			}
+
+			rateBox.hidden = ! data.canRate && ! rateBox.getAttribute( 'data-open' );
+
+			if ( again && againBtn ) {
+				againBtn.ysfLines = data.reorder || [];
+				againBtn.removeAttribute( 'data-ysf-reorder' );
+				againBtn.setAttribute( 'data-ysf-reorder', '' );
+				again.hidden = ! ( data.reorder && data.reorder.length ) || data.step < 4;
+			}
+
+			if ( data.step >= 4 || data.cancelled ) {
+				markOrderDone( id );
+				window.clearInterval( timer );
+			}
+		}
+
+		function poll() {
+			if ( document.hidden ) {
+				return;
+			}
+
+			request( 'ysf_order_status', { id: id, k: key } ).then( function ( response ) {
+				if ( response.ok ) {
+					render( response.payload );
+				}
+			} ).catch( function () {} );
+		}
+
+		render( state );
+
+		if ( ! state || ( state.step < 4 && ! state.cancelled ) ) {
+			timer = window.setInterval( poll, 15000 );
+			document.addEventListener( 'visibilitychange', poll );
+		}
+
+		if ( notifyBtn ) {
+			notifyBtn.addEventListener( 'click', function () {
+				window.Notification.requestPermission().then( function () {
+					notifyBtn.hidden = true;
+				} );
+			} );
+		}
+
+		function sendRating( note ) {
+			var data = { id: id, k: key, stars: stars };
+
+			if ( note ) {
+				data.note = note;
+			}
+
+			return request( 'ysf_order_rate', data ).then( function ( response ) {
+				showResult( rateResult, response.payload.message || t( 'form_error', 'Bir sorun oluştu.' ), response.ok );
+
+				if ( ! response.ok ) {
+					return;
+				}
+
+				rateBox.setAttribute( 'data-open', '1' );
+				qsa( '[data-ysf-star]', rateBox ).forEach( function ( star ) {
+					star.disabled = true;
+				} );
+
+				if ( response.payload.reviewUrl ) {
+					var link = document.createElement( 'a' );
+					link.className = 'ysf-btn ysf-btn--sm';
+					link.href = response.payload.reviewUrl;
+					link.target = '_blank';
+					link.rel = 'noopener noreferrer';
+					link.textContent = t( 'trk_google', 'Google’da yorum yaz' );
+					var p = document.createElement( 'p' );
+					p.className = 'ysf-alert__hint';
+					p.appendChild( link );
+					rateResult.appendChild( p );
+				}
+
+				noteBox.hidden = ! response.payload.askNote;
+
+				if ( note ) {
+					noteBox.hidden = true;
+				}
+			} );
+		}
+
+		qsa( '[data-ysf-star]', rateBox ).forEach( function ( star ) {
+			star.addEventListener( 'click', function () {
+				stars = Number( star.getAttribute( 'data-ysf-star' ) );
+
+				qsa( '[data-ysf-star]', rateBox ).forEach( function ( other ) {
+					var on = Number( other.getAttribute( 'data-ysf-star' ) ) <= stars;
+					other.classList.toggle( 'is-on', on );
+					other.setAttribute( 'aria-checked', Number( other.getAttribute( 'data-ysf-star' ) ) === stars ? 'true' : 'false' );
+				} );
+
+				sendRating( '' );
+			} );
+		} );
+
+		var send = qs( '[data-ysf-track-send]', rateBox );
+
+		if ( send ) {
+			send.addEventListener( 'click', function () {
+				var field = qs( 'textarea', noteBox );
+				var text = field ? field.value.trim() : '';
+
+				if ( text ) {
+					send.disabled = true;
+					sendRating( text ).then( function () {
+						send.disabled = false;
+					} );
+				}
+			} );
+		}
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Rezervasyon: müsait saatler ve takvime ekle
+	 * ------------------------------------------------------------------ */
+
+	function initReservationSlots() {
+		var form = qs( '[data-ysf-form="reservation"]' );
+		var date = form ? qs( '[name="date"]', form ) : null;
+		var time = form ? qs( '[name="time"]', form ) : null;
+
+		if ( ! date || ! time ) {
+			return;
+		}
+
+		var hint = document.createElement( 'small' );
+		hint.setAttribute( 'aria-live', 'polite' );
+		time.parentNode.appendChild( hint );
+
+		function refresh() {
+			if ( ! /^\d{4}-\d{2}-\d{2}$/.test( date.value ) ) {
+				return;
+			}
+
+			request( 'ysf_reservation_slots', { date: date.value } ).then( function ( response ) {
+				if ( ! response.ok ) {
+					return;
+				}
+
+				var full = response.payload.full || [];
+				var past = response.payload.past || [];
+				var firstFree = null;
+
+				qsa( 'option', time ).forEach( function ( option ) {
+					var isFull = full.indexOf( option.value ) > -1;
+					var isPast = past.indexOf( option.value ) > -1;
+
+					option.disabled = !! response.payload.closed || isFull || isPast;
+					option.textContent = option.value + ( isFull ? ' — ' + t( 'res_slot_full_short', 'dolu' ) : '' );
+
+					if ( ! option.disabled && null === firstFree ) {
+						firstFree = option;
+					}
+				} );
+
+				if ( time.selectedOptions[ 0 ] && time.selectedOptions[ 0 ].disabled && firstFree ) {
+					time.value = firstFree.value;
+				}
+
+				if ( response.payload.closed ) {
+					hint.textContent = t( 'res_day_closed', 'Bu gün kapalıyız, başka bir gün seçin.' );
+				} else if ( ! firstFree ) {
+					hint.textContent = t( 'res_no_slots', 'Bu gün için boş saat kalmadı.' );
+				} else {
+					hint.textContent = '';
+				}
+			} ).catch( function () {} );
+		}
+
+		date.addEventListener( 'change', refresh );
+		refresh();
+	}
+
+	function icsEscape( value ) {
+		return String( value || '' ).replace( /\\/g, '\\\\' ).replace( /\n/g, '\\n' ).replace( /([,;])/g, '\\$1' );
+	}
+
+	function appendCalendarButton( box, cal ) {
+		if ( ! box || ! cal || ! cal.start ) {
+			return;
+		}
+
+		var tz = cal.tz && cal.tz.indexOf( '/' ) > -1 ? ';TZID=' + cal.tz : '';
+		var stamp = new Date().toISOString().replace( /[-:]/g, '' ).replace( /\.\d+/, '' );
+		var ics = [
+			'BEGIN:VCALENDAR',
+			'VERSION:2.0',
+			'PRODID:-//YSF Food Lab//Rezervasyon//TR',
+			'BEGIN:VEVENT',
+			'UID:' + cal.start + '-' + Math.random().toString( 36 ).slice( 2 ) + '@ysffoodlab',
+			'DTSTAMP:' + stamp,
+			'DTSTART' + tz + ':' + cal.start,
+			'DTEND' + tz + ':' + cal.end,
+			'SUMMARY:' + icsEscape( cal.title ),
+			'LOCATION:' + icsEscape( cal.location ),
+			'DESCRIPTION:' + icsEscape( cal.details ),
+			'BEGIN:VALARM',
+			'TRIGGER:-PT2H',
+			'ACTION:DISPLAY',
+			'DESCRIPTION:' + icsEscape( cal.title ),
+			'END:VALARM',
+			'END:VEVENT',
+			'END:VCALENDAR'
+		].join( '\r\n' );
+
+		var link = document.createElement( 'a' );
+		link.className = 'ysf-btn ysf-btn--ghost ysf-btn--sm';
+		link.href = URL.createObjectURL( new Blob( [ ics ], { type: 'text/calendar;charset=utf-8' } ) );
+		link.download = 'ysf-rezervasyon.ics';
+		link.textContent = t( 'res_add_calendar', 'Takvime ekle' );
+
+		var wrap = document.createElement( 'p' );
+		wrap.className = 'ysf-alert__hint';
+		wrap.appendChild( link );
+		box.appendChild( wrap );
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * Karanlık mod
+	 * ------------------------------------------------------------------ */
+
+	function initThemeToggle() {
+		var button = qs( '[data-ysf-theme-toggle]' );
+
+		if ( ! button ) {
+			return;
+		}
+
+		function paint() {
+			var dark = 'dark' === document.documentElement.getAttribute( 'data-theme' );
+			button.setAttribute( 'aria-pressed', dark ? 'true' : 'false' );
+			button.setAttribute( 'aria-label', dark ? t( 'theme_light', 'Açık temaya geç' ) : t( 'theme_dark', 'Karanlık temaya geç' ) );
+		}
+
+		button.addEventListener( 'click', function () {
+			var next = 'dark' === document.documentElement.getAttribute( 'data-theme' ) ? 'light' : 'dark';
+
+			document.documentElement.setAttribute( 'data-theme', next );
+
+			try {
+				window.localStorage.setItem( 'ysf_theme', next );
+			} catch ( e ) {
+				// Depolama kapalıysa yalnızca bu sayfada geçerli olur.
+			}
+
+			paint();
+		} );
+
+		paint();
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * PWA
+	 * ------------------------------------------------------------------ */
+
+	function initPwa() {
+		if ( ! settings.pwa || ! settings.pwa.sw || ! ( 'serviceWorker' in navigator ) ) {
+			return;
+		}
+
+		window.addEventListener( 'load', function () {
+			navigator.serviceWorker.register( settings.pwa.sw, { scope: settings.pwa.scope || '/' } ).catch( function () {} );
+		} );
+	}
+
+	/* ------------------------------------------------------------------ *
 	 * Başlat
 	 * ------------------------------------------------------------------ */
 
@@ -3285,6 +4352,15 @@
 		initHeroSlider();
 		initReveal();
 		initCampaignNotices();
+		initFavorites();
+		initProductDetail();
+		initTableBar();
+		initReorder();
+		initTracking();
+		initTrackChip();
+		initReservationSlots();
+		initThemeToggle();
+		initPwa();
 	}
 
 	if ( 'loading' === document.readyState ) {

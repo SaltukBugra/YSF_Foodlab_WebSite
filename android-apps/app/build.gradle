@@ -2,6 +2,13 @@ plugins {
 	id "com.android.application"
 }
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+	keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
 	namespace "tr.com.ysffoodlab.staff"
 	compileSdk 34
@@ -38,10 +45,25 @@ android {
 		}
 	}
 
+	signingConfigs {
+		release {
+			if (hasReleaseKeystore) {
+				storeFile rootProject.file(keystoreProperties["storeFile"])
+				storePassword keystoreProperties["storePassword"]
+				keyAlias keystoreProperties["keyAlias"]
+				keyPassword keystoreProperties["keyPassword"]
+			}
+		}
+	}
+
 	buildTypes {
 		release {
 			minifyEnabled false
-			signingConfig signingConfigs.debug
+			if (hasReleaseKeystore) {
+				signingConfig signingConfigs.release
+			} else {
+				signingConfig signingConfigs.debug
+			}
 		}
 	}
 
@@ -52,5 +74,14 @@ android {
 	compileOptions {
 		sourceCompatibility JavaVersion.VERSION_17
 		targetCompatibility JavaVersion.VERSION_17
+	}
+}
+
+if (!hasReleaseKeystore) {
+	logger.warn("UYARI: android-apps/keystore.properties bulunamadı. Release APK debug anahtarıyla imzalanır ve DAĞITILMAMALIDIR.")
+	gradle.taskGraph.whenReady { graph ->
+		if (graph.allTasks.any { it.name.contains("Release") }) {
+			logger.warn("WARNING: Release APK is DEBUG-SIGNED (android-apps/keystore.properties missing). Do NOT distribute this APK.")
+		}
 	}
 }

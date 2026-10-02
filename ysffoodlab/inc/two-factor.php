@@ -210,7 +210,7 @@ function ysf_send_2fa_email( $user, $code ) {
  * Kurulum için e-posta adımını başlatır.
  *
  * @param WP_User $user Kullanıcı.
- * @return array {ctx, sent, code, ticket}
+ * @return array {ctx, sent, ticket}
  */
 function ysf_2fa_start_email_challenge( $user ) {
 	$ctx    = ysf_2fa_remember_challenge( $user, true );
@@ -224,7 +224,6 @@ function ysf_2fa_start_email_challenge( $user ) {
 	return array(
 		'ctx'    => $ctx,
 		'ticket' => $ticket,
-		'code'   => $code,
 		'sent'   => ysf_send_2fa_email( $user, $code ),
 	);
 }
@@ -402,16 +401,6 @@ function ysf_2fa_otpauth( $user, $secret ) {
 }
 
 /**
- * Karekod adresi.
- *
- * @param string $otpauth otpauth bağlantısı.
- * @return string
- */
-function ysf_2fa_qr_url( $otpauth ) {
-	return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=M&data=' . rawurlencode( $otpauth );
-}
-
-/**
  * Bekleyen kurulum anahtarını üretir veya döner.
  *
  * @param WP_User $user Kullanıcı.
@@ -491,7 +480,6 @@ function ysf_2fa_remember_challenge( $user, $setup ) {
 		'ticket'  => $ticket,
 		'setup'   => (bool) $setup,
 		'user'    => $user,
-		'qr'      => $otpauth ? ysf_2fa_qr_url( $otpauth ) : '',
 		'otpauth' => $otpauth,
 		'secret'  => $pending,
 	);
@@ -520,7 +508,6 @@ function ysf_2fa_restore_challenge( $user, $ticket, $data ) {
 			'ticket'  => $ticket,
 			'setup'   => $setup,
 			'user'    => $user,
-			'qr'      => $otpauth ? ysf_2fa_qr_url( $otpauth ) : '',
 			'otpauth' => $otpauth,
 			'secret'  => $pending,
 		)
@@ -830,6 +817,34 @@ function ysf_2fa_app_password_errors( $error, $user ) {
 	return $error;
 }
 add_filter( 'wp_authenticate_application_password_errors', 'ysf_2fa_app_password_errors', 10, 2 );
+
+/**
+ * Yöneticilerde uygulama şifrelerini kapatır; aksi halde REST/XML-RPC
+ * üzerinden Authenticator kodu sorulmadan giriş yapılabilir.
+ *
+ * Bir entegrasyon gerekiyorsa wp-config.php içinde
+ * define( 'YSF_ALLOW_ADMIN_APP_PASSWORDS', true ); ile açılabilir.
+ *
+ * @param bool    $available Uygun mu.
+ * @param WP_User $user      Kullanıcı.
+ * @return bool
+ */
+function ysf_2fa_app_passwords_for_user( $available, $user ) {
+	if ( defined( 'YSF_ALLOW_ADMIN_APP_PASSWORDS' ) && YSF_ALLOW_ADMIN_APP_PASSWORDS ) {
+		return $available;
+	}
+
+	if ( $user instanceof WP_User && ysf_user_needs_2fa( $user ) ) {
+		return false;
+	}
+
+	return $available;
+}
+add_filter( 'wp_is_application_passwords_available_for_user', 'ysf_2fa_app_passwords_for_user', 10, 2 );
+
+if ( ! defined( 'YSF_ALLOW_XMLRPC' ) || ! YSF_ALLOW_XMLRPC ) {
+	add_filter( 'xmlrpc_enabled', '__return_false' );
+}
 
 /**
  * wp-login.php: şifre doğruysa yalnızca Authenticator adımı.

@@ -33,7 +33,7 @@ $ysf_acc      = ysf_account_url();
 				</div>
 
 				<label class="ysf-check">
-					<input type="checkbox" name="remember" value="1" checked>
+					<input type="checkbox" name="remember" value="1">
 					<span><?php ysf_e( 'acc_remember' ); ?></span>
 				</label>
 			</div>

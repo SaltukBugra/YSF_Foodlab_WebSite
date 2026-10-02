@@ -62,6 +62,16 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.0 =
+* Canli siparis takip sayfasi (/?ysf_siparis=), hazir bildirimi, puanlama ve Google yorum yonlendirmesi.
+* Sadakat (damga) karti, favoriler, tekrar siparis, diyet/alerjen filtreleri, urun detay penceresi.
+* QR masadan Garson cagir / Hesap iste; garson ve kasiyer ekraninda cagri uyarilari.
+* Rezervasyonda musait saatler, saat basi kapasite, takvime ekle (.ics) ve hatirlatma.
+* Musteri PWA (manifest + service worker), karanlik mod, WebP gorseller ve srcset.
+* Guvenlik: kayit/OTP sertlestirme, 2FA iyilestirmeleri, kilitler, hiz siniri, nonce yenileme, personel oturum suresi.
+* KVKK: siparis/rezervasyon rizasi, WordPress kisisel veri disa aktarma ve silme destegi.
+* Mutfak hesabi bilgileri koddan kaldirildi (YSF_KITCHEN_SEED sabiti).
+
 = 1.4.39 =
 * WordPress panelinde ve Hesabimda ayri Duyurular bolumu. Baslik, kisa aciklama, icerik, gorsel; yonetici silebilir.
 

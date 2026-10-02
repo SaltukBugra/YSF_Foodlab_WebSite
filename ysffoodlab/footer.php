@@ -126,12 +126,12 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 </footer>
 
 <?php if ( $ysf_orders_on ) : ?>
-<aside class="ysf-cart" data-ysf-cart aria-label="<?php echo esc_attr( ysf_t( 'cart_title' ) ); ?>" aria-hidden="true">
+<aside class="ysf-cart" id="ysf-cart" data-ysf-cart role="dialog" aria-modal="true" aria-labelledby="ysf-cart-title" aria-hidden="true" tabindex="-1">
 	<div class="ysf-cart__head">
-		<h2><?php ysf_e( 'cart_title' ); ?></h2>
+		<h2 id="ysf-cart-title"><?php ysf_e( 'cart_title' ); ?></h2>
 		<button type="button" class="ysf-cart__close" data-ysf-cart-close aria-label="<?php echo esc_attr( ysf_t( 'cart_close' ) ); ?>">&times;</button>
 	</div>
-	<div class="ysf-cart__body" data-ysf-cart-body></div>
+	<div class="ysf-cart__body" data-ysf-cart-body aria-live="polite"></div>
 	<div class="ysf-cart__foot">
 		<div class="ysf-totals" data-ysf-cart-totals></div>
 		<a class="ysf-btn ysf-btn--block" href="<?php echo esc_url( $ysf_order_url ); ?>" data-ysf-cart-checkout>
@@ -195,6 +195,8 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 		</a>
 	<?php endif; ?>
 </nav>
+
+<?php get_template_part( 'template-parts/customer-extras' ); ?>
 
 <?php wp_footer(); ?>
 </body>

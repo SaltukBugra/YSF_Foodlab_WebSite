@@ -735,12 +735,42 @@ function ysf_clear_pending_reg( $token, $email = '', $phone = '' ) {
 }
 
 /**
+ * Önceden özetlenmiş şifreyi doğrudan kullanıcıya yazar.
+ *
+ * Düz şifre bekleyen kayıtta tutulmadığı için wp_set_password() kullanılamaz;
+ * çekirdek de aynı alanı bu şekilde günceller.
+ *
+ * @param int    $user_id Kullanıcı.
+ * @param string $hash    wp_hash_password() çıktısı.
+ */
+function ysf_set_user_password_hash( $user_id, $hash ) {
+	global $wpdb;
+
+	$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->users,
+		array(
+			'user_pass'           => $hash,
+			'user_activation_key' => '',
+		),
+		array( 'ID' => (int) $user_id ),
+		array( '%s', '%s' ),
+		array( '%d' )
+	);
+
+	clean_user_cache( (int) $user_id );
+}
+
+/**
  * 6 haneli doğrulama kodu üretir.
  *
  * @return string
  */
 function ysf_otp_make() {
-	return (string) wp_rand( 100000, 999999 );
+	try {
+		return (string) random_int( 100000, 999999 );
+	} catch ( Exception $e ) {
+		return (string) wp_rand( 100000, 999999 );
+	}
 }
 
 /**
@@ -777,17 +807,18 @@ function ysf_send_verify_email( $pending, $code = '' ) {
 }
 
 /**
- * Kayıt doğrulama ekranı cevabı (mail gitmese de kod gösterilir).
+ * Kayıt doğrulama ekranı cevabı.
  *
- * @param string $token      Jeton.
- * @param array  $pending    Bekleyen kayıt.
- * @param bool   $sent       Mail gitti mi.
- * @param string $plain_code Düz kod.
+ * Kod hiçbir koşulda istemciye dönmez; e-posta gitmediyse kullanıcı
+ * "Kodu tekrar gönder" ile yeniden dener.
+ *
+ * @param string $token   Jeton.
+ * @param array  $pending Bekleyen kayıt.
+ * @param bool   $sent    Mail gitti mi.
  * @return array
  */
-function ysf_register_verify_payload( $token, $pending, $sent, $plain_code = '' ) {
+function ysf_register_verify_payload( $token, $pending, $sent ) {
 	$email = isset( $pending['email'] ) ? $pending['email'] : '';
-	$code  = $plain_code ? $plain_code : ( isset( $pending['code'] ) ? $pending['code'] : '' );
 	$out   = array(
 		'step'  => 'verify',
 		'token' => $token,
@@ -800,11 +831,34 @@ function ysf_register_verify_payload( $token, $pending, $sent, $plain_code = '' 
 		return $out;
 	}
 
-	$out['message']    = sprintf( ysf_t( 'acc_verify_onscreen' ), $code );
-	$out['code']       = $code;
+	$out['message']    = ysf_t( 'acc_verify_mail_failed' );
 	$out['mailFailed'] = true;
 
 	return $out;
+}
+
+/**
+ * E-postası zaten kayıtlı birine "hesabınız var" bilgisini gönderir.
+ *
+ * Kayıt ekranı aynı "kod gönderildi" cevabını verir; böylece form
+ * üzerinden hangi e-postaların üye olduğu öğrenilemez.
+ *
+ * @param string $email E-posta.
+ * @return bool
+ */
+function ysf_send_account_exists_email( $email ) {
+	return ysf_send_notification(
+		$email,
+		sprintf(
+			/* translators: %s: site adı. */
+			__( '%s — zaten bir üyeliğiniz var', 'ysffoodlab' ),
+			get_bloginfo( 'name' )
+		),
+		array(
+			ysf_t( 'acc_login_title' ) => ysf_account_url(),
+		),
+		ysf_t( 'acc_exists_mail' )
+	);
 }
 
 /**
@@ -903,6 +957,10 @@ function ysf_ajax_register() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
 	}
 
+	if ( ysf_rate_limited( 'reg_mail', 12, 15 * MINUTE_IN_SECONDS ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
 	$name      = isset( $_POST['name'] ) ? sanitize_text_field( wp_unslash( $_POST['name'] ) ) : '';
 	$raw_user  = isset( $_POST['username'] ) ? trim( (string) wp_unslash( $_POST['username'] ) ) : '';
 	$raw_email = isset( $_POST['email'] ) ? trim( (string) wp_unslash( $_POST['email'] ) ) : '';
@@ -951,15 +1009,13 @@ function ysf_ajax_register() {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_pass_short' ), 'field' => 'password' ), 400 );
 	}
 
-	if ( email_exists( $email ) ) {
-		wp_send_json_error( array( 'message' => ysf_t( 'acc_email_taken' ), 'field' => 'email' ), 400 );
-	}
+	$email_taken = (bool) email_exists( $email );
 
 	if ( ! $phone ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_phone_invalid' ), 'field' => 'phone' ), 400 );
 	}
 
-	if ( ysf_phone_in_use( $phone ) ) {
+	if ( ! $email_taken && ysf_phone_in_use( $phone ) ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_phone_taken' ), 'field' => 'phone' ), 400 );
 	}
 
@@ -986,8 +1042,20 @@ function ysf_ajax_register() {
 		);
 	}
 
-	if ( ysf_rate_limited( 'reg_mail', 12, 15 * MINUTE_IN_SECONDS ) ) {
-		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	if ( $email_taken ) {
+		$decoy = array(
+			'email'  => $email,
+			'code'   => ysf_otp_make(),
+			'tries'  => 0,
+			'decoy'  => true,
+			'resent' => 0,
+		);
+		$token = wp_generate_password( 32, false );
+
+		set_transient( 'ysf_reg_' . $token, $decoy, 30 * MINUTE_IN_SECONDS );
+		ysf_send_account_exists_email( $email );
+
+		wp_send_json_success( ysf_register_verify_payload( $token, $decoy, true ) );
 	}
 
 	$old_mail  = get_transient( ysf_pending_reg_mail_key( $email ) );
@@ -1008,10 +1076,11 @@ function ysf_ajax_register() {
 		'username' => $username,
 		'email'    => $email,
 		'phone'    => $phone,
-		'pass'     => $pass,
+		'pass'     => wp_hash_password( $pass ),
 		'address'  => $address,
 		'code'     => $code,
 		'tries'    => 0,
+		'resent'   => 0,
 		'lang'     => ysf_lang(),
 	);
 
@@ -1021,7 +1090,7 @@ function ysf_ajax_register() {
 
 	$sent = ysf_send_verify_email( $pending, $code );
 
-	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $code ) );
+	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent ) );
 }
 add_action( 'wp_ajax_nopriv_ysf_register', 'ysf_ajax_register' );
 add_action( 'wp_ajax_ysf_register', 'ysf_ajax_register' );
@@ -1043,13 +1112,23 @@ function ysf_ajax_resend_verify() {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
 	}
 
-	$pending['code']  = ysf_otp_make();
-	$pending['tries'] = 0;
+	$pending['resent'] = isset( $pending['resent'] ) ? (int) $pending['resent'] + 1 : 1;
+
+	if ( $pending['resent'] > 5 ) {
+		ysf_clear_pending_reg( $token, isset( $pending['email'] ) ? $pending['email'] : '', isset( $pending['phone'] ) ? $pending['phone'] : '' );
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_locked' ) ), 400 );
+	}
+
+	$pending['code'] = ysf_otp_make();
 	set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
+
+	if ( ! empty( $pending['decoy'] ) ) {
+		wp_send_json_success( ysf_register_verify_payload( $token, $pending, true ) );
+	}
 
 	$sent = ysf_send_verify_email( $pending, $pending['code'] );
 
-	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent, $pending['code'] ) );
+	wp_send_json_success( ysf_register_verify_payload( $token, $pending, $sent ) );
 }
 add_action( 'wp_ajax_nopriv_ysf_resend_verify', 'ysf_ajax_resend_verify' );
 add_action( 'wp_ajax_ysf_resend_verify', 'ysf_ajax_resend_verify' );
@@ -1083,9 +1162,14 @@ function ysf_ajax_verify_register() {
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_locked' ) ), 400 );
 	}
 
-	if ( ! hash_equals( (string) $pending['code'], (string) $code ) ) {
+	if ( ! empty( $pending['decoy'] ) || ! hash_equals( (string) $pending['code'], (string) $code ) ) {
 		set_transient( 'ysf_reg_' . $token, $pending, 30 * MINUTE_IN_SECONDS );
 		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_wrong' ) ), 400 );
+	}
+
+	if ( empty( $pending['pass'] ) || 0 !== strpos( (string) $pending['pass'], '$' ) ) {
+		ysf_clear_pending_reg( $token, $pending['email'], isset( $pending['phone'] ) ? $pending['phone'] : '' );
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_expired' ) ), 400 );
 	}
 
 	if ( email_exists( $pending['email'] ) ) {
@@ -1102,7 +1186,7 @@ function ysf_ajax_verify_register() {
 		array(
 			'user_login'   => $pending['username'],
 			'user_email'   => $pending['email'],
-			'user_pass'    => $pending['pass'],
+			'user_pass'    => wp_generate_password( 32, true, true ),
 			'display_name' => $pending['name'],
 			'first_name'   => $pending['name'],
 			'role'         => 'subscriber',
@@ -1112,6 +1196,8 @@ function ysf_ajax_verify_register() {
 	if ( is_wp_error( $user_id ) ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 500 );
 	}
+
+	ysf_set_user_password_hash( $user_id, $pending['pass'] );
 
 	update_user_meta( $user_id, YSF_META_PHONE, $pending['phone'] );
 	update_user_meta( $user_id, '_ysf_lang', isset( $pending['lang'] ) ? $pending['lang'] : ysf_lang() );
@@ -1245,28 +1331,25 @@ function ysf_ajax_login() {
 						$started = ysf_2fa_start_email_challenge( $found );
 						$ticket  = $started['ticket'];
 						$sent    = $started['sent'];
-						$code    = $started['code'];
 					} else {
 						$sent = true;
-						$code = '';
+					}
+
+					if ( ! $sent ) {
+						ysf_2fa_ticket_abort( $ticket );
+						wp_send_json_error( array( 'message' => ysf_t( 'acc_verify_mail_failed' ), 'reset' => true ), 503 );
 					}
 
 					$masked = ysf_mask_email( $found->user_email );
-					$out    = array(
-						'step'    => '2fa_email',
-						'ticket'  => $ticket,
-						'email'   => $masked,
-						'message' => $sent
-							? sprintf( ysf_t( 'tfa_email_sent' ), $masked )
-							: sprintf( ysf_t( 'acc_verify_onscreen' ), $code ),
+
+					wp_send_json_success(
+						array(
+							'step'    => '2fa_email',
+							'ticket'  => $ticket,
+							'email'   => $masked,
+							'message' => sprintf( ysf_t( 'tfa_email_sent' ), $masked ),
+						)
 					);
-
-					if ( ! $sent && $code ) {
-						$out['code']       = $code;
-						$out['mailFailed'] = true;
-					}
-
-					wp_send_json_success( $out );
 				}
 			}
 

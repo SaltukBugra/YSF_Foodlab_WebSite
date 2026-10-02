@@ -24,6 +24,7 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 				<div class="ysf-hero__slide <?php echo 0 === $ysf_slide_index ? 'is-active' : ''; ?>" data-ysf-slide>
 					<img
 						src="<?php echo esc_url( $ysf_slide ); ?>"
+						<?php echo ysf_image_srcset_attrs( $ysf_slide, '100vw' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 						alt=""
 						<?php if ( 0 === $ysf_slide_index ) : ?>
 							fetchpriority="high"
@@ -255,7 +256,7 @@ if ( $ysf_about_text ) :
 		<div class="ysf-wrap ysf-split ysf-split--media-right">
 			<?php if ( $ysf_about_img ) : ?>
 				<div class="ysf-split__media">
-					<img src="<?php echo esc_url( $ysf_about_img ); ?>" alt="" loading="lazy" decoding="async">
+					<img src="<?php echo esc_url( $ysf_about_img ); ?>"<?php echo ysf_image_srcset_attrs( $ysf_about_img, '(min-width: 900px) 50vw, 100vw' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?> alt="<?php echo esc_attr( ysf_option_i18n( 'ysf_about_title', '' ) ); ?>" loading="lazy" decoding="async">
 				</div>
 			<?php endif; ?>
 

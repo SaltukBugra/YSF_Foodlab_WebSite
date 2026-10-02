@@ -4,3 +4,8 @@ android-apps/.gradle/
 android-apps/app/build/
 android-apps/build/
 android-apps/local.properties
+android-apps/dist/
+apk/
+keystore.properties
+*.jks
+*.keystore

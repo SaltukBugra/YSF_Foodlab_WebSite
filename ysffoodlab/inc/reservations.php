@@ -73,6 +73,220 @@ function ysf_reservation_slots() {
 }
 
 /**
+ * Formdan gelen açık rızayı kayda işler (KVKK ispat yükü).
+ *
+ * @param int $post_id Kayıt.
+ */
+function ysf_record_consent( $post_id ) {
+	update_post_meta( $post_id, '_ysf_consent_at', current_time( 'mysql' ) );
+	update_post_meta( $post_id, '_ysf_consent_text', ysf_t( 'form_consent' ) );
+}
+
+/**
+ * Bir saat diliminde en fazla kaç rezervasyon alınır (0 = sınırsız).
+ *
+ * @return int
+ */
+function ysf_reservation_capacity() {
+	return max( 0, (int) ysf_get_option( 'ysf_res_slot_capacity', 0 ) );
+}
+
+/**
+ * Bir gün için saat başına aktif rezervasyon sayıları.
+ *
+ * @param string $date Y-m-d.
+ * @return array<string,int>
+ */
+function ysf_reservation_counts( $date ) {
+	$ids = get_posts(
+		array(
+			'post_type'      => 'ysf_reservation',
+			'post_status'    => 'publish',
+			'posts_per_page' => 300,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				array(
+					'key'   => '_ysf_date',
+					'value' => $date,
+				),
+			),
+		)
+	);
+
+	$counts = array();
+
+	foreach ( $ids as $id ) {
+		if ( 'cancelled' === get_post_meta( $id, '_ysf_state', true ) ) {
+			continue;
+		}
+
+		$time            = (string) get_post_meta( $id, '_ysf_time', true );
+		$counts[ $time ] = isset( $counts[ $time ] ) ? $counts[ $time ] + 1 : 1;
+	}
+
+	return $counts;
+}
+
+/**
+ * Seçilen gün için dolu ve geçmiş saatleri döner.
+ *
+ * @param string $date Y-m-d.
+ * @return array{full:string[],past:string[],closed:bool}
+ */
+function ysf_reservation_availability( $date ) {
+	$out = array(
+		'full'   => array(),
+		'past'   => array(),
+		'closed' => false,
+	);
+
+	$day   = strtolower( gmdate( 'D', (int) strtotime( $date . ' 12:00:00' ) ) );
+	$hours = ysf_get_hours();
+
+	if ( isset( $hours[ $day ] ) && ! preg_match( '/\d/', (string) $hours[ $day ] ) ) {
+		$out['closed'] = true;
+	}
+
+	$lead = (int) ysf_get_option( 'ysf_res_lead_hours', 2 ) * HOUR_IN_SECONDS;
+	$now  = current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested
+	$cap  = ysf_reservation_capacity();
+	$used = $cap ? ysf_reservation_counts( $date ) : array();
+
+	foreach ( ysf_reservation_slots() as $slot ) {
+		$ts = strtotime( $date . ' ' . $slot );
+
+		if ( ! $ts || $ts < $now + $lead ) {
+			$out['past'][] = $slot;
+			continue;
+		}
+
+		if ( $cap && isset( $used[ $slot ] ) && $used[ $slot ] >= $cap ) {
+			$out['full'][] = $slot;
+		}
+	}
+
+	return $out;
+}
+
+/**
+ * Seçilen gün için müsait saatleri döner.
+ */
+function ysf_ajax_reservation_slots() {
+	check_ajax_referer( 'ysf_public', 'nonce' );
+
+	if ( ysf_rate_limited( 'res_slots', 60, 300 ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_too_many' ) ), 429 );
+	}
+
+	$date = isset( $_POST['date'] ) ? sanitize_text_field( wp_unslash( $_POST['date'] ) ) : '';
+
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'form_required' ) ), 400 );
+	}
+
+	wp_send_json_success( ysf_reservation_availability( $date ) );
+}
+add_action( 'wp_ajax_ysf_reservation_slots', 'ysf_ajax_reservation_slots' );
+add_action( 'wp_ajax_nopriv_ysf_reservation_slots', 'ysf_ajax_reservation_slots' );
+
+/**
+ * Takvim dosyası (.ics) için istemciye verilecek bilgiler.
+ *
+ * @param string $date   Y-m-d.
+ * @param string $time   H:i.
+ * @param int    $guests Kişi.
+ * @return array
+ */
+function ysf_reservation_calendar( $date, $time, $guests ) {
+	$start = strtotime( $date . ' ' . $time );
+
+	return array(
+		'title'    => sprintf( '%1$s — %2$s', get_bloginfo( 'name' ), ysf_t( 'res_title' ) ),
+		'start'    => gmdate( 'Ymd\THis', $start ),
+		'end'      => gmdate( 'Ymd\THis', $start + 2 * HOUR_IN_SECONDS ),
+		'tz'       => wp_timezone_string(),
+		'location' => (string) ysf_get_option( 'ysf_address', '' ),
+		'details'  => sprintf( '%d %s', $guests, ysf_t( 'per_person' ) ),
+	);
+}
+
+/**
+ * Yarınki rezervasyonlara hatırlatma e-postası gönderir.
+ */
+function ysf_send_reservation_reminders() {
+	if ( ! ysf_get_option( 'ysf_res_reminder', true ) ) {
+		return;
+	}
+
+	$tomorrow = wp_date( 'Y-m-d', time() + DAY_IN_SECONDS );
+	$ids      = get_posts(
+		array(
+			'post_type'      => 'ysf_reservation',
+			'post_status'    => 'publish',
+			'posts_per_page' => 200,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				array(
+					'key'   => '_ysf_date',
+					'value' => $tomorrow,
+				),
+				array(
+					'key'     => '_ysf_reminded',
+					'compare' => 'NOT EXISTS',
+				),
+			),
+		)
+	);
+
+	foreach ( $ids as $id ) {
+		$state = get_post_meta( $id, '_ysf_state', true );
+		$email = (string) get_post_meta( $id, '_ysf_email', true );
+
+		update_post_meta( $id, '_ysf_reminded', current_time( 'mysql' ) );
+
+		if ( 'cancelled' === $state || ! is_email( $email ) ) {
+			continue;
+		}
+
+		$lang = (string) get_post_meta( $id, '_ysf_lang', true );
+		$time = (string) get_post_meta( $id, '_ysf_time', true );
+
+		ysf_send_notification(
+			$email,
+			sprintf( '%1$s — %2$s', get_bloginfo( 'name' ), ysf_t( 'res_reminder_subject', $lang ) ),
+			array(
+				ysf_t( 'form_date', $lang )   => $tomorrow,
+				ysf_t( 'form_time', $lang )   => $time,
+				ysf_t( 'form_guests', $lang ) => (int) get_post_meta( $id, '_ysf_guests', true ),
+				ysf_t( 'form_phone', $lang )  => ysf_get_option( 'ysf_phone', '' ),
+			),
+			ysf_t( 'res_reminder_mail', $lang )
+		);
+	}
+}
+add_action( 'ysf_reservation_reminders', 'ysf_send_reservation_reminders' );
+
+/**
+ * Hatırlatma görevini saatlik olarak planlar.
+ */
+function ysf_schedule_reservation_reminders() {
+	if ( ! wp_next_scheduled( 'ysf_reservation_reminders' ) ) {
+		wp_schedule_event( time() + 300, 'hourly', 'ysf_reservation_reminders' );
+	}
+}
+add_action( 'init', 'ysf_schedule_reservation_reminders' );
+
+/**
+ * Tema değişince planlanmış görevi kaldırır.
+ */
+function ysf_unschedule_reservation_reminders() {
+	wp_clear_scheduled_hook( 'ysf_reservation_reminders' );
+}
+add_action( 'switch_theme', 'ysf_unschedule_reservation_reminders' );
+
+/**
  * Rezervasyon formunu işler.
  */
 function ysf_ajax_submit_reservation() {
@@ -82,8 +296,12 @@ function ysf_ajax_submit_reservation() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 403 );
 	}
 
-	if ( ! empty( $_POST['ysf_hp'] ) ) {
+	if ( ysf_honeypot_tripped() ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
+	}
+
+	if ( empty( $_POST['consent'] ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'form_need_consent' ) ), 400 );
 	}
 
 	if ( ysf_rate_limited( 'reservation', 6, 900 ) ) {
@@ -104,8 +322,18 @@ function ysf_ajax_submit_reservation() {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_required' ) ), 400 );
 	}
 
-	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+	if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) || ! in_array( $time, ysf_reservation_slots(), true ) ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_required' ) ), 400 );
+	}
+
+	$availability = ysf_reservation_availability( $date );
+
+	if ( $availability['closed'] ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'res_day_closed' ) ), 400 );
+	}
+
+	if ( in_array( $time, $availability['full'], true ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'res_slot_full' ) ), 409 );
 	}
 
 	$max_guests = (int) ysf_get_option( 'ysf_res_max_guests', 20 );
@@ -168,6 +396,7 @@ function ysf_ajax_submit_reservation() {
 	}
 
 	ysf_attach_user_to_record( $reservation_id );
+	ysf_record_consent( $reservation_id );
 
 	$occasion_label = isset( $occasions[ $occasion ] ) ? $occasions[ $occasion ] : '';
 
@@ -256,6 +485,7 @@ function ysf_ajax_submit_reservation() {
 		array(
 			'message'  => ysf_t( 'res_success' ),
 			'whatsapp' => $wa_url,
+			'calendar' => ysf_reservation_calendar( $date, $time, $guests ),
 		)
 	);
 }
@@ -268,8 +498,12 @@ add_action( 'wp_ajax_nopriv_ysf_submit_reservation', 'ysf_ajax_submit_reservatio
 function ysf_ajax_submit_contact() {
 	check_ajax_referer( 'ysf_public', 'nonce' );
 
-	if ( ! empty( $_POST['ysf_hp'] ) ) {
+	if ( ysf_honeypot_tripped() ) {
 		wp_send_json_error( array( 'message' => ysf_t( 'form_error' ) ), 400 );
+	}
+
+	if ( empty( $_POST['consent'] ) ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'form_need_consent' ) ), 400 );
 	}
 
 	if ( ysf_rate_limited( 'contact', 6, 900 ) ) {

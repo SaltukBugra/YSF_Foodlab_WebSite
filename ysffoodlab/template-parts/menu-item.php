@@ -18,14 +18,36 @@ $ysf_search = strtolower( ysf_field( $ysf_id, 'title' ) . ' ' . wp_strip_all_tag
 $ysf_show_cart = ! empty( $args['show_cart'] );
 $ysf_layout    = ( isset( $args['layout'] ) && 'list' === $args['layout'] ) ? 'list' : 'embed';
 $ysf_sold      = ysf_meta_flag( $ysf_id, '_ysf_sold_out' );
+$ysf_diet      = array();
+
+foreach ( array( 'vegan', 'vegetarian', 'glutenfree', 'spicy' ) as $ysf_flag ) {
+	if ( ysf_meta_flag( $ysf_id, '_ysf_' . $ysf_flag ) ) {
+		$ysf_diet[] = $ysf_flag;
+	}
+}
+
+if ( in_array( 'vegan', $ysf_diet, true ) && ! in_array( 'vegetarian', $ysf_diet, true ) ) {
+	$ysf_diet[] = 'vegetarian';
+}
+
+$ysf_title = ysf_field( $ysf_id, 'title' );
+$ysf_full  = get_the_post_thumbnail_url( $ysf_id, 'large' );
 ?>
 <?php if ( 'list' === $ysf_layout ) : ?>
 <article
 	class="ysf-item<?php echo $ysf_thumb ? '' : ' ysf-item--noimg'; ?><?php echo $ysf_sold ? ' ysf-item--soldout' : ''; ?>"
 	data-ysf-item
+	data-id="<?php echo esc_attr( $ysf_id ); ?>"
 	data-cats="<?php echo esc_attr( is_wp_error( $ysf_terms ) ? '' : implode( ' ', $ysf_terms ) ); ?>"
+	data-diet="<?php echo esc_attr( implode( ' ', $ysf_diet ) ); ?>"
 	data-search="<?php echo esc_attr( $ysf_search ); ?>"
+	<?php if ( $ysf_full ) : ?>
+		data-full="<?php echo esc_url( $ysf_full ); ?>"
+	<?php endif; ?>
 >
+	<button type="button" class="ysf-fav" data-ysf-fav="<?php echo esc_attr( $ysf_id ); ?>" aria-pressed="false" aria-label="<?php echo esc_attr( sprintf( ysf_t( 'fav_add' ), $ysf_title ) ); ?>">
+		<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.4h2c.7-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>
+	</button>
 	<?php if ( $ysf_thumb ) : ?>
 		<img
 			class="ysf-item__thumb"
@@ -40,7 +62,7 @@ $ysf_sold      = ysf_meta_flag( $ysf_id, '_ysf_sold_out' );
 
 	<div class="ysf-item__body">
 		<h3 class="ysf-item__title">
-			<?php echo esc_html( ysf_field( $ysf_id, 'title' ) ); ?>
+			<button type="button" class="ysf-item__open" data-ysf-detail aria-haspopup="dialog"><?php echo esc_html( $ysf_title ); ?></button>
 			<?php ysf_the_item_tags( $ysf_id ); ?>
 		</h3>
 
@@ -79,9 +101,17 @@ $ysf_sold      = ysf_meta_flag( $ysf_id, '_ysf_sold_out' );
 <article
 	class="ysf-item<?php echo $ysf_thumb ? ' ysf-item--embed' : ' ysf-item--noimg'; ?><?php echo $ysf_sold ? ' ysf-item--soldout' : ''; ?><?php echo $ysf_show_cart ? ' ysf-item--order' : ''; ?>"
 	data-ysf-item
+	data-id="<?php echo esc_attr( $ysf_id ); ?>"
 	data-cats="<?php echo esc_attr( is_wp_error( $ysf_terms ) ? '' : implode( ' ', $ysf_terms ) ); ?>"
+	data-diet="<?php echo esc_attr( implode( ' ', $ysf_diet ) ); ?>"
 	data-search="<?php echo esc_attr( $ysf_search ); ?>"
+	<?php if ( $ysf_full ) : ?>
+		data-full="<?php echo esc_url( $ysf_full ); ?>"
+	<?php endif; ?>
 >
+	<button type="button" class="ysf-fav" data-ysf-fav="<?php echo esc_attr( $ysf_id ); ?>" aria-pressed="false" aria-label="<?php echo esc_attr( sprintf( ysf_t( 'fav_add' ), $ysf_title ) ); ?>">
+		<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.4h2c.7-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>
+	</button>
 	<?php if ( $ysf_thumb ) : ?>
 		<div class="ysf-item__media">
 			<img
@@ -98,7 +128,7 @@ $ysf_sold      = ysf_meta_flag( $ysf_id, '_ysf_sold_out' );
 
 	<div class="ysf-item__body">
 		<h3 class="ysf-item__title">
-			<?php echo esc_html( ysf_field( $ysf_id, 'title' ) ); ?>
+			<button type="button" class="ysf-item__open" data-ysf-detail aria-haspopup="dialog"><?php echo esc_html( $ysf_title ); ?></button>
 			<?php ysf_the_item_tags( $ysf_id ); ?>
 			<?php if ( $ysf_sold ) : ?>
 				<span class="ysf-tag ysf-tag--bad"><?php echo esc_html( ysf_t( 'sold_out' ) ); ?></span>

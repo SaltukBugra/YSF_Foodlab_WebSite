@@ -2,7 +2,7 @@
 
 **Canlı site:** [ysffoodlab.com.tr](https://www.ysffoodlab.com.tr)  
 **GitHub:** [github.com/SaltukBugra/YSF_Foodlab_WebSite](https://github.com/SaltukBugra/YSF_Foodlab_WebSite)  
-**Güncel tema sürümü:** `1.4.39`  
+**Güncel tema sürümü:** `1.5.0`  
 **WordPress teması:** `ysffoodlab/`
 
 YSF Food Lab restoranının resmi web sitesi, online sipariş, rezervasyon, masa servisi (garson / kasiyer / mutfak), üye hesapları, kampanya ve duyuru yönetimi ile birlikte tek bir WordPress temasında toplanmıştır. Ek eklenti gerektirmez; Türkçe ve İngilizce çift dilli çalışır.
@@ -280,6 +280,15 @@ Derleme çıktıları `apk/` klasöründe tutulabilir (git’e eklenmez):
 - `YSF-Kasiyer.apk`
 - `YSF-Mutfak.apk`
 
+**Release imzalama:** `android-apps/keystore.properties.example` dosyasını `android-apps/keystore.properties` olarak kopyalayın ve keystore bilgilerini (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) girin. `storeFile` yolu `android-apps/` klasörüne göredir. Bu dosya yoksa release APK debug anahtarıyla imzalanır, Gradle uyarı verir ve bu APK dağıtılmamalıdır. `keystore.properties`, `*.jks` ve `*.keystore` git’e eklenmez; keystore’u güvenli bir yerde yedekleyin (kaybolursa uygulama güncellenemez).
+
+```bash
+cd android-apps
+./gradlew assembleGarsonRelease assembleKasiyerRelease assembleMutfakRelease
+```
+
+**Dağıtım:** APK dosyaları repoya commit edilmez (`apk/` ve `android-apps/dist/` yok sayılır). Yeni sürümler GitHub Releases üzerinden yayınlanmalıdır.
+
 ---
 
 ## Masa broşürü baskı araçları
@@ -357,6 +366,7 @@ Tam liste `ysffoodlab/readme.txt` içindedir. Son sürümler:
 
 | Sürüm | Öne çıkanlar |
 |-------|--------------|
+| **1.5.0** | Sipariş takip sayfası, puanlama, sadakat kartı, favoriler, diyet filtreleri, ürün detayı, masadan garson/hesap çağırma, PWA, karanlık mod, WebP; güvenlik ve KVKK düzeltmeleri |
 | **1.4.39** | Ayrı Duyurular modülü (wp-admin + Hesabım); başlık, açıklama, içerik, görsel |
 | **1.4.38** | Saat aralığı başlamadan kampanya gizlenmez; “16:00'da başlıyor” |
 | **1.4.37** | Kampanya ürün grid’i, görsel yükleme, satır düzeni |
@@ -381,4 +391,4 @@ WordPress teması **GPLv2 or later** lisansı altındadır (`ysffoodlab/readme.t
 
 ---
 
-*Son güncelleme: Eylül 2026 — tema sürümü 1.4.39*
+*Son güncelleme: Ekim 2026 — tema sürümü 1.5.0*

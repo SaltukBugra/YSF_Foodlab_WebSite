@@ -15,10 +15,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 const YSF_ROLE_KITCHEN     = 'ysf_kitchen';
 const YSF_CAP_MENU         = 'ysf_manage_menu';
-const YSF_KITCHEN_EMAIL    = 'sef@ysffoodlab.com.tr';
-const YSF_KITCHEN_PHONE    = '05372754263';
-const YSF_KITCHEN_NAME     = 'Furkan Şef';
 const YSF_KITCHEN_SEED_OPT = 'ysf_kitchen_staff_seeded';
+
+/**
+ * İlk kurulumda açılacak mutfak hesabının bilgileri.
+ *
+ * Kişisel bilgiler koda yazılmaz; wp-config.php içinde tanımlanır:
+ * define( 'YSF_KITCHEN_SEED', array( 'email' => 'sef@ornek.com', 'name' => 'Ad Soyad', 'phone' => '05xx...' ) );
+ *
+ * @return array{email:string,name:string,phone:string}
+ */
+function ysf_kitchen_seed_config() {
+	$config = defined( 'YSF_KITCHEN_SEED' ) && is_array( YSF_KITCHEN_SEED ) ? YSF_KITCHEN_SEED : array();
+	$config = apply_filters( 'ysf_kitchen_seed', $config );
+
+	return array(
+		'email' => isset( $config['email'] ) ? sanitize_email( $config['email'] ) : '',
+		'name'  => isset( $config['name'] ) ? sanitize_text_field( $config['name'] ) : __( 'Mutfak Sorumlusu', 'ysffoodlab' ),
+		'phone' => isset( $config['phone'] ) ? (string) $config['phone'] : '',
+	);
+}
 
 /**
  * Mutfak rolünü ve menü yetkisini kaydeder.
@@ -97,7 +113,9 @@ function ysf_venue_address() {
 }
 
 /**
- * Furkan Şef mutfak hesabını yoksa oluşturur, varsa yetkisini günceller.
+ * Yapılandırılmış mutfak hesabını yoksa oluşturur, varsa yetkisini günceller.
+ *
+ * Şifre e-postayla gönderilmez; hesap sahibine şifre belirleme bağlantısı gider.
  */
 function ysf_maybe_seed_kitchen_staff() {
 	if ( get_option( YSF_KITCHEN_SEED_OPT ) ) {
@@ -108,21 +126,25 @@ function ysf_maybe_seed_kitchen_staff() {
 		return;
 	}
 
-	$email = YSF_KITCHEN_EMAIL;
-	$phone = ysf_normalize_phone( YSF_KITCHEN_PHONE );
-	$name  = YSF_KITCHEN_NAME;
+	$config = ysf_kitchen_seed_config();
+	$email  = $config['email'];
+
+	if ( ! is_email( $email ) ) {
+		return;
+	}
+
+	$phone = $config['phone'] ? ysf_normalize_phone( $config['phone'] ) : '';
+	$name  = $config['name'];
 	$user  = get_user_by( 'email', $email );
 
 	if ( ! $user ) {
-		$password = wp_generate_password( 16, true, true );
-		$user_id  = wp_insert_user(
+		$user_id = wp_insert_user(
 			array(
 				'user_login'   => ysf_generate_username( $email, $name ),
 				'user_email'   => $email,
-				'user_pass'    => $password,
+				'user_pass'    => wp_generate_password( 32, true, true ),
 				'display_name' => $name,
-				'first_name'   => 'Furkan',
-				'last_name'    => 'Şef',
+				'first_name'   => $name,
 				'role'         => YSF_ROLE_KITCHEN,
 				'description'  => __( 'Mutfak sorumlusu', 'ysffoodlab' ),
 			)
@@ -133,36 +155,13 @@ function ysf_maybe_seed_kitchen_staff() {
 		}
 
 		$user = get_userdata( $user_id );
-		set_transient( 'ysf_kitchen_staff_pass', $password, WEEK_IN_SECONDS );
 
-		try {
-			ysf_send_notification(
-				$email,
-				sprintf(
-					/* translators: %s: site adı. */
-					__( '%s — mutfak hesabınız hazır', 'ysffoodlab' ),
-					get_bloginfo( 'name' )
-				),
-				array(
-					ysf_t( 'form_name' )  => $name,
-					ysf_t( 'form_email' ) => $email,
-					ysf_t( 'form_phone' ) => ysf_phone_display( $phone ),
-					ysf_t( 'acc_password' ) => $password,
-				),
-				ysf_t( 'kit_welcome_mail' )
-			);
-		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		if ( $user ) {
+			retrieve_password( $user->user_login );
+			set_transient( 'ysf_kitchen_staff_created', $email, WEEK_IN_SECONDS );
 		}
 	} else {
 		$user->set_role( YSF_ROLE_KITCHEN );
-		wp_update_user(
-			array(
-				'ID'           => $user->ID,
-				'display_name' => $name,
-				'first_name'   => 'Furkan',
-				'last_name'    => 'Şef',
-			)
-		);
 	}
 
 	if ( ! $user || ! $user->ID ) {
@@ -185,29 +184,29 @@ function ysf_maybe_seed_kitchen_staff() {
 add_action( 'init', 'ysf_maybe_seed_kitchen_staff', 20 );
 
 /**
- * Yöneticiye bir kerelik mutfak şifresi hatırlatması.
+ * Yöneticiye mutfak hesabının açıldığını bildirir (şifre gösterilmez).
  */
 function ysf_kitchen_staff_notice() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
 
-	$password = get_transient( 'ysf_kitchen_staff_pass' );
+	delete_transient( 'ysf_kitchen_staff_pass' );
+	$email = get_transient( 'ysf_kitchen_staff_created' );
 
-	if ( ! $password ) {
+	if ( ! $email ) {
 		return;
 	}
 	?>
-	<div class="notice notice-warning is-dismissible">
+	<div class="notice notice-info is-dismissible">
 		<p>
 			<strong><?php esc_html_e( 'Mutfak sorumlusu hesabı oluşturuldu.', 'ysffoodlab' ); ?></strong>
 			<?php
 			echo esc_html(
 				sprintf(
-					/* translators: 1: e-posta, 2: şifre. */
-					__( 'Giriş: %1$s — geçici şifre: %2$s', 'ysffoodlab' ),
-					YSF_KITCHEN_EMAIL,
-					$password
+					/* translators: %s: e-posta. */
+					__( '%s adresine şifre belirleme bağlantısı gönderildi.', 'ysffoodlab' ),
+					$email
 				)
 			);
 			?>

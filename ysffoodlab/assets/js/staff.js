@@ -193,9 +193,6 @@
 
 			if ( emailField ) {
 				emailField.required = true;
-				if ( payload.code ) {
-					emailField.value = payload.code;
-				}
 				emailField.focus();
 			}
 
@@ -541,6 +538,78 @@
 		return t( 'kds_ago', '%s dk' ).replace( '%s', String( mins ) );
 	}
 
+	/**
+	 * Sunucu "değişiklik yok" diyebilsin diye son sürümü gönderir; yaş
+	 * etiketleri bayatlamasın diye 30 sn'de bir tam liste ister.
+	 */
+	function sinceParams( sync, extra ) {
+		var data = extra || {};
+
+		if ( sync.rev && Date.now() - sync.fullAt < 30000 ) {
+			data.since = sync.rev;
+		}
+
+		return data;
+	}
+
+	function acceptSync( sync, payload ) {
+		if ( payload && payload.unchanged ) {
+			return false;
+		}
+
+		sync.rev = payload && payload.rev ? String( payload.rev ) : '';
+		sync.fullAt = Date.now();
+
+		return true;
+	}
+
+	function renderCalls( box, calls, onDone ) {
+		if ( ! box ) {
+			return;
+		}
+
+		box.innerHTML = '';
+		box.hidden = ! ( calls && calls.length );
+
+		( calls || [] ).forEach( function ( call ) {
+			var row = document.createElement( 'div' );
+			var text = document.createElement( 'span' );
+			var done = document.createElement( 'button' );
+
+			row.className = 'ysf-pos__call is-' + call.type;
+			text.innerHTML = '<strong>' + escapeHtml( tableTitle( call.table ) ) + '</strong> ' + escapeHtml( call.label ) + ' · ' + escapeHtml( ageLabel( call.age ) );
+			done.type = 'button';
+			done.className = 'ysf-btn ysf-btn--sm';
+			done.textContent = t( 'call_done', 'Tamam' );
+			done.addEventListener( 'click', function () {
+				done.disabled = true;
+				request( 'ysf_table_call_done', { id: call.id } ).then( function ( response ) {
+					if ( response.ok ) {
+						onDone( response.payload.calls || [] );
+					}
+				} );
+			} );
+
+			row.appendChild( text );
+			row.appendChild( done );
+			box.appendChild( row );
+		} );
+	}
+
+	function hasNewCall( known, calls ) {
+		var fresh = false;
+
+		( calls || [] ).forEach( function ( call ) {
+			if ( ! known[ call.id ] ) {
+				fresh = true;
+			}
+
+			known[ call.id ] = true;
+		} );
+
+		return fresh;
+	}
+
 	function tableTitle( number ) {
 		return t( 'pos_table', 'Masa %s' ).replace( '%s', String( number ) );
 	}
@@ -663,6 +732,11 @@
 		var sendBtn = qs( '[data-ysf-send]', root );
 		var sendLabel = qs( '[data-ysf-send-label]', root );
 		var noteInput = qs( '[data-ysf-ticket-note]', root );
+		var callsBox = qs( '[data-ysf-calls]', root );
+		var closeBtn = qs( '[data-ysf-close-table]', root );
+		var sync = { rev: '', fullAt: 0 };
+		var knownCalls = {};
+		var firstCalls = true;
 		var state = {
 			table: '',
 			tables: [],
@@ -674,6 +748,22 @@
 			sending: false,
 			moving: false
 		};
+
+		if ( closeBtn && ! settings.canCashier ) {
+			closeBtn.textContent = t( 'pos_request_bill', 'Hesabı kasaya gönder' );
+		}
+
+		function paintCalls( calls ) {
+			var fresh = hasNewCall( knownCalls, calls );
+
+			renderCalls( callsBox, calls, paintCalls );
+
+			if ( fresh && ! firstCalls ) {
+				beep();
+			}
+
+			firstCalls = false;
+		}
 
 		function showView( name ) {
 			Object.keys( views ).forEach( function ( key ) {
@@ -750,11 +840,12 @@
 			} );
 		}
 
-		function loadTables() {
-			return request( 'ysf_floor_tables', {} ).then( function ( response ) {
-				if ( response.ok ) {
+		function loadTables( fromPoll ) {
+			return request( 'ysf_floor_tables', fromPoll ? sinceParams( sync ) : {} ).then( function ( response ) {
+				if ( response.ok && acceptSync( sync, response.payload ) ) {
 					state.tables = response.payload.tables || [];
 					renderTables( state.tables );
+					paintCalls( response.payload.calls || [] );
 
 					if ( views.move && views.move.classList.contains( 'is-active' ) ) {
 						renderMoveTables( state.tables );
@@ -1171,8 +1262,12 @@
 			sendOrder( false );
 		} );
 
-		qs( '[data-ysf-close-table]', root ).addEventListener( 'click', function () {
-			if ( ! state.table || ! window.confirm( t( 'pos_close_ask', 'Masa kapatılsın mı?' ) ) ) {
+		closeBtn.addEventListener( 'click', function () {
+			var ask = settings.canCashier
+				? t( 'pos_close_ask', 'Masa kapatılsın mı?' )
+				: t( 'pos_request_bill_ask', 'Bu masanın hesabı kasaya gönderilsin mi?' );
+
+			if ( ! state.table || ! window.confirm( ask ) ) {
 				return;
 			}
 
@@ -1181,6 +1276,7 @@
 
 				if ( response.ok ) {
 					state.table = '';
+					sync.rev = '';
 					showView( 'floor' );
 					loadTables();
 				}
@@ -1206,9 +1302,9 @@
 			}
 
 			if ( views.floor && views.floor.classList.contains( 'is-active' ) ) {
-				loadTables();
+				loadTables( true );
 			} else if ( views.move && views.move.classList.contains( 'is-active' ) ) {
-				loadTables();
+				loadTables( true );
 			} else if ( state.table && views.table && views.table.classList.contains( 'is-active' ) ) {
 				request( 'ysf_floor_table', { table: state.table } ).then( function ( response ) {
 					if ( response.ok ) {
@@ -1245,11 +1341,30 @@
 		var flash = qs( '[data-ysf-pos-flash]', root );
 		var grid = qs( '[data-ysf-tables]', root );
 		var ticketsBox = qs( '[data-ysf-tickets]', root );
+		var callsBox = qs( '[data-ysf-calls]', root );
+		var sync = { rev: '', fullAt: 0 };
+		var knownCalls = {};
+		var firstCalls = true;
 		var state = {
 			table: '',
 			timer: null,
 			paying: false
 		};
+
+		function paintCalls( calls ) {
+			var bills = ( calls || [] ).filter( function ( call ) {
+				return 'bill' === call.type;
+			} );
+			var fresh = hasNewCall( knownCalls, bills );
+
+			renderCalls( callsBox, bills, paintCalls );
+
+			if ( fresh && ! firstCalls ) {
+				beep();
+			}
+
+			firstCalls = false;
+		}
 
 		function showView( name ) {
 			Object.keys( views ).forEach( function ( key ) {
@@ -1357,11 +1472,12 @@
 			} );
 		}
 
-		function loadTables() {
-			return request( 'ysf_cashier_tables', {} ).then( function ( response ) {
-				if ( response.ok ) {
+		function loadTables( fromPoll ) {
+			return request( 'ysf_cashier_tables', fromPoll ? sinceParams( sync ) : {} ).then( function ( response ) {
+				if ( response.ok && acceptSync( sync, response.payload ) ) {
 					renderSummary( response.payload );
 					renderTables( response.payload.tables );
+					paintCalls( response.payload.calls || [] );
 				}
 			} );
 		}
@@ -1497,7 +1613,7 @@
 			}
 
 			if ( views.floor && views.floor.classList.contains( 'is-active' ) ) {
-				loadTables();
+				loadTables( true );
 			} else if ( state.table && views.table && views.table.classList.contains( 'is-active' ) ) {
 				request( 'ysf_cashier_table', { table: state.table } ).then( function ( response ) {
 					if ( response.ok ) {
@@ -1553,6 +1669,7 @@
 		var clock = qs( '[data-ysf-kds-clock]', root );
 		var list = qs( '[data-ysf-kds-list]', root );
 		var countBadge = qs( '[data-ysf-kds-count]', root );
+		var sync = { rev: '', fullAt: 0 };
 
 		function tickClock() {
 			if ( ! clock ) {
@@ -1776,9 +1893,9 @@
 			known = incoming;
 		}
 
-		function load() {
-			return request( 'ysf_kds_tickets', {} ).then( function ( response ) {
-				if ( response.ok ) {
+		function load( fromPoll ) {
+			return request( 'ysf_kds_tickets', fromPoll ? sinceParams( sync ) : {} ).then( function ( response ) {
+				if ( response.ok && acceptSync( sync, response.payload ) ) {
 					render( response.payload.tickets );
 				}
 			} );
@@ -1801,7 +1918,7 @@
 		load();
 		window.setInterval( function () {
 			if ( ! document.hidden ) {
-				load();
+				load( true );
 			}
 		}, pollMs );
 		document.addEventListener( 'visibilitychange', function () {

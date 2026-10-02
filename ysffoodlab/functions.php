@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.4.39' );
+define( 'YSF_VERSION', '1.5.0' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 define( 'YSF_MAIL_FROM', 'info@ysffoodlab.com.tr' );
@@ -27,6 +27,10 @@ require_once YSF_DIR . '/inc/accounts.php';
 require_once YSF_DIR . '/inc/two-factor.php';
 require_once YSF_DIR . '/inc/kitchen.php';
 require_once YSF_DIR . '/inc/floor.php';
+require_once YSF_DIR . '/inc/floor-sync.php';
+require_once YSF_DIR . '/inc/order-tracking.php';
+require_once YSF_DIR . '/inc/privacy.php';
+require_once YSF_DIR . '/inc/pwa.php';
 require_once YSF_DIR . '/inc/seo.php';
 require_once YSF_DIR . '/inc/setup-wizard.php';
 
@@ -130,6 +134,7 @@ function ysf_enqueue_assets() {
 				'lang'     => ysf_lang(),
 				'currency' => ysf_get_option( 'ysf_currency', '₺' ),
 				'pollMs'   => 4000,
+				'canCashier' => ysf_can_cashier(),
 				'utcOffset'  => ysf_utc_offset(),
 				'i18n'       => ysf_staff_js_strings(),
 				'campaigns'  => function_exists( 'ysf_campaign_rules_for_js' ) ? ysf_campaign_rules_for_js() : array(),
@@ -162,6 +167,7 @@ function ysf_enqueue_assets() {
 			'utcOffset'    => ysf_utc_offset(),
 			'i18n'         => ysf_js_strings(),
 			'campaigns'    => function_exists( 'ysf_campaign_rules_for_js' ) ? ysf_campaign_rules_for_js() : array(),
+			'pwa'          => function_exists( 'ysf_pwa_js_settings' ) ? ysf_pwa_js_settings() : array(),
 		)
 	);
 
@@ -170,6 +176,20 @@ function ysf_enqueue_assets() {
 	}
 }
 add_action( 'wp_enqueue_scripts', 'ysf_enqueue_assets' );
+
+/**
+ * Karanlık mod tercihini sayfa çizilmeden uygular (beyaz parlama olmasın).
+ */
+function ysf_theme_boot_script() {
+	if ( ! ysf_get_option( 'ysf_dark_mode', true ) || ysf_is_staff_app() ) {
+		return;
+	}
+
+	$auto = ysf_get_option( 'ysf_dark_auto', true ) ? 'true' : 'false';
+
+	echo "<script>(function(){try{var s=localStorage.getItem('ysf_theme');var d=s?s==='dark':(" . $auto . "&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();</script>\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+add_action( 'wp_head', 'ysf_theme_boot_script', 1 );
 
 /**
  * Fonts için preconnect ipuçları.
@@ -370,7 +390,7 @@ function ysf_smtp_admin_notice() {
 		return;
 	}
 
-	if ( (string) get_theme_mod( 'ysf_smtp_pass', '' ) ) {
+	if ( (string) get_theme_mod( 'ysf_smtp_pass', '' ) || ( defined( 'YSF_SMTP_PASS' ) && YSF_SMTP_PASS ) ) {
 		return;
 	}
 

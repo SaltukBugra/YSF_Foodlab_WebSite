@@ -43,14 +43,26 @@ if ( is_wp_error( $ysf_terms ) ) {
 		>
 	</div>
 
-	<div class="ysf-filters" role="tablist" aria-label="<?php echo esc_attr( ysf_t( 'nav_menu' ) ); ?>">
-		<button type="button" class="ysf-filter is-active" data-ysf-filter="all"><?php ysf_e( 'menu_all' ); ?></button>
+	<div class="ysf-filters" role="group" aria-label="<?php echo esc_attr( ysf_t( 'menu_categories' ) ); ?>">
+		<button type="button" class="ysf-filter is-active" data-ysf-filter="all" aria-pressed="true"><?php ysf_e( 'menu_all' ); ?></button>
 		<?php foreach ( $ysf_terms as $ysf_term ) : ?>
-			<button type="button" class="ysf-filter" data-ysf-filter="<?php echo esc_attr( $ysf_term->slug ); ?>">
+			<button type="button" class="ysf-filter" data-ysf-filter="<?php echo esc_attr( $ysf_term->slug ); ?>" aria-pressed="false">
 				<?php echo esc_html( ysf_term_name( $ysf_term ) ); ?>
 			</button>
 		<?php endforeach; ?>
 	</div>
+
+	<div class="ysf-chips" role="group" aria-label="<?php echo esc_attr( ysf_t( 'diet_filters' ) ); ?>">
+		<button type="button" class="ysf-chip" data-ysf-diet="vegan" aria-pressed="false"><?php ysf_e( 'vegan' ); ?></button>
+		<button type="button" class="ysf-chip" data-ysf-diet="vegetarian" aria-pressed="false"><?php ysf_e( 'vegetarian' ); ?></button>
+		<button type="button" class="ysf-chip" data-ysf-diet="glutenfree" aria-pressed="false"><?php ysf_e( 'glutenfree' ); ?></button>
+		<button type="button" class="ysf-chip" data-ysf-diet="nospicy" aria-pressed="false"><?php ysf_e( 'diet_nospicy' ); ?></button>
+		<button type="button" class="ysf-chip ysf-chip--fav" data-ysf-fav-filter aria-pressed="false" hidden>
+			<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.4h2c.7-1.2 2.2-2.4 4.3-2.4 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>
+			<?php ysf_e( 'fav_filter' ); ?>
+		</button>
+	</div>
+	<p class="ysf-chips__note"><?php ysf_e( 'diet_note' ); ?></p>
 
 	<p class="ysf-empty" data-ysf-menu-empty hidden><?php ysf_e( 'menu_no_result' ); ?></p>
 

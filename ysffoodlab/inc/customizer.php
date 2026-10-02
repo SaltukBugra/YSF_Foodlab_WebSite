@@ -433,6 +433,24 @@ function ysf_customize_register( $wp_customize ) {
 			'type'        => 'textarea',
 			'description' => __( 'Virgülle ayırın. Sipariş formunda seçenek olarak çıkar.', 'ysffoodlab' ),
 		),
+		'ysf_google_review_url' => array(
+			'label'       => __( 'Google yorum bağlantısı', 'ysffoodlab' ),
+			'type'        => 'url',
+			'description' => __( 'Sipariş takibinde 4–5 yıldız veren müşteriye "Google’da yorum yaz" düğmesi çıkar. Google İşletme Profili → "Yorum iste" bağlantısını yapıştırın.', 'ysffoodlab' ),
+		),
+		'ysf_loyalty_goal'      => array(
+			'label'       => __( 'Damga kartı: kaç siparişte bir ödül', 'ysffoodlab' ),
+			'type'        => 'number',
+			'default'     => 0,
+			'description' => __( 'Üye müşterinin tamamlanan her online siparişi bir damgadır. 0 = damga kartı kapalı.', 'ysffoodlab' ),
+		),
+		'ysf_loyalty_reward'    => array(
+			'label'       => __( 'Damga kartı ödülü', 'ysffoodlab' ),
+			'description' => __( 'Örn: "Bir sonraki siparişinizde tatlı bizden"', 'ysffoodlab' ),
+		),
+		'ysf_loyalty_reward_en' => array(
+			'label' => __( 'Damga kartı ödülü (EN)', 'ysffoodlab' ),
+		),
 		'ysf_yemeksepeti'       => array(
 			'label' => __( 'Yemeksepeti bağlantısı', 'ysffoodlab' ),
 			'type'  => 'url',
@@ -481,6 +499,18 @@ function ysf_customize_register( $wp_customize ) {
 			'label'   => __( 'Rezervasyon bitiş saati', 'ysffoodlab' ),
 			'default' => '22:30',
 		),
+		'ysf_res_slot_capacity' => array(
+			'label'       => __( 'Bir saatte en fazla rezervasyon', 'ysffoodlab' ),
+			'type'        => 'number',
+			'default'     => 0,
+			'description' => __( 'Aynı saate bu kadar rezervasyon gelince o saat formda "dolu" görünür. 0 = sınırsız.', 'ysffoodlab' ),
+		),
+		'ysf_res_reminder'    => array(
+			'label'       => __( 'Bir gün önce hatırlatma e-postası gönder', 'ysffoodlab' ),
+			'type'        => 'checkbox',
+			'default'     => true,
+			'description' => __( 'E-posta adresi bırakan misafire rezervasyondan bir gün önce hatırlatma gider.', 'ysffoodlab' ),
+		),
 		'ysf_res_note'        => array(
 			'label' => __( 'Rezervasyon sayfası bilgi notu', 'ysffoodlab' ),
 			'type'  => 'textarea',
@@ -508,6 +538,12 @@ function ysf_customize_register( $wp_customize ) {
 			'default'     => 16,
 			'sanitize'    => 'ysf_sanitize_table_count',
 			'description' => __( 'Garson uygulamasında görünen masa adedi (1–80).', 'ysffoodlab' ),
+		),
+		'ysf_staff_session_hours' => array(
+			'label'       => __( 'Personel oturumu en fazla kaç saat açık kalsın', 'ysffoodlab' ),
+			'type'        => 'number',
+			'default'     => 16,
+			'description' => __( 'Garson, kasiyer ve mutfak hesapları bu süre sonunda yeniden giriş yapar (1–72). Yöneticiler etkilenmez.', 'ysffoodlab' ),
 		),
 		'ysf_kds_online'    => array(
 			'label'       => __( 'Mutfak ekranında online siparişleri de göster', 'ysffoodlab' ),
@@ -572,6 +608,35 @@ function ysf_customize_register( $wp_customize ) {
 			'description' => __( 'Kapatırsanız sistem yazı tipleri kullanılır, site birkaç ms daha hızlı açılır.', 'ysffoodlab' ),
 		)
 	);
+
+	$extras = array(
+		'ysf_dark_mode'    => array(
+			'label'       => __( 'Karanlık mod düğmesini göster', 'ysffoodlab' ),
+			'type'        => 'checkbox',
+			'default'     => true,
+		),
+		'ysf_dark_auto'    => array(
+			'label'       => __( 'Telefon karanlık moddaysa siteyi de karanlık aç', 'ysffoodlab' ),
+			'type'        => 'checkbox',
+			'default'     => true,
+		),
+		'ysf_pwa'          => array(
+			'label'       => __( 'Ana ekrana ekle (PWA) ve çevrimdışı menü', 'ysffoodlab' ),
+			'type'        => 'checkbox',
+			'default'     => true,
+			'description' => __( 'Müşteriler siteyi uygulama gibi telefona ekleyebilir; bağlantı kopsa da son görülen menü açılır.', 'ysffoodlab' ),
+		),
+		'ysf_webp_uploads' => array(
+			'label'       => __( 'Yüklenen fotoğrafların küçük boyutlarını WebP üret', 'ysffoodlab' ),
+			'type'        => 'checkbox',
+			'default'     => true,
+			'description' => __( 'Sunucu destekliyorsa yeni yüklenen görseller %25–35 daha küçük olur. Eski görseller için "Regenerate Thumbnails" eklentisi çalıştırılabilir.', 'ysffoodlab' ),
+		),
+	);
+
+	foreach ( $extras as $id => $args ) {
+		ysf_add_setting( $wp_customize, $id, $args + array( 'section' => 'ysf_advanced' ) );
+	}
 
 	ysf_add_setting(
 		$wp_customize,

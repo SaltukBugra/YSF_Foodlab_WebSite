@@ -465,12 +465,26 @@ $ysf_open    = ysf_get_option( 'ysf_acc_enabled', true );
 						<div class="ysf-card-panel">
 							<h3 class="ysf-card-panel__title"><?php ysf_e( 'acc_orders_title' ); ?></h3>
 
+							<?php ysf_render_loyalty_card( get_current_user_id() ); ?>
+
 							<?php if ( $ysf_orders ) : ?>
 								<ul class="ysf-record-list">
 									<?php foreach ( $ysf_orders as $ysf_record ) : ?>
+										<?php
+										$ysf_again = ysf_order_reorder_lines( $ysf_record->ID );
+										$ysf_step  = ysf_order_tracking_step( $ysf_record->ID );
+										?>
 										<li>
 											<span class="ysf-record-list__date"><?php echo esc_html( get_the_date( '', $ysf_record ) ); ?></span>
 											<span><?php echo esc_html( get_the_title( $ysf_record ) ); ?></span>
+											<span class="ysf-record-list__actions">
+												<?php if ( $ysf_step >= 0 && $ysf_step < 4 && 'online' === get_post_meta( $ysf_record->ID, '_ysf_source', true ) ) : ?>
+													<a class="ysf-link-btn" href="<?php echo esc_url( ysf_order_tracking_url( $ysf_record->ID ) ); ?>"><?php ysf_e( 'trk_follow' ); ?></a>
+												<?php endif; ?>
+												<?php if ( $ysf_again ) : ?>
+													<button type="button" class="ysf-link-btn" data-ysf-reorder="<?php echo esc_attr( wp_json_encode( $ysf_again ) ); ?>"><?php ysf_e( 'reorder' ); ?></button>
+												<?php endif; ?>
+											</span>
 										</li>
 									<?php endforeach; ?>
 								</ul>

@@ -294,8 +294,65 @@ function ysf_asset_image( $file ) {
 		return '';
 	}
 
+	$webp = preg_replace( '/\.(?:jpe?g|png)$/i', '.webp', $file );
+
+	if ( $webp !== $file && file_exists( YSF_DIR . '/assets/images/' . $webp ) ) {
+		return YSF_URI . '/assets/images/' . $webp;
+	}
+
 	return YSF_URI . '/assets/images/' . $file;
 }
+
+/**
+ * Ortam kütüphanesindeki görsel için srcset/sizes nitelikleri.
+ *
+ * @param string $url   Görsel adresi.
+ * @param string $sizes sizes niteliği.
+ * @return string Kaçışlanmış nitelikler ya da boş.
+ */
+function ysf_image_srcset_attrs( $url, $sizes = '100vw' ) {
+	if ( ! $url || false === strpos( $url, '/uploads/' ) ) {
+		return '';
+	}
+
+	$key = 'ysf_att_' . md5( $url );
+	$id  = wp_cache_get( $key, 'ysf' );
+
+	if ( false === $id ) {
+		$id = (int) attachment_url_to_postid( $url );
+		wp_cache_set( $key, $id, 'ysf', HOUR_IN_SECONDS );
+	}
+
+	if ( ! $id ) {
+		return '';
+	}
+
+	$srcset = wp_get_attachment_image_srcset( $id, 'full' );
+
+	if ( ! $srcset ) {
+		return '';
+	}
+
+	return sprintf( ' srcset="%1$s" sizes="%2$s"', esc_attr( $srcset ), esc_attr( $sizes ) );
+}
+
+/**
+ * Sunucu destekliyorsa yüklenen JPEG/PNG görsellerin ara boyutları WebP üretilir.
+ *
+ * @param array $formats Kaynak → hedef MIME eşlemesi.
+ * @return array
+ */
+function ysf_webp_output_format( $formats ) {
+	if ( ! ysf_get_option( 'ysf_webp_uploads', true ) || ! wp_image_editor_supports( array( 'mime_type' => 'image/webp' ) ) ) {
+		return $formats;
+	}
+
+	$formats['image/jpeg'] = 'image/webp';
+	$formats['image/png']  = 'image/webp';
+
+	return $formats;
+}
+add_filter( 'image_editor_output_format', 'ysf_webp_output_format' );
 
 /**
  * Kapak slaytında gösterilecek görseller.
