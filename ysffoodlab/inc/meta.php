@@ -262,6 +262,33 @@ function ysf_register_meta() {
 
 	register_post_meta(
 		'ysf_menu_item',
+		'_ysf_notes',
+		array(
+			'type'              => 'array',
+			'single'            => true,
+			'show_in_rest'      => array(
+				'schema' => array(
+					'type'  => 'array',
+					'items' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'text'    => array( 'type' => 'string' ),
+							'text_en' => array( 'type' => 'string' ),
+							'type'    => array( 'type' => 'string' ),
+						),
+					),
+				),
+			),
+			'default'           => array(),
+			'sanitize_callback' => 'ysf_sanitize_notes',
+			'auth_callback'     => function () {
+				return current_user_can( 'edit_posts' ) || current_user_can( 'ysf_manage_menu' );
+			},
+		)
+	);
+
+	register_post_meta(
+		'ysf_menu_item',
 		'_ysf_sizes',
 		array(
 			'type'              => 'array',
@@ -651,7 +678,7 @@ function ysf_add_meta_boxes() {
 
 	add_meta_box(
 		'ysf_menu_tags_box',
-		__( 'İsim yanı etiketler', 'ysffoodlab' ),
+		__( 'Etiketler ve görünürlük notları', 'ysffoodlab' ),
 		'ysf_render_tags_box',
 		'ysf_menu_item',
 		'normal',
@@ -940,6 +967,7 @@ function ysf_render_tags_box( $post ) {
 
 	echo '</tbody></table>';
 	echo '<p><button type="button" class="button" id="ysf-tag-add">' . esc_html__( 'Etiket ekle', 'ysffoodlab' ) . '</button></p>';
+	ysf_render_notes_fields( $post );
 	echo '<template id="ysf-tag-row-tpl">';
 	ysf_render_tag_row(
 		array(
@@ -1001,6 +1029,100 @@ function ysf_render_tag_row( $tag, $types ) {
 	}
 	echo '</select></td>';
 	echo '<td><button type="button" class="button-link" data-ysf-tag-remove>' . esc_html__( 'Sil', 'ysffoodlab' ) . '</button></td>';
+	echo '</tr>';
+}
+
+/**
+ * Görünürlük notu alanlarını etiket kutusunun altına çizer.
+ *
+ * @param WP_Post $post Ürün.
+ */
+function ysf_render_notes_fields( $post ) {
+	$notes = ysf_get_item_notes( $post->ID );
+	$types = ysf_note_types();
+
+	echo '<input type="hidden" name="ysf_notes_ready" value="1">';
+	echo '<p><strong>' . esc_html__( 'Görünürlük notları', 'ysffoodlab' ) . '</strong><br>';
+	echo esc_html__( 'Kısa cümleler. Olumlu yeşil, olumsuz kırmızı, bilgi koyu görünür. Kartta ilk iki not, ürüne tıklayınca hepsi çıkar. En fazla dört not.', 'ysffoodlab' ) . '</p>';
+	echo '<table class="widefat striped" id="ysf-notes-table"><thead><tr>';
+	echo '<th>' . esc_html__( 'Metin', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'İngilizce', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'Tür', 'ysffoodlab' ) . '</th>';
+	echo '<th></th></tr></thead><tbody>';
+
+	if ( ! $notes ) {
+		$notes[] = array(
+			'text'    => '',
+			'text_en' => '',
+			'type'    => 'info',
+		);
+	}
+
+	foreach ( $notes as $note ) {
+		ysf_render_note_row( $note, $types );
+	}
+
+	echo '</tbody></table>';
+	echo '<p><button type="button" class="button" id="ysf-note-add">' . esc_html__( 'Not ekle', 'ysffoodlab' ) . '</button></p>';
+	echo '<template id="ysf-note-row-tpl">';
+	ysf_render_note_row(
+		array(
+			'text'    => '',
+			'text_en' => '',
+			'type'    => 'info',
+		),
+		$types
+	);
+	echo '</template>';
+	?>
+	<script>
+	(function () {
+		var add = document.getElementById('ysf-note-add');
+		var table = document.getElementById('ysf-notes-table');
+		var tpl = document.getElementById('ysf-note-row-tpl');
+		if (!add || !table || !tpl) return;
+		add.addEventListener('click', function () {
+			if (table.querySelectorAll('tbody tr').length >= 4) return;
+			table.querySelector('tbody').insertAdjacentHTML('beforeend', tpl.innerHTML);
+		});
+		table.addEventListener('click', function (event) {
+			if (!event.target.closest('[data-ysf-note-remove]')) return;
+			var row = event.target.closest('tr');
+			if (row && table.querySelectorAll('tbody tr').length > 1) row.remove();
+			else if (row) row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+		});
+	})();
+	</script>
+	<?php
+}
+
+/**
+ * Yönetim paneli görünürlük notu satırı.
+ *
+ * @param array $note  Not.
+ * @param array $types Türler.
+ */
+function ysf_render_note_row( $note, $types ) {
+	echo '<tr>';
+	printf(
+		'<td><input type="text" name="ysf_note_text[]" value="%s" class="widefat" maxlength="140"></td>',
+		esc_attr( isset( $note['text'] ) ? $note['text'] : '' )
+	);
+	printf(
+		'<td><input type="text" name="ysf_note_text_en[]" value="%s" class="widefat" maxlength="140"></td>',
+		esc_attr( isset( $note['text_en'] ) ? $note['text_en'] : '' )
+	);
+	echo '<td><select name="ysf_note_type[]">';
+	foreach ( $types as $key => $meta ) {
+		printf(
+			'<option value="%1$s" %2$s>%3$s</option>',
+			esc_attr( $key ),
+			selected( isset( $note['type'] ) ? $note['type'] : 'info', $key, false ),
+			esc_html( $meta['label'] )
+		);
+	}
+	echo '</select></td>';
+	echo '<td><button type="button" class="button-link" data-ysf-note-remove>' . esc_html__( 'Sil', 'ysffoodlab' ) . '</button></td>';
 	echo '</tr>';
 }
 
@@ -1142,6 +1264,23 @@ function ysf_save_meta( $post_id, $post ) {
 			}
 
 			ysf_save_item_tags( $post_id, $rows );
+		}
+
+		if ( isset( $_POST['ysf_notes_ready'] ) ) {
+			$texts = isset( $_POST['ysf_note_text'] ) ? wp_unslash( $_POST['ysf_note_text'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$ens   = isset( $_POST['ysf_note_text_en'] ) ? wp_unslash( $_POST['ysf_note_text_en'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$kinds = isset( $_POST['ysf_note_type'] ) ? wp_unslash( $_POST['ysf_note_type'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$rows  = array();
+
+			foreach ( (array) $texts as $index => $text ) {
+				$rows[] = array(
+					'text'    => $text,
+					'text_en' => isset( $ens[ $index ] ) ? $ens[ $index ] : '',
+					'type'    => isset( $kinds[ $index ] ) ? $kinds[ $index ] : 'info',
+				);
+			}
+
+			ysf_save_item_notes( $post_id, $rows );
 		}
 
 		if ( isset( $_POST['ysf_sizes_ready'] ) ) {

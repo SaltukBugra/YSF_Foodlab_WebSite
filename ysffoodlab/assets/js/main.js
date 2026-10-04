@@ -2630,6 +2630,12 @@
 			return hidden ? parseTags( hidden.value ) : [];
 		}
 
+		function currentNotes() {
+			var hidden = field( 'notes' );
+
+			return hidden ? parseTags( hidden.value ) : [];
+		}
+
 		function setTags( tags ) {
 			var hidden = field( 'tags' );
 			var list = qs( '[data-ysf-tag-list]', form );
@@ -2653,6 +2659,37 @@
 				mark.textContent = tag.label || '';
 				remove.type = 'button';
 				remove.setAttribute( 'data-ysf-tag-remove', String( index ) );
+				remove.setAttribute( 'aria-label', t( 'acc_cancel', 'Kaldır' ) );
+				remove.textContent = '×';
+				item.appendChild( mark );
+				item.appendChild( remove );
+				list.appendChild( item );
+			} );
+		}
+
+		function setNotes( notes ) {
+			var hidden = field( 'notes' );
+			var list = qs( '[data-ysf-note-list]', form );
+
+			if ( hidden ) {
+				hidden.value = JSON.stringify( notes );
+			}
+
+			if ( ! list ) {
+				return;
+			}
+
+			list.innerHTML = '';
+
+			notes.forEach( function ( note, index ) {
+				var item = document.createElement( 'li' );
+				var mark = document.createElement( 'span' );
+				var remove = document.createElement( 'button' );
+
+				item.className = 'ysf-tag ysf-tag--' + ( note.type || 'info' );
+				mark.textContent = note.text || '';
+				remove.type = 'button';
+				remove.setAttribute( 'data-ysf-note-remove', String( index ) );
 				remove.setAttribute( 'aria-label', t( 'acc_cancel', 'Kaldır' ) );
 				remove.textContent = '×';
 				item.appendChild( mark );
@@ -2802,6 +2839,7 @@
 			} );
 
 			setTags( row ? parseTags( row.getAttribute( 'data-tags' ) ) : [] );
+			setNotes( row ? parseTags( row.getAttribute( 'data-notes' ) ) : [] );
 			setSizes( row ? parseTags( row.getAttribute( 'data-sizes' ) ) : [] );
 
 			if ( photo ) {
@@ -2913,6 +2951,74 @@
 					if ( ! isNaN( index ) ) {
 						tags.splice( index, 1 );
 						setTags( tags );
+					}
+				} );
+			}
+		}() );
+
+		( function initNoteComposer() {
+			var add = qs( '[data-ysf-note-add]', form );
+			var input = qs( '[data-ysf-note-text]', form );
+			var type = qs( '[data-ysf-note-type]', form );
+			var list = qs( '[data-ysf-note-list]', form );
+
+			function pushNote() {
+				var text = input ? String( input.value ).trim() : '';
+
+				if ( ! text ) {
+					if ( input ) {
+						input.focus();
+					}
+					return;
+				}
+
+				var notes = currentNotes();
+
+				if ( notes.length >= 4 ) {
+					return;
+				}
+
+				notes.push( {
+					text: text,
+					text_en: '',
+					type: type ? type.value : 'info'
+				} );
+
+				setNotes( notes );
+
+				if ( input ) {
+					input.value = '';
+					input.focus();
+				}
+			}
+
+			if ( add ) {
+				add.addEventListener( 'click', pushNote );
+			}
+
+			if ( input ) {
+				input.addEventListener( 'keydown', function ( event ) {
+					if ( 'Enter' === event.key ) {
+						event.preventDefault();
+						pushNote();
+					}
+				} );
+			}
+
+			if ( list ) {
+				list.addEventListener( 'click', function ( event ) {
+					var button = event.target.closest( '[data-ysf-note-remove]' );
+
+					if ( ! button ) {
+						return;
+					}
+
+					var notes = currentNotes();
+					var index = parseInt( button.getAttribute( 'data-ysf-note-remove' ), 10 );
+
+					if ( ! isNaN( index ) ) {
+						notes.splice( index, 1 );
+						setNotes( notes );
 					}
 				} );
 			}
@@ -3834,6 +3940,8 @@
 		var titleEl = qs( '[data-ysf-detail-title]', dialog );
 		var tagsEl = qs( '[data-ysf-detail-tags]', dialog );
 		var descEl = qs( '[data-ysf-detail-desc]', dialog );
+		var notesBox = qs( '[data-ysf-detail-notes]', dialog );
+		var notesList = qs( '[data-ysf-detail-note-list]', dialog );
 		var metaEl = qs( '[data-ysf-detail-meta]', dialog );
 		var buyEl = qs( '[data-ysf-detail-buy]', dialog );
 		var pairsBox = qs( '[data-ysf-detail-pairs]', dialog );
@@ -3951,9 +4059,23 @@
 			titleEl.textContent = info.name;
 			tagsEl.textContent = '';
 
-			qsa( '.ysf-item__title .ysf-tag', card ).forEach( function ( tag ) {
+			qsa( '.ysf-item__tags .ysf-tag', card ).forEach( function ( tag ) {
 				tagsEl.appendChild( tag.cloneNode( true ) );
 			} );
+
+			if ( notesList ) {
+				notesList.textContent = '';
+			}
+
+			var notes = qs( '.ysf-notes', card );
+
+			if ( notes && notesList ) {
+				notesList.appendChild( notes.cloneNode( true ) );
+			}
+
+			if ( notesBox ) {
+				notesBox.hidden = ! notes;
+			}
 
 			descEl.textContent = desc ? desc.textContent.trim() : '';
 			descEl.hidden = ! descEl.textContent;

@@ -34,6 +34,10 @@ $ysf_title = ysf_field( $ysf_id, 'title' );
 $ysf_full  = get_the_post_thumbnail_url( $ysf_id, 'large' );
 $ysf_ingr  = ysf_item_ingredients( $ysf_id );
 $ysf_opts  = ysf_item_options( $ysf_id );
+
+foreach ( ysf_get_item_notes( $ysf_id ) as $ysf_note ) {
+	$ysf_search .= ' ' . strtolower( $ysf_note['text'] . ' ' . $ysf_note['text_en'] );
+}
 ?>
 <?php if ( 'list' === $ysf_layout ) : ?>
 <article
@@ -71,12 +75,18 @@ $ysf_opts  = ysf_item_options( $ysf_id );
 	<div class="ysf-item__body">
 		<h3 class="ysf-item__title">
 			<button type="button" class="ysf-item__open" data-ysf-detail aria-haspopup="dialog"><?php echo esc_html( $ysf_title ); ?></button>
-			<?php ysf_the_item_tags( $ysf_id ); ?>
 		</h3>
+		<div class="ysf-item__tags">
+			<?php ysf_the_item_tags( $ysf_id ); ?>
+			<?php if ( $ysf_sold ) : ?>
+				<span class="ysf-tag ysf-tag--bad"><?php echo esc_html( ysf_t( 'sold_out' ) ); ?></span>
+			<?php endif; ?>
+		</div>
 
 		<?php if ( $ysf_desc ) : ?>
 			<p class="ysf-item__desc"><?php echo esc_html( wp_strip_all_tags( $ysf_desc ) ); ?></p>
 		<?php endif; ?>
+		<?php ysf_the_item_notes( $ysf_id ); ?>
 
 		<?php if ( $ysf_cal || $ysf_prep || $ysf_allerg ) : ?>
 			<p class="ysf-card__meta">
@@ -143,15 +153,18 @@ $ysf_opts  = ysf_item_options( $ysf_id );
 	<div class="ysf-item__body">
 		<h3 class="ysf-item__title">
 			<button type="button" class="ysf-item__open" data-ysf-detail aria-haspopup="dialog"><?php echo esc_html( $ysf_title ); ?></button>
+		</h3>
+		<div class="ysf-item__tags">
 			<?php ysf_the_item_tags( $ysf_id ); ?>
 			<?php if ( $ysf_sold ) : ?>
 				<span class="ysf-tag ysf-tag--bad"><?php echo esc_html( ysf_t( 'sold_out' ) ); ?></span>
 			<?php endif; ?>
-		</h3>
+		</div>
 
 		<?php if ( $ysf_desc ) : ?>
 			<p class="ysf-item__desc"><?php echo esc_html( wp_strip_all_tags( $ysf_desc ) ); ?></p>
 		<?php endif; ?>
+		<?php ysf_the_item_notes( $ysf_id ); ?>
 
 		<?php if ( $ysf_cal || $ysf_prep || $ysf_allerg ) : ?>
 			<p class="ysf-card__meta">

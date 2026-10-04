@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), masa servisi (garson uygulaması + kasiyer kasası + mutfak ekrani), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.5.9
+Version: 1.5.10
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -1733,6 +1733,77 @@ body.ysf-no-scroll {
 	font-size: 1.16rem;
 }
 
+.ysf-item__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0 0 6px;
+}
+
+.ysf-item__tags:not(:has(.ysf-tag)) {
+	display: none;
+}
+
+.ysf-notes {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+	margin: 8px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ysf-item .ysf-notes li:nth-child(n + 3),
+.ysf-card .ysf-notes li:nth-child(n + 3) {
+	display: none;
+}
+
+.ysf-note {
+	display: block;
+	max-width: 100%;
+	padding: 4px 10px;
+	border-radius: 8px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	line-height: 1.35;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ysf-note::before {
+	margin-right: 6px;
+	font-weight: 800;
+}
+
+.ysf-note--good {
+	background: #e6f1e8;
+	color: #1f6b3a;
+}
+
+.ysf-note--good::before {
+	content: "✓";
+}
+
+.ysf-note--bad {
+	background: #fbe8e8;
+	color: #8d2a2a;
+}
+
+.ysf-note--bad::before {
+	content: "!";
+}
+
+.ysf-note--info {
+	background: var(--ysf-ink);
+	color: var(--ysf-cream);
+}
+
+.ysf-note--info::before {
+	content: "i";
+}
+
 .ysf-item--embed .ysf-item__title {
 	color: #fff;
 	font-size: 1.08rem;
@@ -2873,6 +2944,16 @@ body.ysf-no-scroll {
 	font: inherit;
 	font-weight: 700;
 	cursor: pointer;
+}
+
+.ysf-kit-notes__list {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.ysf-kit-notes__list li {
+	max-width: 100%;
+	white-space: normal;
 }
 
 @media (max-width: 640px) {
@@ -4786,6 +4867,16 @@ body.ysf-staff-app .ysf-staff-tabs {
 	text-align: center;
 }
 
+.ysf-detail__notes,
+.ysf-detail [data-ysf-detail-note-list] .ysf-notes {
+	align-items: stretch;
+}
+
+.ysf-detail .ysf-note {
+	white-space: normal;
+	text-align: center;
+}
+
 .ysf-detail__body > .ysf-card__meta {
 	justify-content: center;
 	text-align: center;
@@ -5460,6 +5551,11 @@ html[data-theme="dark"] .ysf-card__title a:hover {
 html[data-theme="dark"] .ysf-track__cancelled {
 	background: rgba(160, 44, 44, 0.25);
 	color: #ffc7c7;
+}
+
+html[data-theme="dark"] .ysf-note--info {
+	background: #3a3128;
+	color: #fbf7f1;
 }
 
 html[data-theme="dark"] .ysf-item__thumb {

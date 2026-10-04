@@ -336,6 +336,11 @@ function ysf_ajax_kitchen_save() {
 	$tags = isset( $_POST['tags'] ) ? wp_unslash( $_POST['tags'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	ysf_save_item_tags( $post_id, $tags );
 
+	if ( isset( $_POST['notes'] ) ) {
+		$raw_notes = wp_unslash( $_POST['notes'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		ysf_save_item_notes( $post_id, $raw_notes );
+	}
+
 	if ( $cat ) {
 		wp_set_object_terms( $post_id, array( $cat ), 'ysf_menu_cat' );
 	}

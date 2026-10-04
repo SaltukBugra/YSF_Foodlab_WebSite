@@ -872,6 +872,140 @@ function ysf_the_item_tags( $post_id ) {
 }
 
 /**
+ * Kartta görünen vurgu notu türleri.
+ *
+ * @return array
+ */
+function ysf_note_types() {
+	$types = ysf_tag_types();
+
+	return array(
+		'good' => $types['good'],
+		'bad'  => $types['bad'],
+		'info' => $types['info'],
+	);
+}
+
+/**
+ * Vurgu notlarını temizler. En fazla dört kısa cümle.
+ *
+ * @param mixed $raw Ham liste.
+ * @return array
+ */
+function ysf_sanitize_notes( $raw ) {
+	$clean = array();
+	$types = array_keys( ysf_note_types() );
+
+	if ( is_string( $raw ) ) {
+		$decoded = json_decode( $raw, true );
+		$raw     = is_array( $decoded ) ? $decoded : array();
+	}
+
+	if ( ! is_array( $raw ) ) {
+		return $clean;
+	}
+
+	foreach ( $raw as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+
+		$text = isset( $row['text'] ) ? ysf_clip( sanitize_text_field( $row['text'] ), 140 ) : '';
+
+		if ( ! $text ) {
+			continue;
+		}
+
+		$type = isset( $row['type'] ) ? sanitize_key( $row['type'] ) : 'info';
+
+		if ( ! in_array( $type, $types, true ) ) {
+			$type = 'info';
+		}
+
+		$clean[] = array(
+			'text'    => $text,
+			'text_en' => isset( $row['text_en'] ) ? ysf_clip( sanitize_text_field( $row['text_en'] ), 140 ) : '',
+			'type'    => $type,
+		);
+
+		if ( count( $clean ) >= 4 ) {
+			break;
+		}
+	}
+
+	return $clean;
+}
+
+/**
+ * Ürüne kayıtlı vurgu notları.
+ *
+ * @param int $post_id Ürün.
+ * @return array
+ */
+function ysf_get_item_notes( $post_id ) {
+	$stored = get_post_meta( (int) $post_id, '_ysf_notes', true );
+
+	return ysf_sanitize_notes( $stored );
+}
+
+/**
+ * Vurgu notlarını kaydeder.
+ *
+ * @param int   $post_id Ürün.
+ * @param mixed $notes   Ham liste.
+ */
+function ysf_save_item_notes( $post_id, $notes ) {
+	update_post_meta( (int) $post_id, '_ysf_notes', ysf_sanitize_notes( $notes ) );
+}
+
+/**
+ * Ekranda gösterilecek notlar. Dil İngilizceyse çeviri varsa o kullanılır.
+ *
+ * @param int $post_id Ürün.
+ * @return array
+ */
+function ysf_item_notes( $post_id ) {
+	$lang  = ysf_lang();
+	$notes = array();
+
+	foreach ( ysf_get_item_notes( $post_id ) as $note ) {
+		$text = ( 'en' === $lang && $note['text_en'] ) ? $note['text_en'] : $note['text'];
+
+		$notes[] = array(
+			'text' => $text,
+			'type' => $note['type'],
+		);
+	}
+
+	return $notes;
+}
+
+/**
+ * Vurgu notlarını basar. Kartta ilk ikisi, detayda hepsi görünür.
+ *
+ * @param int $post_id Ürün.
+ */
+function ysf_the_item_notes( $post_id ) {
+	$notes = ysf_item_notes( $post_id );
+
+	if ( ! $notes ) {
+		return;
+	}
+
+	echo '<ul class="ysf-notes">';
+
+	foreach ( $notes as $note ) {
+		printf(
+			'<li class="ysf-note ysf-note--%1$s">%2$s</li>',
+			esc_attr( $note['type'] ),
+			esc_html( $note['text'] )
+		);
+	}
+
+	echo '</ul>';
+}
+
+/**
  * Ürünün sepete eklenebilir olup olmadığı.
  *
  * @param int $post_id Ürün kimliği.

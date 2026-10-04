@@ -41,6 +41,7 @@ $ysf_desc  = ysf_field( $ysf_id, 'excerpt' );
 		<?php if ( $ysf_desc ) : ?>
 			<p class="ysf-card__text"><?php echo esc_html( wp_trim_words( wp_strip_all_tags( $ysf_desc ), 18, '…' ) ); ?></p>
 		<?php endif; ?>
+		<?php ysf_the_item_notes( $ysf_id ); ?>
 
 		<div class="ysf-card__foot">
 			<?php ysf_the_price( $ysf_id ); ?>

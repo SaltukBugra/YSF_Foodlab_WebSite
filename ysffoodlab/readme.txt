@@ -62,6 +62,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.10 =
+* Urunlere olumlu, olumsuz ve bilgi notu eklenebiliyor. Kartta ilk iki not, urun detayinda hepsi gorunuyor.
+
 = 1.5.9 =
 * Telefon ikonu ve diger ara baglantilari numarayi + ile aciyor.
 

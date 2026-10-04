@@ -136,6 +136,24 @@ foreach ( $ysf_items as $ysf_item ) {
 			<input type="hidden" name="tags" value="[]">
 		</div>
 
+		<div class="ysf-field ysf-field--full" data-ysf-kit-notes>
+			<label><?php ysf_e( 'kit_notes' ); ?></label>
+			<p class="ysf-muted"><?php ysf_e( 'kit_notes_hint' ); ?></p>
+			<div class="ysf-kit-tags__composer">
+				<select data-ysf-note-type>
+					<?php foreach ( ysf_note_types() as $ysf_note_key => $ysf_note_meta ) : ?>
+						<option value="<?php echo esc_attr( $ysf_note_key ); ?>">
+							<?php echo esc_html( $ysf_note_meta['label'] ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<input type="text" data-ysf-note-text maxlength="140" placeholder="<?php echo esc_attr( ysf_t( 'kit_note_ph' ) ); ?>">
+				<button type="button" class="ysf-btn ysf-btn--sm" data-ysf-note-add><?php ysf_e( 'kit_tag_add' ); ?></button>
+			</div>
+			<ul class="ysf-kit-tags__list ysf-kit-notes__list" data-ysf-note-list></ul>
+			<input type="hidden" name="notes" value="[]">
+		</div>
+
 		<label class="ysf-check">
 			<input type="checkbox" name="sold_out" value="1">
 			<span><?php ysf_e( 'kit_sold_out' ); ?></span>
@@ -191,6 +209,7 @@ foreach ( $ysf_items as $ysf_item ) {
 			$ysf_gf     = ysf_meta_flag( $ysf_id, '_ysf_glutenfree' );
 			$ysf_spicy  = ysf_meta_flag( $ysf_id, '_ysf_spicy' );
 			$ysf_tags   = ysf_get_item_tags( $ysf_id );
+			$ysf_notes  = ysf_get_item_notes( $ysf_id );
 			$ysf_sizes  = ysf_get_item_sizes( $ysf_id );
 			?>
 			<article
@@ -210,6 +229,7 @@ foreach ( $ysf_items as $ysf_item ) {
 				data-glutenfree="<?php echo $ysf_gf ? '1' : '0'; ?>"
 				data-spicy="<?php echo $ysf_spicy ? '1' : '0'; ?>"
 				data-tags="<?php echo esc_attr( wp_json_encode( $ysf_tags ) ); ?>"
+				data-notes="<?php echo esc_attr( wp_json_encode( $ysf_notes ) ); ?>"
 				data-sizes="<?php echo esc_attr( wp_json_encode( $ysf_sizes ) ); ?>"
 				data-search="<?php echo esc_attr( strtolower( $ysf_item->post_title . ' ' . $ysf_desc ) ); ?>"
 			>

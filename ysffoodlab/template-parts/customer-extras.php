@@ -17,6 +17,10 @@ $ysf_track_tables = function_exists( 'ysf_show_table_service' ) && ysf_show_tabl
 		<h2 id="ysf-detail-title" data-ysf-detail-title></h2>
 		<div class="ysf-detail__tags" data-ysf-detail-tags></div>
 		<p class="ysf-detail__desc" data-ysf-detail-desc></p>
+		<section class="ysf-detail__section" data-ysf-detail-notes hidden>
+			<h3><?php ysf_e( 'detail_notes' ); ?></h3>
+			<div data-ysf-detail-note-list></div>
+		</section>
 		<p class="ysf-card__meta" data-ysf-detail-meta></p>
 		<section class="ysf-detail__section" data-ysf-detail-ingredients hidden>
 			<h3><?php ysf_e( 'detail_ingredients' ); ?></h3>
