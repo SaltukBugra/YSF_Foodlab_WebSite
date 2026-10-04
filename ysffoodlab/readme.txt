@@ -62,6 +62,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.7 =
+* Mobil online sipariste sepet altindaki "Teslimat asamasina gec" dugmesi gizlendi. Masaustunde yapiskan sepette duruyor.
+
 = 1.5.6 =
 * Siralama ekrani duzeltildi: sayfa dogru menuye baglandi, surukleme artik kaydediliyor.
 * Urun duzenleme ekraninda ve sitedeki menu ayarinda "kacinci sirada gorunsun" alani var; numara girilince urun o kategoride istenen yere tasinir.
