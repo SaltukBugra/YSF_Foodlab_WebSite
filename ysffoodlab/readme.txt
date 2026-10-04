@@ -62,6 +62,10 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.1 =
+* Menu ve online sipariste yapiskan kategori gezinmesi: kaydirdikca gorunen kategori vurgulanir, tiklayinca o bolume kayilir.
+* Masaustunde menu urun alani eski genisligini korur; genis ekranda kategori listesi solda, daha dar ekranda ve sipariste ustte yatay serit.
+
 = 1.5.0 =
 * Canli siparis takip sayfasi (/?ysf_siparis=), hazir bildirimi, puanlama ve Google yorum yonlendirmesi.
 * Sadakat (damga) karti, favoriler, tekrar siparis, diyet/alerjen filtreleri, urun detay penceresi.

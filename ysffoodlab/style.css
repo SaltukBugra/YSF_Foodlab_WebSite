@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), masa servisi (garson uygulaması + kasiyer kasası + mutfak ekrani), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.5.0
+Version: 1.5.1
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -1411,162 +1411,104 @@ body.ysf-no-scroll {
 	margin-bottom: 0;
 }
 
-@media (min-width: 992px) {
-	.ysf-cat-layout {
+/* Geniş ekranda menü sayfası: ürün alanı eski genişliğini korur,
+   kategori listesi onun soluna taşar. Daha dar masaüstünde ve sipariş
+   sayfasında üstteki yatay şerit kullanılır. */
+@media (min-width: 1440px) {
+	.ysf-cat-layout--embed {
 		display: grid;
-		grid-template-columns: 240px minmax(0, 1fr);
-		gap: clamp(28px, 4vw, 48px);
+		grid-template-columns: 200px minmax(0, 1fr);
+		gap: 40px;
 		align-items: start;
+		width: calc(100% + 240px);
+		margin-inline: -120px;
 	}
 
-	.ysf-cat-nav {
-		position: sticky;
-		top: calc(var(--ysf-header-h, 104px) + 24px);
+	.ysf-cat-layout--embed .ysf-cat-nav {
+		top: calc(var(--ysf-header-h) + 32px);
 		z-index: 20;
-		background: transparent;
-		border-bottom: none;
+		max-height: calc(100vh - var(--ysf-header-h) - 64px);
+		margin: 0;
 		padding: 0;
-		margin-bottom: 0;
-		max-height: calc(100vh - var(--ysf-header-h, 104px) - 48px);
+		border: 0;
+		background: none;
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
 		overflow-y: auto;
-		scrollbar-width: thin;
+		scrollbar-width: none;
 	}
 
-	.ysf-cat-nav__track {
-		background: var(--ysf-card);
-		border: 1px solid var(--ysf-line);
-		border-radius: var(--ysf-radius-lg);
-		padding: 16px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-	}
-
-	.ysf-cat-nav__head {
-		display: flex;
-		align-items: center;
-		padding: 4px 8px 12px;
-		margin-bottom: 8px;
-		border-bottom: 1px solid var(--ysf-line);
-	}
-
-	.ysf-cat-nav__title {
-		font-size: 0.8rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: var(--ysf-muted);
-	}
-
-	.ysf-cat-nav__list {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		padding: 0;
-		overflow: visible;
-	}
-
-	.ysf-cat-nav__link {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 10px 14px;
-		border-radius: var(--ysf-radius-md);
-		border: 1px solid transparent;
-		background: transparent;
-		color: var(--ysf-fg);
-		font-size: 0.92rem;
-		font-weight: 500;
-		text-decoration: none;
-		transition: all 0.18s ease;
-	}
-
-	.ysf-cat-nav__link:hover {
-		background: var(--ysf-bg-2);
-		color: var(--ysf-accent);
-	}
-
-	.ysf-cat-nav__link.is-active {
-		background: var(--ysf-ink);
-		color: var(--ysf-cream);
-		border-color: var(--ysf-ink);
-		font-weight: 700;
-		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-		transform: translateX(4px);
-	}
-
-	.ysf-cat-nav__link.is-active .ysf-cat-nav__count {
-		background: rgba(255, 255, 255, 0.22);
-		color: #fff;
-	}
-}
-
-/* Sipariş sayfasında responsive düzen */
-@media (min-width: 992px) and (max-width: 1199px) {
-	.ysf-order-layout .ysf-cat-layout {
-		display: block;
-	}
-
-	.ysf-order-layout .ysf-cat-nav {
-		position: sticky;
-		top: var(--ysf-header-h, 104px);
-		z-index: 25;
-		background: var(--ysf-bg);
-		border-bottom: 1px solid var(--ysf-line);
-		padding: 10px 0;
-		margin-bottom: 24px;
-		max-height: none;
-		overflow: visible;
-	}
-
-	.ysf-order-layout .ysf-cat-nav__track {
-		background: transparent;
-		border: none;
-		padding: 0;
-		box-shadow: none;
-	}
-
-	.ysf-order-layout .ysf-cat-nav__head {
+	.ysf-cat-layout--embed .ysf-cat-nav::-webkit-scrollbar {
 		display: none;
 	}
 
-	.ysf-order-layout .ysf-cat-nav__list {
-		display: flex;
-		flex-direction: row;
-		gap: 8px;
-		overflow-x: auto;
-		scrollbar-width: none;
-		padding-inline: 0;
+	.ysf-cat-layout--embed .ysf-cat-nav__head {
+		display: block;
+		margin-bottom: 14px;
 	}
 
-	.ysf-order-layout .ysf-cat-nav__link {
-		flex: none;
-		border-radius: var(--ysf-radius-pill);
-		border: 1px solid var(--ysf-line);
-		background: var(--ysf-card);
-		padding: 8px 16px;
-		transform: none;
+	.ysf-cat-layout--embed .ysf-cat-nav__title {
+		color: var(--ysf-accent);
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
 	}
 
-	.ysf-order-layout .ysf-cat-nav__link.is-active {
-		background: var(--ysf-ink);
-		color: var(--ysf-cream);
-		border-color: var(--ysf-ink);
-		transform: none;
-	}
-}
-
-@media (min-width: 1200px) {
-	.ysf-order-layout .ysf-cat-layout {
-		grid-template-columns: 195px minmax(0, 1fr);
-		gap: 28px;
+	.ysf-cat-layout--embed .ysf-cat-nav__list {
+		flex-direction: column;
+		gap: 2px;
+		padding: 0;
+		border-left: 1px solid var(--ysf-line);
+		overflow: visible;
 	}
 
-	.ysf-order-layout .ysf-cat-nav__track {
-		padding: 12px;
+	.ysf-cat-layout--embed .ysf-cat-nav__link {
+		justify-content: space-between;
+		gap: 12px;
+		margin-left: -1px;
+		padding: 9px 4px 9px 16px;
+		border: 0;
+		border-left: 3px solid transparent;
+		border-radius: 0;
+		background: none;
+		box-shadow: none;
+		color: var(--ysf-muted);
+		font-size: 0.95rem;
+		white-space: normal;
 	}
 
-	.ysf-order-layout .ysf-cat-nav__link {
-		padding: 8px 12px;
-		font-size: 0.88rem;
+	.ysf-cat-layout--embed .ysf-cat-nav__link:hover {
+		border-left-color: var(--ysf-line);
+		color: var(--ysf-fg);
+	}
+
+	.ysf-cat-layout--embed .ysf-cat-nav__link.is-active,
+	html[data-theme="dark"] .ysf-cat-layout--embed .ysf-cat-nav__link.is-active {
+		border-color: transparent;
+		border-left-color: var(--ysf-accent);
+		background: none;
+		box-shadow: none;
+		color: var(--ysf-fg);
+		font-weight: 700;
+	}
+
+	.ysf-cat-layout--embed .ysf-cat-nav__count {
+		padding: 0;
+		background: none;
+		color: var(--ysf-muted);
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+
+	.ysf-cat-layout--embed .ysf-cat-nav__link.is-active .ysf-cat-nav__count,
+	html[data-theme="dark"] .ysf-cat-layout--embed .ysf-cat-nav__link.is-active .ysf-cat-nav__count {
+		background: none;
+		color: var(--ysf-accent);
+	}
+
+	.ysf-cat-layout--embed .ysf-menu-group {
+		scroll-margin-top: calc(var(--ysf-header-h) + 28px);
 	}
 }
 
@@ -1615,18 +1557,6 @@ body.ysf-no-scroll {
 .ysf-menu-group {
 	margin-bottom: clamp(36px, 5vw, 64px);
 	scroll-margin-top: calc(var(--ysf-header-h, 104px) + 68px);
-}
-
-@media (min-width: 992px) {
-	.ysf-menu-group {
-		scroll-margin-top: calc(var(--ysf-header-h, 104px) + 28px);
-	}
-}
-
-@media (min-width: 992px) and (max-width: 1199px) {
-	.ysf-order-layout .ysf-menu-group {
-		scroll-margin-top: calc(var(--ysf-header-h, 104px) + 68px);
-	}
 }
 
 .ysf-menu-group__head {

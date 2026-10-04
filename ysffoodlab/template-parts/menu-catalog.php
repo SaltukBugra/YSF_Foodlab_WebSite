@@ -79,7 +79,7 @@ if ( $ysf_uncategorized ) {
 ?>
 
 <?php if ( $ysf_catalog_data ) : ?>
-	<div class="ysf-cat-layout" data-ysf-cat-layout>
+	<div class="ysf-cat-layout ysf-cat-layout--<?php echo esc_attr( $ysf_layout ); ?>" data-ysf-cat-layout>
 
 		<!-- Yan / Üst Yapışkan Kategori Menüsü (Scrollspy) -->
 		<aside class="ysf-cat-nav" data-ysf-cat-nav aria-label="<?php echo esc_attr( ysf_t( 'menu_categories' ) ); ?>">
