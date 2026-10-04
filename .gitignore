@@ -9,3 +9,5 @@ apk/
 keystore.properties
 *.jks
 *.keystore
+*.sql
+
