@@ -588,6 +588,8 @@ function ysf_dictionary() {
 		'kit_photo_hint'      => array( 'İsteğe bağlı. Düzenlerken boş bırakırsanız mevcut fotoğraf kalır.', 'Optional. Leave empty while editing to keep the current photo.' ),
 		'kit_orderable'       => array( 'Online siparişe açık', 'Available for online orders' ),
 		'kit_search'          => array( 'Ürün ara…', 'Search items…' ),
+		'kit_reorder_hint'    => array( 'Ürünleri tutup sürükleyerek sıralayın. Sıra menüde ve online siparişte aynen görünür.', 'Drag items to reorder them. The order is used on the menu and for online orders.' ),
+		'kit_reordered'       => array( 'Sıralama kaydedildi.', 'Order saved.' ),
 		'kit_forbidden'       => array( 'Bu işlem için mutfak yetkisi gerekir.', 'Kitchen permission is required for this action.' ),
 		'kit_price_invalid'   => array( 'Fiyat geçersiz.', 'The price is not valid.' ),
 		'kit_cat_invalid'     => array( 'Kategori geçersiz.', 'That category is not valid.' ),

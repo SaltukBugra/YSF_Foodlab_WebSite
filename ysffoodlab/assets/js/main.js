@@ -2508,12 +2508,72 @@
 	/**
 	 * Sipariş formunda kayıtlı adresi tek dokunuşla doldurur.
 	 */
+	function initKitchenReorder( root ) {
+		var list = qs( '[data-ysf-kit-list]', root );
+
+		if ( ! list ) {
+			return;
+		}
+
+		var dragged = null;
+
+		function rows() {
+			return qsa( '[data-ysf-kit-row]', list ).filter( function ( row ) {
+				return ! row.hidden;
+			} );
+		}
+
+		function save() {
+			var ids = qsa( '[data-ysf-kit-row]', list ).map( function ( row ) {
+				return row.getAttribute( 'data-id' );
+			} );
+
+			request( 'ysf_kitchen_action', {
+				id: ids[ 0 ] || '0',
+				task: 'reorder',
+				ids: ids
+			} );
+		}
+
+		qsa( '[data-ysf-kit-row]', list ).forEach( function ( row ) {
+			row.draggable = true;
+
+			row.addEventListener( 'dragstart', function ( event ) {
+				if ( event.target.closest( 'button, a, input' ) ) {
+					event.preventDefault();
+					return;
+				}
+
+				dragged = row;
+				row.classList.add( 'is-dragging' );
+			} );
+
+			row.addEventListener( 'dragend', function () {
+				row.classList.remove( 'is-dragging' );
+				dragged = null;
+				save();
+			} );
+
+			row.addEventListener( 'dragover', function ( event ) {
+				if ( ! dragged || dragged === row ) {
+					return;
+				}
+
+				event.preventDefault();
+				var before = rows().indexOf( row ) > rows().indexOf( dragged );
+				list.insertBefore( dragged, before ? row.nextSibling : row );
+			} );
+		} );
+	}
+
 	function initKitchenDesk() {
 		var root = qs( '[data-ysf-kitchen]' );
 
 		if ( ! root ) {
 			return;
 		}
+
+		initKitchenReorder( root );
 
 		var form = qs( '[data-ysf-form="kitchen"]', root );
 		var flash = qs( '[data-ysf-kit-flash]', root );

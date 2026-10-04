@@ -18,13 +18,7 @@ $ysf_item_args = array(
 );
 $ysf_grid_class = ( 'list' === $ysf_layout ) ? 'ysf-grid' : 'ysf-grid ysf-grid--menu';
 
-$ysf_terms = get_terms(
-	array(
-		'taxonomy'   => 'ysf_menu_cat',
-		'hide_empty' => true,
-		'orderby'    => 'term_order',
-	)
-);
+$ysf_terms = ysf_ordered_menu_cats( true );
 
 if ( is_wp_error( $ysf_terms ) ) {
 	$ysf_terms = array();

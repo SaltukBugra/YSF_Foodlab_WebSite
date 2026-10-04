@@ -44,6 +44,15 @@ function ysf_register_post_types() {
 		)
 	);
 
+	add_submenu_page(
+		'edit.php?post_type=ysf_menu_item',
+		__( 'Menü Sıralaması', 'ysffoodlab' ),
+		__( 'Sıralama', 'ysffoodlab' ),
+		'edit_posts',
+		'ysf-menu-order',
+		'ysf_menu_order_page'
+	);
+
 	register_taxonomy(
 		'ysf_menu_cat',
 		array( 'ysf_menu_item' ),

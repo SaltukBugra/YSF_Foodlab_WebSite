@@ -62,6 +62,10 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.5 =
+* Menü Yönetimi altinda "Siralama" ekrani: kategoriler ve her kategorinin urunleri suruklenerek dizilir, menude ve online sipariste bu sira kullanilir.
+* Mutfak panelindeki urun listesi de ayni siraya gore gelir ve surukleyerek degistirilebilir.
+
 = 1.5.4 =
 * Mobil online siparis: sayfa kategori seridi yuzunden ekrandan tasiyordu, duzeltildi. Urun gorselleri buyutuldu; ad ve aciklama 2 satirdan sonra uc noktayla kesilir, tamami urun detayinda gorunur.
 

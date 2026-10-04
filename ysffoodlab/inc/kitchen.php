@@ -228,8 +228,8 @@ function ysf_kitchen_items() {
 			'post_status'    => array( 'publish', 'draft', 'pending', 'trash' ),
 			'posts_per_page' => -1,
 			'orderby'        => array(
-				'post_status' => 'ASC',
-				'title'       => 'ASC',
+				'menu_order' => 'ASC',
+				'title'      => 'ASC',
 			),
 		)
 	);
@@ -393,6 +393,35 @@ function ysf_ajax_kitchen_action() {
 			wp_untrash_post( $item->ID );
 			wp_publish_post( $item->ID );
 			$ok_msg = ysf_t( 'kit_restored' );
+			break;
+
+		case 'reorder':
+			$ids   = isset( $_POST['ids'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['ids'] ) ) : array();
+			$place = array();
+
+			foreach ( $ids as $post_id ) {
+				if ( 'ysf_menu_item' !== get_post_type( $post_id ) ) {
+					continue;
+				}
+
+				$terms = wp_get_post_terms( $post_id, 'ysf_menu_cat', array( 'fields' => 'ids' ) );
+				$cat   = ( $terms && ! is_wp_error( $terms ) ) ? (int) $terms[0] : 0;
+
+				if ( ! isset( $place[ $cat ] ) ) {
+					$place[ $cat ] = 0;
+				}
+
+				++$place[ $cat ];
+
+				wp_update_post(
+					array(
+						'ID'         => $post_id,
+						'menu_order' => $place[ $cat ],
+					)
+				);
+			}
+
+			$ok_msg = ysf_t( 'kit_reordered' );
 			break;
 
 		default:

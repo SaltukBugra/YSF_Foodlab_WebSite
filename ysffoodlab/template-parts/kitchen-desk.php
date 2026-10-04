@@ -10,12 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $ysf_items = ysf_kitchen_items();
-$ysf_cats  = get_terms(
-	array(
-		'taxonomy'   => 'ysf_menu_cat',
-		'hide_empty' => false,
-	)
-);
+$ysf_cats = ysf_ordered_menu_cats( false );
 
 if ( is_wp_error( $ysf_cats ) ) {
 	$ysf_cats = array();
@@ -170,7 +165,9 @@ foreach ( $ysf_items as $ysf_item ) {
 		<p class="ysf-muted" data-ysf-kit-empty><?php ysf_e( 'kit_empty' ); ?></p>
 	<?php endif; ?>
 
-	<div class="ysf-kitchen__list">
+	<p class="ysf-muted ysf-kitchen__reorder-hint"><?php ysf_e( 'kit_reorder_hint' ); ?></p>
+
+	<div class="ysf-kitchen__list" data-ysf-kit-list>
 		<?php foreach ( $ysf_live as $ysf_item ) : ?>
 			<?php
 			$ysf_id     = $ysf_item->ID;
