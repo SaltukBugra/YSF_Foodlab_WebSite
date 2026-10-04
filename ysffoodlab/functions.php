@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'YSF_VERSION', '1.5.7' );
+define( 'YSF_VERSION', '1.5.8' );
 define( 'YSF_DIR', get_template_directory() );
 define( 'YSF_URI', get_template_directory_uri() );
 define( 'YSF_MAIL_FROM', 'info@ysffoodlab.com.tr' );

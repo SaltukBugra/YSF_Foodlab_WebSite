@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), masa servisi (garson uygulaması + kasiyer kasası + mutfak ekrani), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.5.7
+Version: 1.5.8
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -136,7 +136,7 @@ blockquote {
 	font-family: var(--ysf-font-head);
 	font-size: 1.15rem;
 	font-style: italic;
-	color: var(--ysf-ink-soft);
+	color: var(--ysf-fg);
 }
 
 table {
@@ -2136,7 +2136,7 @@ body.ysf-no-scroll {
 .ysf-field label {
 	font-size: 0.85rem;
 	font-weight: 600;
-	color: var(--ysf-ink-soft);
+	color: var(--ysf-fg);
 }
 
 .ysf-field .ysf-req {
@@ -2195,7 +2195,7 @@ body.ysf-no-scroll {
 	border: 0;
 	border-radius: 999px;
 	background: var(--ysf-bg-2);
-	color: var(--ysf-ink-soft);
+	color: var(--ysf-fg);
 	font-family: inherit;
 	font-size: 0.75rem;
 	font-weight: 700;
@@ -2244,6 +2244,7 @@ body.ysf-no-scroll {
 	border: 1px solid var(--ysf-line);
 	border-radius: 12px;
 	background: var(--ysf-card);
+	color: var(--ysf-fg);
 	font-size: 0.9rem;
 	font-weight: 600;
 	text-align: center;
@@ -2314,7 +2315,7 @@ body.ysf-no-scroll {
 	align-items: flex-start;
 	font-size: 0.9rem;
 	line-height: 1.5;
-	color: var(--ysf-ink-soft);
+	color: var(--ysf-fg);
 	cursor: pointer;
 }
 
@@ -5439,6 +5440,21 @@ html[data-theme="dark"] .ysf-alert--err {
 
 html[data-theme="dark"] .ysf-alert--info {
 	color: var(--ysf-fg);
+}
+
+html[data-theme="dark"] .ysf-eyebrow,
+html[data-theme="dark"] .ysf-link-btn:not(.ysf-link-btn--danger),
+html[data-theme="dark"] .ysf-details > summary,
+html[data-theme="dark"] .ysf-fact__num,
+html[data-theme="dark"] .ysf-campaign-hint,
+html[data-theme="dark"] .ysf-card.is-waiting .ysf-card__meta,
+html[data-theme="dark"] .ysf-card.is-pending .ysf-card__meta,
+html[data-theme="dark"] .ysf-choice input:checked + span,
+html[data-theme="dark"] .ysf-info-list__icon,
+html[data-theme="dark"] .ysf-kitchen__row.is-soldout .ysf-kitchen__state,
+html[data-theme="dark"] .ysf-qty button:hover,
+html[data-theme="dark"] .ysf-card__title a:hover {
+	color: #f0c27a;
 }
 
 html[data-theme="dark"] .ysf-track__cancelled {
