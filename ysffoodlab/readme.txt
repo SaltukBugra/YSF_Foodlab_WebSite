@@ -62,6 +62,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.4 =
+* Mobil online siparis: sayfa kategori seridi yuzunden ekrandan tasiyordu, duzeltildi. Urun gorselleri buyutuldu; ad ve aciklama 2 satirdan sonra uc noktayla kesilir, tamami urun detayinda gorunur.
+
 = 1.5.3 =
 * Urunlere "Icindekiler" alani (TR/EN) ve her ebata "Icerik / ekstra" notu eklendi; yonetim panelinden ve mutfak panelinden girilir.
 * Menude urune tiklayinca acilan detayda gorsel, ad ve aciklama ortalanir; altinda Icindekiler ve Seceneklerde (ebat, ekstra, fiyat) gosterilir. Sipariste secenege dokunmak o ebati secer.
