@@ -280,6 +280,10 @@ function ysf_ajax_table_call() {
 		wp_send_json_error( array( 'message' => ysf_t( 'pos_disabled' ) ), 403 );
 	}
 
+	if ( ! is_user_logged_in() ) {
+		wp_send_json_error( array( 'message' => ysf_t( 'acc_login_required' ) ), 403 );
+	}
+
 	$table = isset( $_POST['table'] ) ? sanitize_text_field( wp_unslash( $_POST['table'] ) ) : '';
 	$type  = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
 
@@ -368,7 +372,7 @@ function ysf_table_menu_url( $table ) {
  * @return bool
  */
 function ysf_show_table_service() {
-	return ysf_floor_enabled() && ( is_page_template( 'template-menu.php' ) || is_page_template( 'template-order.php' ) );
+	return ysf_floor_enabled() && is_user_logged_in() && is_page_template( 'template-menu.php' );
 }
 
 /**

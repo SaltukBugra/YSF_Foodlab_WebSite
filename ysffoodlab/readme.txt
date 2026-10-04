@@ -62,6 +62,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.2 =
+* "Masadasiniz / Garson cagir / Hesap iste" seridi online siparis sayfasinda gosterilmez; menu sayfasinda yalnizca giris yapmis kullaniciya gorunur. Cagri istegi sunucuda da giris ister.
+
 = 1.5.1 =
 * Menu ve online sipariste yapiskan kategori gezinmesi: kaydirdikca gorunen kategori vurgulanir, tiklayinca o bolume kayilir.
 * Masaustunde menu urun alani eski genisligini korur; genis ekranda kategori listesi solda, daha dar ekranda ve sipariste ustte yatay serit.
