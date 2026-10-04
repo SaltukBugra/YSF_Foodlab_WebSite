@@ -314,6 +314,10 @@ function ysf_ajax_kitchen_save() {
 
 	update_post_meta( $post_id, '_ysf_price', $price );
 
+	if ( isset( $_POST['item_order'] ) && '' !== (string) wp_unslash( $_POST['item_order'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		ysf_place_menu_item( $post_id, absint( wp_unslash( $_POST['item_order'] ) ) );
+	}
+
 	if ( isset( $_POST['ingredients'] ) ) {
 		$ingredients = ysf_clip( sanitize_textarea_field( wp_unslash( $_POST['ingredients'] ) ), 600 );
 		update_post_meta( $post_id, '_ysf_ingredients', $ingredients );

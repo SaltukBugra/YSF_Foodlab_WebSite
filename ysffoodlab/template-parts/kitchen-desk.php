@@ -61,6 +61,12 @@ foreach ( $ysf_items as $ysf_item ) {
 		</div>
 
 		<div class="ysf-field">
+			<label for="ysf-kit-order"><?php ysf_e( 'kit_order' ); ?></label>
+			<input type="number" id="ysf-kit-order" name="item_order" min="1" step="1" inputmode="numeric">
+			<small><?php ysf_e( 'kit_order_hint' ); ?></small>
+		</div>
+
+		<div class="ysf-field">
 			<label for="ysf-kit-price"><?php ysf_e( 'kit_price' ); ?></label>
 			<input type="number" id="ysf-kit-price" name="price" min="0" step="0.01" inputmode="decimal">
 		</div>
@@ -193,6 +199,7 @@ foreach ( $ysf_items as $ysf_item ) {
 				data-id="<?php echo esc_attr( (string) $ysf_id ); ?>"
 				data-title="<?php echo esc_attr( $ysf_item->post_title ); ?>"
 				data-price="<?php echo esc_attr( (string) $ysf_price ); ?>"
+				data-order="<?php echo esc_attr( (string) (int) $ysf_item->menu_order ); ?>"
 				data-cat="<?php echo esc_attr( (string) $ysf_cat_id ); ?>"
 				data-excerpt="<?php echo esc_attr( $ysf_desc ); ?>"
 				data-ingredients="<?php echo esc_attr( (string) get_post_meta( $ysf_id, '_ysf_ingredients', true ) ); ?>"

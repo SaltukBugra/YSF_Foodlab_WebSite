@@ -2749,6 +2749,7 @@
 			var title = field( 'title' );
 			var category = field( 'category' );
 			var price = field( 'price' );
+			var order = field( 'item_order' );
 			var excerpt = field( 'excerpt' );
 			var ingredients = field( 'ingredients' );
 			var sold = field( 'sold_out' );
@@ -2770,6 +2771,10 @@
 
 			if ( price ) {
 				price.value = row ? ( row.getAttribute( 'data-price' ) || '' ) : '';
+			}
+
+			if ( order ) {
+				order.value = row ? ( row.getAttribute( 'data-order' ) || '' ) : '';
 			}
 
 			if ( excerpt ) {

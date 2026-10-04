@@ -474,7 +474,7 @@ function ysf_menu_order_page() {
 				<?php $items = ysf_get_menu_items( array( 'category' => $term->term_id ) ); ?>
 				<li class="ysf-order__cat" data-id="<?php echo esc_attr( (string) $term->term_id ); ?>">
 					<div class="ysf-order__head">
-						<button type="button" class="ysf-order__handle" aria-label="<?php esc_attr_e( 'Sırayı değiştir', 'ysffoodlab' ); ?>">&#9776;</button>
+						<span class="ysf-order__handle" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'Sırayı değiştir', 'ysffoodlab' ); ?>">&#9776;</span>
 						<strong><?php echo esc_html( $term->name ); ?></strong>
 						<span class="ysf-order__count"><?php echo esc_html( sprintf( '%d ürün', count( $items ) ) ); ?></span>
 						<button type="button" class="button-link ysf-order__toggle" aria-expanded="false"><?php esc_html_e( 'Ürünleri sırala', 'ysffoodlab' ); ?></button>
@@ -507,8 +507,6 @@ function ysf_menu_order_assets( $hook ) {
 		return;
 	}
 
-	wp_enqueue_script( 'jquery-ui-sortable' );
-
 	$css = '
 		.ysf-order{max-width:760px;margin:0}
 		.ysf-order li{margin:0}
@@ -530,26 +528,52 @@ function ysf_menu_order_assets( $hook ) {
 	wp_enqueue_style( 'ysf-order' );
 	wp_add_inline_style( 'ysf-order', $css );
 
-	wp_register_script( 'ysf-order', false, array( 'jquery', 'jquery-ui-sortable' ), YSF_VERSION, true );
+	wp_register_script( 'ysf-order', false, array(), YSF_VERSION, true );
 	wp_enqueue_script( 'ysf-order' );
 
 	$js = '
-		jQuery(function($){
-			var status=$("[data-ysf-order-status]");
-			function note(text,ok){status.text(text).removeClass("is-ok is-err").addClass(ok?"is-ok":"is-err").prop("hidden",false);}
+		(function(){
+			var status=document.querySelector("[data-ysf-order-status]");
+			function note(text,ok){status.textContent=text;status.className="ysf-order-status "+(ok?"is-ok":"is-err");status.hidden=false;}
 			function save(kind,cat,ids){
-				$.post(ajaxurl,{action:"ysf_menu_order",nonce:ysfOrder.nonce,kind:kind,cat:cat||0,ids:ids})
-					.done(function(res){note(res&&res.success?ysfOrder.saved:ysfOrder.failed,!!(res&&res.success));})
-					.fail(function(){note(ysfOrder.failed,false);});
+				var body=new FormData();
+				body.append("action","ysf_menu_order");
+				body.append("nonce",ysfOrder.nonce);
+				body.append("kind",kind);
+				body.append("cat",cat||"0");
+				ids.forEach(function(id){body.append("ids[]",id);});
+				fetch(ajaxurl,{method:"POST",body:body,credentials:"same-origin"})
+					.then(function(r){return r.json();})
+					.then(function(res){note(res&&res.success?ysfOrder.saved:ysfOrder.failed,!!(res&&res.success));})
+					.catch(function(){note(ysfOrder.failed,false);});
 			}
-			function ids(list){return list.children("[data-id]").map(function(){return $(this).data("id");}).get();}
-			$("[data-ysf-order=cats]").sortable({handle:".ysf-order__head .ysf-order__handle",items:">li",update:function(){save("cats",0,ids($(this)));}});
-			$("[data-ysf-order=items]").sortable({handle:".ysf-order__handle",items:">li[data-id]",update:function(){save("items",$(this).data("cat"),ids($(this)));}});
-			$(".ysf-order__toggle").on("click",function(){
-				var open=$(this).attr("aria-expanded")==="true";
-				$(this).attr("aria-expanded",open?"false":"true").closest(".ysf-order__cat").find(".ysf-order__items").prop("hidden",open);
+			function ids(list){return Array.prototype.map.call(list.querySelectorAll(":scope > [data-id]"),function(li){return li.getAttribute("data-id");});}
+			function sortable(list,kind,cat){
+				var dragged=null;
+				Array.prototype.forEach.call(list.querySelectorAll(":scope > [data-id]"),function(li){
+					var handle=li.querySelector(".ysf-order__handle");
+					if(handle){handle.draggable=true;}
+					(handle||li).addEventListener("dragstart",function(e){dragged=li;e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",li.getAttribute("data-id"));li.classList.add("is-dragging");});
+					li.addEventListener("dragend",function(){li.classList.remove("is-dragging");dragged=null;save(kind,cat,ids(list));});
+					li.addEventListener("dragover",function(e){
+						if(!dragged||dragged===li||dragged.parentNode!==list){return;}
+						e.preventDefault();
+						var after=li.getBoundingClientRect().top+li.offsetHeight/2<e.clientY;
+						list.insertBefore(dragged,after?li.nextSibling:li);
+					});
+				});
+			}
+			var cats=document.querySelector("[data-ysf-order=cats]");
+			if(cats){sortable(cats,"cats",0);}
+			Array.prototype.forEach.call(document.querySelectorAll("[data-ysf-order=items]"),function(list){sortable(list,"items",list.getAttribute("data-cat"));});
+			Array.prototype.forEach.call(document.querySelectorAll(".ysf-order__toggle"),function(btn){
+				btn.addEventListener("click",function(){
+					var open=btn.getAttribute("aria-expanded")==="true";
+					btn.setAttribute("aria-expanded",open?"false":"true");
+					btn.closest(".ysf-order__cat").querySelector(".ysf-order__items").hidden=open;
+				});
 			});
-		});
+		})();
 	';
 	wp_add_inline_script( 'ysf-order', $js );
 	wp_localize_script(
@@ -617,6 +641,15 @@ function ysf_add_meta_boxes() {
 	);
 
 	add_meta_box(
+		'ysf_menu_order_box',
+		__( 'Menüdeki sırası', 'ysffoodlab' ),
+		'ysf_render_item_order_box',
+		'ysf_menu_item',
+		'side',
+		'high'
+	);
+
+	add_meta_box(
 		'ysf_menu_tags_box',
 		__( 'İsim yanı etiketler', 'ysffoodlab' ),
 		'ysf_render_tags_box',
@@ -657,6 +690,105 @@ function ysf_add_meta_boxes() {
 	);
 }
 add_action( 'add_meta_boxes', 'ysf_add_meta_boxes' );
+
+/**
+ * Ürün düzenleme ekranında, kategorisinin içindeki sırayı gösteren kutu.
+ *
+ * @param WP_Post $post Ürün.
+ */
+function ysf_render_item_order_box( $post ) {
+	$terms = wp_get_post_terms( $post->ID, 'ysf_menu_cat' );
+	$term  = ( $terms && ! is_wp_error( $terms ) ) ? $terms[0] : null;
+	$mates = $term ? ysf_get_menu_items( array( 'category' => $term->term_id ) ) : array();
+	$place = 0;
+
+	foreach ( $mates as $index => $mate ) {
+		if ( (int) $mate->ID === (int) $post->ID ) {
+			$place = $index + 1;
+		}
+	}
+
+	wp_nonce_field( 'ysf_item_order', 'ysf_item_order_nonce' );
+
+	if ( $term ) {
+		printf(
+			'<p>%s</p>',
+			esc_html( sprintf( '%1$s kategorisinde %2$d. sırada.', $term->name, $place ? $place : count( $mates ) + 1 ) )
+		);
+	} else {
+		echo '<p>' . esc_html__( 'Önce bir kategori seçin.', 'ysffoodlab' ) . '</p>';
+	}
+
+	printf(
+		'<label for="ysf-item-order"><strong>%s</strong></label>',
+		esc_html__( 'Kaçıncı sırada görünsün', 'ysffoodlab' )
+	);
+	printf(
+		'<input type="number" id="ysf-item-order" name="ysf_item_order" min="1" step="1" value="%d" style="width:100%%;margin-top:6px">',
+		(int) ( $place ? $place : count( $mates ) + 1 )
+	);
+	echo '<p class="description">' . esc_html__( 'Küçük numara menüde daha üstte görünür. Tüm kategoriyi sürükleyerek dizmek için Menü Yönetimi → Sıralama ekranını kullanın.', 'ysffoodlab' ) . '</p>';
+}
+
+/**
+ * Ürünün kategorisi içindeki sırasını kaydeder.
+ *
+ * @param int $post_id Ürün.
+ */
+function ysf_save_item_order( $post_id ) {
+	if ( ! isset( $_POST['ysf_item_order_nonce'] ) || ! wp_verify_nonce( sanitize_key( wp_unslash( $_POST['ysf_item_order_nonce'] ) ), 'ysf_item_order' ) ) {
+		return;
+	}
+
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+
+	if ( ! current_user_can( 'edit_post', $post_id ) || 'ysf_menu_item' !== get_post_type( $post_id ) ) {
+		return;
+	}
+
+	$wanted = isset( $_POST['ysf_item_order'] ) ? absint( wp_unslash( $_POST['ysf_item_order'] ) ) : 0;
+
+	if ( $wanted ) {
+		ysf_place_menu_item( $post_id, $wanted );
+	}
+}
+
+/**
+ * Ürünü kategorisinin içinde istenen sıraya taşır, diğerlerini kaydırır.
+ *
+ * @param int $post_id Ürün.
+ * @param int $place   1 tabanlı sıra.
+ */
+function ysf_place_menu_item( $post_id, $place ) {
+	$terms = wp_get_post_terms( $post_id, 'ysf_menu_cat', array( 'fields' => 'ids' ) );
+
+	if ( ! $terms || is_wp_error( $terms ) ) {
+		return;
+	}
+
+	$mates = ysf_get_menu_items( array( 'category' => (int) $terms[0] ) );
+	$ids   = array();
+
+	foreach ( $mates as $mate ) {
+		if ( (int) $mate->ID !== (int) $post_id ) {
+			$ids[] = (int) $mate->ID;
+		}
+	}
+
+	array_splice( $ids, max( 0, (int) $place - 1 ), 0, array( (int) $post_id ) );
+
+	foreach ( $ids as $index => $id ) {
+		wp_update_post(
+			array(
+				'ID'         => $id,
+				'menu_order' => $index + 1,
+			)
+		);
+	}
+}
+add_action( 'save_post_ysf_menu_item', 'ysf_save_item_order' );
 
 /**
  * Alan grubunu isme göre döndürür.

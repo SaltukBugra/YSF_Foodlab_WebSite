@@ -44,15 +44,6 @@ function ysf_register_post_types() {
 		)
 	);
 
-	add_submenu_page(
-		'edit.php?post_type=ysf_menu_item',
-		__( 'Menü Sıralaması', 'ysffoodlab' ),
-		__( 'Sıralama', 'ysffoodlab' ),
-		'edit_posts',
-		'ysf-menu-order',
-		'ysf_menu_order_page'
-	);
-
 	register_taxonomy(
 		'ysf_menu_cat',
 		array( 'ysf_menu_item' ),
@@ -161,6 +152,22 @@ function ysf_register_post_types() {
 	);
 }
 add_action( 'init', 'ysf_register_post_types' );
+
+/**
+ * Menü sıralama ekranı. admin_menu sırasında eklenir; init içinde eklenirse
+ * WordPress sayfayı tanımaz ve betiği hiç yüklemez.
+ */
+function ysf_menu_order_menu() {
+	add_submenu_page(
+		'edit.php?post_type=ysf_menu_item',
+		__( 'Menü Sıralaması', 'ysffoodlab' ),
+		__( 'Sıralama', 'ysffoodlab' ),
+		'edit_posts',
+		'ysf-menu-order',
+		'ysf_menu_order_page'
+	);
+}
+add_action( 'admin_menu', 'ysf_menu_order_menu' );
 
 /**
  * Talep durumu etiketleri.

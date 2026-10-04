@@ -62,6 +62,10 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.6 =
+* Siralama ekrani duzeltildi: sayfa dogru menuye baglandi, surukleme artik kaydediliyor.
+* Urun duzenleme ekraninda ve sitedeki menu ayarinda "kacinci sirada gorunsun" alani var; numara girilince urun o kategoride istenen yere tasinir.
+
 = 1.5.5 =
 * Menü Yönetimi altinda "Siralama" ekrani: kategoriler ve her kategorinin urunleri suruklenerek dizilir, menude ve online sipariste bu sira kullanilir.
 * Mutfak panelindeki urun listesi de ayni siraya gore gelir ve surukleyerek degistirilebilir.
