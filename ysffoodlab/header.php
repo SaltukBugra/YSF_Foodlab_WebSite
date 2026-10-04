@@ -94,7 +94,7 @@ if ( is_user_logged_in() ) {
 			<?php endif; ?>
 
 			<?php if ( $ysf_phone ) : ?>
-				<a class="ysf-topbar__phone" href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>">
+				<a class="ysf-topbar__phone" href="<?php echo esc_attr( ysf_tel( $ysf_phone ) ); ?>">
 					<?php echo esc_html( $ysf_phone ); ?>
 				</a>
 			<?php endif; ?>

@@ -62,6 +62,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.9 =
+* Telefon ikonu ve diger ara baglantilari numarayi + ile aciyor.
+
 = 1.5.8 =
 * Koyu temada neredeyse siyah kalan form etiketleri, onay kutulari ve secilmemis secenek yazilari artik acik renkte.
 * Kampanya notu, kategori ust yazisi ve secili secenek gibi vurgu metinleri koyu zeminde acik altin rengine cekildi.

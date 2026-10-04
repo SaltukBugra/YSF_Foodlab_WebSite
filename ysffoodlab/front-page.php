@@ -451,7 +451,7 @@ if ( $ysf_map ) :
 						</a>
 					<?php endif; ?>
 					<?php if ( ysf_get_option( 'ysf_phone', '' ) ) : ?>
-						<a class="ysf-btn" href="tel:<?php echo esc_attr( ysf_digits( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
+						<a class="ysf-btn" href="<?php echo esc_attr( ysf_tel( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
 							<?php ysf_e( 'cta_call' ); ?>
 						</a>
 					<?php endif; ?>

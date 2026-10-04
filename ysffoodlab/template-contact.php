@@ -103,7 +103,7 @@ $ysf_today   = ysf_today_key();
 						<span class="ysf-info-list__icon"><?php echo ysf_icon( 'phone' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 						<span>
 							<strong><?php ysf_e( 'contact_phone' ); ?></strong>
-							<a href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>"><?php echo esc_html( $ysf_phone ); ?></a>
+							<a href="<?php echo esc_attr( ysf_tel( $ysf_phone ) ); ?>"><?php echo esc_html( $ysf_phone ); ?></a>
 						</span>
 					</li>
 				<?php endif; ?>

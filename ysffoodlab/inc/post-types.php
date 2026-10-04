@@ -262,7 +262,7 @@ function ysf_render_admin_columns( $column, $post_id ) {
 		case 'ysf_res_phone':
 			$phone = get_post_meta( $post_id, '_ysf_phone', true );
 			if ( $phone ) {
-				printf( '<a href="tel:%1$s">%2$s</a>', esc_attr( ysf_digits( $phone ) ), esc_html( $phone ) );
+				printf( '<a href="%1$s">%2$s</a>', esc_attr( ysf_tel( $phone ) ), esc_html( $phone ) );
 			}
 			break;
 

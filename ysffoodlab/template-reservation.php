@@ -34,7 +34,7 @@ $ysf_acc_url  = ysf_account_url();
 			<div class="ysf-empty">
 				<p><?php esc_html_e( 'Online rezervasyon şu anda kapalı. Lütfen bizi telefonla arayın.', 'ysffoodlab' ); ?></p>
 				<?php if ( ysf_get_option( 'ysf_phone', '' ) ) : ?>
-					<a class="ysf-btn" href="tel:<?php echo esc_attr( ysf_digits( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
+					<a class="ysf-btn" href="<?php echo esc_attr( ysf_tel( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
 						<?php echo esc_html( ysf_get_option( 'ysf_phone', '' ) ); ?>
 					</a>
 				<?php endif; ?>
@@ -177,7 +177,7 @@ $ysf_acc_url  = ysf_account_url();
 								);
 								?>
 							</p>
-							<a class="ysf-btn ysf-btn--block" href="tel:<?php echo esc_attr( ysf_digits( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
+							<a class="ysf-btn ysf-btn--block" href="<?php echo esc_attr( ysf_tel( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
 								<?php echo esc_html( ysf_get_option( 'ysf_phone', '' ) ); ?>
 							</a>
 						</div>

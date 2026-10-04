@@ -31,6 +31,41 @@ function ysf_digits( $value ) {
 }
 
 /**
+ * Arama bağlantısı. Baştaki + korunur; 0 ile yazılmış Türkiye
+ * numaraları da +90 olarak açılır.
+ *
+ * @param string $value Görünen telefon.
+ * @return string tel:+90... ya da boş.
+ */
+function ysf_tel( $value ) {
+	$raw    = trim( (string) $value );
+	$digits = ysf_digits( $raw );
+
+	if ( ! $digits ) {
+		return '';
+	}
+
+	$plus = ( '+' === substr( $raw, 0, 1 ) );
+
+	if ( 0 === strpos( $digits, '00' ) ) {
+		$digits = substr( $digits, 2 );
+		$plus   = true;
+	}
+
+	if ( 11 === strlen( $digits ) && '0' === $digits[0] ) {
+		$digits = '90' . substr( $digits, 1 );
+		$plus   = true;
+	} elseif ( 10 === strlen( $digits ) ) {
+		$digits = '90' . $digits;
+		$plus   = true;
+	} elseif ( 12 === strlen( $digits ) && 0 === strpos( $digits, '90' ) ) {
+		$plus = true;
+	}
+
+	return 'tel:' . ( $plus ? '+' : '' ) . $digits;
+}
+
+/**
  * Checkbox / bayrak meta değerini doğru boolean'a çevirir.
  *
  * WordPress 0 yazınca meta "0" string olarak saklanır; PHP'de if ("0")

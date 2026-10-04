@@ -93,7 +93,7 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 							<span class="ysf-info-list__icon"><?php echo ysf_icon( 'phone' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></span>
 							<span>
 								<strong><?php ysf_e( 'contact_phone' ); ?></strong>
-								<a href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>"><?php echo esc_html( $ysf_phone ); ?></a>
+								<a href="<?php echo esc_attr( ysf_tel( $ysf_phone ) ); ?>"><?php echo esc_html( $ysf_phone ); ?></a>
 							</span>
 						</li>
 					<?php endif; ?>
@@ -167,7 +167,7 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 		</a>
 	<?php endif; ?>
 	<?php if ( $ysf_phone ) : ?>
-		<a class="ysf-float--call" href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>" aria-label="<?php echo esc_attr( ysf_t( 'cta_call' ) ); ?>">
+		<a class="ysf-float--call" href="<?php echo esc_attr( ysf_tel( $ysf_phone ) ); ?>" aria-label="<?php echo esc_attr( ysf_t( 'cta_call' ) ); ?>">
 			<?php echo ysf_icon( 'phone' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 		</a>
 	<?php endif; ?>
@@ -190,7 +190,7 @@ $ysf_orders_on = ysf_get_option( 'ysf_orders_enabled', true ) && $ysf_order_url;
 		</a>
 	<?php endif; ?>
 	<?php if ( $ysf_phone ) : ?>
-		<a href="tel:<?php echo esc_attr( ysf_digits( $ysf_phone ) ); ?>">
+		<a href="<?php echo esc_attr( ysf_tel( $ysf_phone ) ); ?>">
 			<span aria-hidden="true">📞</span><?php ysf_e( 'cta_call' ); ?>
 		</a>
 	<?php endif; ?>

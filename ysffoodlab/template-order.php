@@ -42,7 +42,7 @@ if ( ! empty( $ysf_me['addresses'] ) ) {
 			<div class="ysf-empty">
 				<p><?php esc_html_e( 'Online sipariş şu anda kapalı. Lütfen bizi telefonla arayın.', 'ysffoodlab' ); ?></p>
 				<?php if ( ysf_get_option( 'ysf_phone', '' ) ) : ?>
-					<a class="ysf-btn" href="tel:<?php echo esc_attr( ysf_digits( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
+					<a class="ysf-btn" href="<?php echo esc_attr( ysf_tel( ysf_get_option( 'ysf_phone', '' ) ) ); ?>">
 						<?php echo esc_html( ysf_get_option( 'ysf_phone', '' ) ); ?>
 					</a>
 				<?php endif; ?>
