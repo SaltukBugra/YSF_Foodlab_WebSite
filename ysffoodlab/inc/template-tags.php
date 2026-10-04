@@ -904,9 +904,11 @@ function ysf_sanitize_sizes( $rows ) {
 			continue;
 		}
 
-		$label = isset( $row['label'] ) ? sanitize_text_field( (string) $row['label'] ) : '';
-		$en    = isset( $row['label_en'] ) ? sanitize_text_field( (string) $row['label_en'] ) : '';
-		$price = isset( $row['price'] ) ? (float) $row['price'] : 0;
+		$label   = isset( $row['label'] ) ? sanitize_text_field( (string) $row['label'] ) : '';
+		$en      = isset( $row['label_en'] ) ? sanitize_text_field( (string) $row['label_en'] ) : '';
+		$price   = isset( $row['price'] ) ? (float) $row['price'] : 0;
+		$note    = isset( $row['note'] ) ? ysf_clip( sanitize_text_field( (string) $row['note'] ), 160 ) : '';
+		$note_en = isset( $row['note_en'] ) ? ysf_clip( sanitize_text_field( (string) $row['note_en'] ), 160 ) : '';
 
 		if ( '' === $label || $price <= 0 ) {
 			continue;
@@ -928,6 +930,8 @@ function ysf_sanitize_sizes( $rows ) {
 			'label'    => $label,
 			'label_en' => $en,
 			'price'    => $price,
+			'note'     => $note,
+			'note_en'  => $note_en,
 		);
 
 		if ( count( $clean ) >= 6 ) {
@@ -962,6 +966,65 @@ function ysf_size_label( $size ) {
 	}
 
 	return isset( $size['label'] ) ? $size['label'] : '';
+}
+
+/**
+ * Aktif dildeki ebat içeriği (o seçenekte gelen ekstralar).
+ *
+ * @param array $size Ebat.
+ * @return string
+ */
+function ysf_size_note( $size ) {
+	if ( 'en' === ysf_lang() && ! empty( $size['note_en'] ) ) {
+		return $size['note_en'];
+	}
+
+	return isset( $size['note'] ) ? (string) $size['note'] : '';
+}
+
+/**
+ * Ürün içindekiler listesi. Satır veya virgülle ayrılmış metinden okunur.
+ *
+ * @param int $post_id Ürün.
+ * @return string[]
+ */
+function ysf_item_ingredients( $post_id ) {
+	$raw = '';
+
+	if ( 'en' === ysf_lang() ) {
+		$raw = (string) get_post_meta( (int) $post_id, '_ysf_ingredients_en', true );
+	}
+
+	if ( '' === trim( $raw ) ) {
+		$raw = (string) get_post_meta( (int) $post_id, '_ysf_ingredients', true );
+	}
+
+	$parts = preg_split( '/[\r\n,]+/u', wp_strip_all_tags( $raw ) );
+
+	return array_values( array_filter( array_map( 'trim', (array) $parts ), 'strlen' ) );
+}
+
+/**
+ * Detay penceresindeki "Seçenekler" listesi: ad, içerik ve kampanyalı fiyat.
+ *
+ * @param int $post_id Ürün.
+ * @return array[]
+ */
+function ysf_item_options( $post_id ) {
+	$out = array();
+
+	foreach ( ysf_get_item_sizes( $post_id ) as $size ) {
+		$amount = (float) $size['price'];
+		$sale   = function_exists( 'ysf_campaign_unit_price' ) ? ysf_campaign_unit_price( $post_id, $amount ) : $amount;
+		$out[]  = array(
+			'key'   => $size['key'],
+			'label' => ysf_size_label( $size ),
+			'note'  => ysf_size_note( $size ),
+			'price' => ysf_price( $sale ),
+		);
+	}
+
+	return $out;
 }
 
 /**

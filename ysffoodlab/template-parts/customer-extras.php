@@ -18,6 +18,14 @@ $ysf_track_tables = function_exists( 'ysf_show_table_service' ) && ysf_show_tabl
 		<div class="ysf-detail__tags" data-ysf-detail-tags></div>
 		<p class="ysf-detail__desc" data-ysf-detail-desc></p>
 		<p class="ysf-card__meta" data-ysf-detail-meta></p>
+		<section class="ysf-detail__section" data-ysf-detail-ingredients hidden>
+			<h3><?php ysf_e( 'detail_ingredients' ); ?></h3>
+			<ul class="ysf-detail__ingredients" data-ysf-detail-ingredient-list></ul>
+		</section>
+		<section class="ysf-detail__section" data-ysf-detail-options hidden>
+			<h3><?php ysf_e( 'detail_options' ); ?></h3>
+			<ul class="ysf-detail__options" data-ysf-detail-option-list></ul>
+		</section>
 		<div class="ysf-detail__buy" data-ysf-detail-buy></div>
 		<section class="ysf-detail__pairs" data-ysf-detail-pairs hidden>
 			<h3><?php ysf_e( 'pairs_title' ); ?></h3>

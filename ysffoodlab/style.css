@@ -3,7 +3,7 @@ Theme Name: YSF Food Lab
 Theme URI: https://www.ysffoodlab.com.tr
 Author: YSF Food Lab
 Description: YSF Food Lab icin gelistirilmis, restoran odakli, TR/EN cift dilli WordPress temasi. Kapak slayti ve yumusak sayfa gecisleri, uye hesaplari (giris, kayit, ev/is adres defteri), online siparis (sepet + WhatsApp), masa servisi (garson uygulaması + kasiyer kasası + mutfak ekrani), ozel gun rezervasyonu, kampanya ve duyuru yonetimi, dijital menu ve Restaurant schema SEO destegi icerir. Hazir yemek fotograflari ile birlikte gelir. LiteSpeed uyumlu, jQuery kullanmaz.
-Version: 1.5.2
+Version: 1.5.3
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
@@ -2800,7 +2800,7 @@ body.ysf-no-scroll {
 
 .ysf-kit-sizes__row {
 	display: grid;
-	grid-template-columns: 1fr 1fr 8rem auto;
+	grid-template-columns: 1fr 1fr 8rem 2fr auto;
 	gap: 8px;
 	align-items: center;
 }
@@ -2808,6 +2808,10 @@ body.ysf-no-scroll {
 @media (max-width: 640px) {
 	.ysf-kit-sizes__row {
 		grid-template-columns: 1fr 1fr;
+	}
+
+	.ysf-kit-sizes__row [data-ysf-size-note] {
+		grid-column: 1 / -1;
 	}
 }
 
@@ -4692,36 +4696,133 @@ body.ysf-staff-app .ysf-staff-tabs {
 	cursor: pointer;
 }
 
+.ysf-detail__media {
+	display: flex;
+	justify-content: center;
+	padding: 16px 16px 0;
+}
+
+.ysf-detail__media[hidden] {
+	display: none;
+}
+
 .ysf-detail__media img {
 	width: 100%;
+	max-width: 480px;
 	aspect-ratio: 4 / 3;
 	object-fit: cover;
+	object-position: center;
+	border-radius: var(--ysf-radius-lg);
 }
 
 .ysf-detail__body {
-	padding: 20px 22px 24px;
+	padding: 18px 22px 24px;
 }
 
 .ysf-detail__body h2 {
 	margin-bottom: 8px;
 	font-size: 1.5rem;
+	text-align: center;
 }
 
 .ysf-detail__tags {
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: center;
 	gap: 6px;
 	margin-bottom: 10px;
 }
 
 .ysf-detail__desc {
 	color: var(--ysf-muted);
+	text-align: center;
+}
+
+.ysf-detail__body > .ysf-card__meta {
+	justify-content: center;
+	text-align: center;
+}
+
+.ysf-detail__section {
+	margin-top: 18px;
+	padding-top: 14px;
+	border-top: 1px solid var(--ysf-line);
+}
+
+.ysf-detail__section h3 {
+	margin-bottom: 10px;
+	font-size: 1.05rem;
+	text-align: center;
+}
+
+.ysf-detail__ingredients {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ysf-detail__ingredients li {
+	padding: 4px 12px;
+	border: 1px solid var(--ysf-line);
+	border-radius: 999px;
+	font-size: 0.9rem;
+}
+
+.ysf-detail__options {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ysf-detail__option {
+	display: grid;
+	gap: 2px;
+	width: 100%;
+	padding: 10px 14px;
+	border: 1px solid var(--ysf-line);
+	border-radius: var(--ysf-radius);
+	background: none;
+	color: var(--ysf-fg);
+	font: inherit;
+	text-align: left;
+}
+
+button.ysf-detail__option {
+	cursor: pointer;
+}
+
+.ysf-detail__option.is-active {
+	border-color: var(--ysf-accent);
+	box-shadow: inset 0 0 0 1px var(--ysf-accent);
+}
+
+.ysf-detail__option-head {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.ysf-detail__option-price {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.ysf-detail__option small {
+	color: var(--ysf-muted);
+	font-size: 0.85rem;
 }
 
 .ysf-detail__buy {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
+	justify-content: center;
 	gap: 12px;
 	margin: 16px 0 4px;
 }

@@ -32,6 +32,8 @@ if ( in_array( 'vegan', $ysf_diet, true ) && ! in_array( 'vegetarian', $ysf_diet
 
 $ysf_title = ysf_field( $ysf_id, 'title' );
 $ysf_full  = get_the_post_thumbnail_url( $ysf_id, 'large' );
+$ysf_ingr  = ysf_item_ingredients( $ysf_id );
+$ysf_opts  = ysf_item_options( $ysf_id );
 ?>
 <?php if ( 'list' === $ysf_layout ) : ?>
 <article
@@ -43,6 +45,12 @@ $ysf_full  = get_the_post_thumbnail_url( $ysf_id, 'large' );
 	data-search="<?php echo esc_attr( $ysf_search ); ?>"
 	<?php if ( $ysf_full ) : ?>
 		data-full="<?php echo esc_url( $ysf_full ); ?>"
+	<?php endif; ?>
+	<?php if ( $ysf_ingr ) : ?>
+		data-ingredients="<?php echo esc_attr( wp_json_encode( $ysf_ingr ) ); ?>"
+	<?php endif; ?>
+	<?php if ( $ysf_opts ) : ?>
+		data-options="<?php echo esc_attr( wp_json_encode( $ysf_opts ) ); ?>"
 	<?php endif; ?>
 >
 	<button type="button" class="ysf-fav" data-ysf-fav="<?php echo esc_attr( $ysf_id ); ?>" aria-pressed="false" aria-label="<?php echo esc_attr( sprintf( ysf_t( 'fav_add' ), $ysf_title ) ); ?>">
@@ -107,6 +115,12 @@ $ysf_full  = get_the_post_thumbnail_url( $ysf_id, 'large' );
 	data-search="<?php echo esc_attr( $ysf_search ); ?>"
 	<?php if ( $ysf_full ) : ?>
 		data-full="<?php echo esc_url( $ysf_full ); ?>"
+	<?php endif; ?>
+	<?php if ( $ysf_ingr ) : ?>
+		data-ingredients="<?php echo esc_attr( wp_json_encode( $ysf_ingr ) ); ?>"
+	<?php endif; ?>
+	<?php if ( $ysf_opts ) : ?>
+		data-options="<?php echo esc_attr( wp_json_encode( $ysf_opts ) ); ?>"
 	<?php endif; ?>
 >
 	<button type="button" class="ysf-fav" data-ysf-fav="<?php echo esc_attr( $ysf_id ); ?>" aria-pressed="false" aria-label="<?php echo esc_attr( sprintf( ysf_t( 'fav_add' ), $ysf_title ) ); ?>">

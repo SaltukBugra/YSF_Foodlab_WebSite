@@ -42,6 +42,19 @@ function ysf_menu_item_fields() {
 			'rest'  => 'string',
 			'full'  => true,
 		),
+		'_ysf_ingredients' => array(
+			'label' => __( 'İçindekiler', 'ysffoodlab' ),
+			'type'  => 'textarea',
+			'rest'  => 'string',
+			'full'  => true,
+			'help'  => __( 'Her satıra veya virgülle bir malzeme yazın. Menüde ürüne tıklanınca açıklamanın altında görünür.', 'ysffoodlab' ),
+		),
+		'_ysf_ingredients_en' => array(
+			'label' => __( 'İngilizce içindekiler', 'ysffoodlab' ),
+			'type'  => 'textarea',
+			'rest'  => 'string',
+			'full'  => true,
+		),
 		'_ysf_allergens'   => array(
 			'label' => __( 'Alerjenler', 'ysffoodlab' ),
 			'type'  => 'text',
@@ -263,6 +276,8 @@ function ysf_register_meta() {
 							'label'    => array( 'type' => 'string' ),
 							'label_en' => array( 'type' => 'string' ),
 							'price'    => array( 'type' => 'number' ),
+							'note'     => array( 'type' => 'string' ),
+							'note_en'  => array( 'type' => 'string' ),
 						),
 					),
 				),
@@ -673,10 +688,13 @@ function ysf_render_sizes_fields( $post ) {
 
 	echo '<input type="hidden" name="ysf_sizes_ready" value="1">';
 	echo '<p><strong>' . esc_html__( 'Ebatlar', 'ysffoodlab' ) . '</strong><br>';
-	echo esc_html__( 'Küçük, orta, büyük gibi seçenekler. Menüde bilgi, online siparişte seçim olur. Tek fiyat yeterliyse bu satırı boş bırakın.', 'ysffoodlab' ) . '</p>';
+	echo esc_html__( 'Küçük, orta, büyük gibi seçenekler. Menüde bilgi, online siparişte seçim olur. Tek fiyat yeterliyse bu satırı boş bırakın.', 'ysffoodlab' ) . '<br>';
+	echo esc_html__( '"İçerik / ekstra" alanına o seçenekle gelen eklemeleri yazın (ör. 2 haşlanmış yumurta, ekstra peynir). Ürün detayında "Seçenekler" altında görünür.', 'ysffoodlab' ) . '</p>';
 	echo '<table class="widefat striped" id="ysf-sizes-table"><thead><tr>';
 	echo '<th>' . esc_html__( 'Ebat', 'ysffoodlab' ) . '</th>';
 	echo '<th>' . esc_html__( 'İngilizce', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'İçerik / ekstra', 'ysffoodlab' ) . '</th>';
+	echo '<th>' . esc_html__( 'İçerik (İngilizce)', 'ysffoodlab' ) . '</th>';
 	echo '<th>' . esc_html__( 'Fiyat', 'ysffoodlab' ) . '</th>';
 	echo '<th></th></tr></thead><tbody>';
 
@@ -735,6 +753,15 @@ function ysf_render_size_row( $size ) {
 		esc_attr( isset( $size['label_en'] ) ? $size['label_en'] : '' )
 	);
 	printf(
+		'<td><input type="text" name="ysf_size_note[]" value="%s" class="widefat" maxlength="160" placeholder="%s"></td>',
+		esc_attr( isset( $size['note'] ) ? $size['note'] : '' ),
+		esc_attr__( 'Haşlanmış yumurta ile', 'ysffoodlab' )
+	);
+	printf(
+		'<td><input type="text" name="ysf_size_note_en[]" value="%s" class="widefat" maxlength="160" placeholder="With boiled egg"></td>',
+		esc_attr( isset( $size['note_en'] ) ? $size['note_en'] : '' )
+	);
+	printf(
 		'<td><input type="number" name="ysf_size_price[]" value="%s" class="widefat" min="0" step="0.01"></td>',
 		esc_attr( isset( $size['price'] ) ? $size['price'] : '' )
 	);
@@ -787,6 +814,8 @@ function ysf_save_meta( $post_id, $post ) {
 			$labels = isset( $_POST['ysf_size_label'] ) ? wp_unslash( $_POST['ysf_size_label'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$ens    = isset( $_POST['ysf_size_label_en'] ) ? wp_unslash( $_POST['ysf_size_label_en'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$prices = isset( $_POST['ysf_size_price'] ) ? wp_unslash( $_POST['ysf_size_price'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$notes  = isset( $_POST['ysf_size_note'] ) ? wp_unslash( $_POST['ysf_size_note'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$n_ens  = isset( $_POST['ysf_size_note_en'] ) ? wp_unslash( $_POST['ysf_size_note_en'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$rows   = array();
 
 			foreach ( (array) $labels as $index => $label ) {
@@ -794,6 +823,8 @@ function ysf_save_meta( $post_id, $post ) {
 					'label'    => $label,
 					'label_en' => isset( $ens[ $index ] ) ? $ens[ $index ] : '',
 					'price'    => isset( $prices[ $index ] ) ? $prices[ $index ] : 0,
+					'note'     => isset( $notes[ $index ] ) ? $notes[ $index ] : '',
+					'note_en'  => isset( $n_ens[ $index ] ) ? $n_ens[ $index ] : '',
 				);
 			}
 

@@ -84,6 +84,12 @@ foreach ( $ysf_items as $ysf_item ) {
 		</div>
 
 		<div class="ysf-field ysf-field--full">
+			<label for="ysf-kit-ingredients"><?php ysf_e( 'kit_ingredients' ); ?></label>
+			<textarea id="ysf-kit-ingredients" name="ingredients" rows="3" maxlength="600"></textarea>
+			<small><?php ysf_e( 'kit_ingredients_hint' ); ?></small>
+		</div>
+
+		<div class="ysf-field ysf-field--full">
 			<label for="ysf-kit-photo"><?php ysf_e( 'kit_photo' ); ?></label>
 			<input type="file" id="ysf-kit-photo" name="photo" accept="image/*">
 			<small><?php ysf_e( 'kit_photo_hint' ); ?></small>
@@ -192,6 +198,7 @@ foreach ( $ysf_items as $ysf_item ) {
 				data-price="<?php echo esc_attr( (string) $ysf_price ); ?>"
 				data-cat="<?php echo esc_attr( (string) $ysf_cat_id ); ?>"
 				data-excerpt="<?php echo esc_attr( $ysf_desc ); ?>"
+				data-ingredients="<?php echo esc_attr( (string) get_post_meta( $ysf_id, '_ysf_ingredients', true ) ); ?>"
 				data-sold="<?php echo $ysf_sold ? '1' : '0'; ?>"
 				data-orderable="<?php echo $ysf_canbuy ? '1' : '0'; ?>"
 				data-vegan="<?php echo $ysf_vegan ? '1' : '0'; ?>"

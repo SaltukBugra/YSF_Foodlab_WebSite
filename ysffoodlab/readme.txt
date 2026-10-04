@@ -62,6 +62,10 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.3 =
+* Urunlere "Icindekiler" alani (TR/EN) ve her ebata "Icerik / ekstra" notu eklendi; yonetim panelinden ve mutfak panelinden girilir.
+* Menude urune tiklayinca acilan detayda gorsel, ad ve aciklama ortalanir; altinda Icindekiler ve Seceneklerde (ebat, ekstra, fiyat) gosterilir. Sipariste secenege dokunmak o ebati secer.
+
 = 1.5.2 =
 * "Masadasiniz / Garson cagir / Hesap iste" seridi online siparis sayfasinda gosterilmez; menu sayfasinda yalnizca giris yapmis kullaniciya gorunur. Cagri istegi sunucuda da giris ister.
 

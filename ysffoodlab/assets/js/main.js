@@ -2607,7 +2607,7 @@
 			input.value = value || '';
 			input.placeholder = placeholder;
 			input.setAttribute( 'data-ysf-size-' + name, '' );
-			input.setAttribute( 'maxlength', '24' );
+			input.setAttribute( 'maxlength', 'note' === name ? '160' : '24' );
 
 			if ( 'price' === name ) {
 				input.inputMode = 'decimal';
@@ -2629,6 +2629,8 @@
 			row.appendChild( sizeInput( 'label', size.label, t( 'kit_size_name', 'Ebat' ) ) );
 			row.appendChild( sizeInput( 'en', size.label_en, 'EN' ) );
 			row.appendChild( sizeInput( 'price', size.price, t( 'kit_price', 'Fiyat' ), 'number' ) );
+			row.appendChild( sizeInput( 'note', size.note, t( 'kit_size_note', 'İçerik / ekstra (ör. haşlanmış yumurta ile)' ) ) );
+			row.setAttribute( 'data-note-en', size.note_en || '' );
 			remove.type = 'button';
 			remove.className = 'ysf-link-btn';
 			remove.textContent = '×';
@@ -2642,11 +2644,14 @@
 				var label = qs( '[data-ysf-size-label]', row );
 				var en = qs( '[data-ysf-size-en]', row );
 				var price = qs( '[data-ysf-size-price]', row );
+				var note = qs( '[data-ysf-size-note]', row );
 
 				return {
 					label: label ? label.value : '',
 					label_en: en ? en.value : '',
-					price: price ? price.value : ''
+					price: price ? price.value : '',
+					note: note ? note.value : '',
+					note_en: row.getAttribute( 'data-note-en' ) || ''
 				};
 			} );
 		}
@@ -2685,6 +2690,7 @@
 			var category = field( 'category' );
 			var price = field( 'price' );
 			var excerpt = field( 'excerpt' );
+			var ingredients = field( 'ingredients' );
 			var sold = field( 'sold_out' );
 			var orderable = field( 'orderable' );
 			var photo = field( 'photo' );
@@ -2708,6 +2714,10 @@
 
 			if ( excerpt ) {
 				excerpt.value = row ? ( row.getAttribute( 'data-excerpt' ) || '' ) : '';
+			}
+
+			if ( ingredients ) {
+				ingredients.value = row ? ( row.getAttribute( 'data-ingredients' ) || '' ) : '';
 			}
 
 			if ( sold ) {
@@ -3763,6 +3773,98 @@
 		var buyEl = qs( '[data-ysf-detail-buy]', dialog );
 		var pairsBox = qs( '[data-ysf-detail-pairs]', dialog );
 		var pairList = qs( '[data-ysf-detail-pair-list]', dialog );
+		var ingrBox = qs( '[data-ysf-detail-ingredients]', dialog );
+		var ingrList = qs( '[data-ysf-detail-ingredient-list]', dialog );
+		var optBox = qs( '[data-ysf-detail-options]', dialog );
+		var optList = qs( '[data-ysf-detail-option-list]', dialog );
+
+		function readList( card, name ) {
+			try {
+				var list = JSON.parse( card.getAttribute( name ) || '[]' );
+				return Array.isArray( list ) ? list : [];
+			} catch ( error ) {
+				return [];
+			}
+		}
+
+		function fillIngredients( card ) {
+			var list = readList( card, 'data-ingredients' );
+
+			if ( ! ingrBox || ! ingrList ) {
+				return;
+			}
+
+			ingrList.textContent = '';
+			list.forEach( function ( name ) {
+				var li = document.createElement( 'li' );
+				li.textContent = String( name );
+				ingrList.appendChild( li );
+			} );
+			ingrBox.hidden = ! list.length;
+		}
+
+		function fillOptions( card, select ) {
+			var list = readList( card, 'data-options' );
+
+			if ( ! optBox || ! optList ) {
+				return;
+			}
+
+			optList.textContent = '';
+
+			function mark() {
+				qsa( '[data-key]', optList ).forEach( function ( item ) {
+					var on = !! select && item.getAttribute( 'data-key' ) === select.value;
+					item.classList.toggle( 'is-active', on );
+
+					if ( 'BUTTON' === item.tagName ) {
+						item.setAttribute( 'aria-pressed', on ? 'true' : 'false' );
+					}
+				} );
+			}
+
+			list.forEach( function ( opt ) {
+				var li = document.createElement( 'li' );
+				var row = document.createElement( select ? 'button' : 'div' );
+				var head = document.createElement( 'span' );
+				var name = document.createElement( 'strong' );
+				var cost = document.createElement( 'span' );
+
+				row.className = 'ysf-detail__option';
+				row.setAttribute( 'data-key', opt.key || '' );
+				head.className = 'ysf-detail__option-head';
+				name.textContent = opt.label || '';
+				cost.className = 'ysf-detail__option-price';
+				cost.textContent = opt.price || '';
+				head.appendChild( name );
+				head.appendChild( cost );
+				row.appendChild( head );
+
+				if ( opt.note ) {
+					var note = document.createElement( 'small' );
+					note.textContent = opt.note;
+					row.appendChild( note );
+				}
+
+				if ( select ) {
+					row.type = 'button';
+					row.addEventListener( 'click', function () {
+						select.value = opt.key || '';
+						mark();
+					} );
+				}
+
+				li.appendChild( row );
+				optList.appendChild( li );
+			} );
+
+			if ( select ) {
+				select.addEventListener( 'change', mark );
+			}
+
+			mark();
+			optBox.hidden = ! list.length;
+		}
 
 		function fill( card ) {
 			var info = cardInfo( card );
@@ -3795,9 +3897,12 @@
 
 			// Satın alma alanı: kartın kendi düğmeleri taşınmaz, kopyası yerine karta yönlendirilir.
 			buyEl.textContent = '';
+			fillIngredients( card );
+
+			var hasOptions = card.hasAttribute( 'data-options' );
 
 			if ( side ) {
-				var price = qs( '.ysf-price, .ysf-sizes', side );
+				var price = qs( hasOptions ? '.ysf-price' : '.ysf-price, .ysf-sizes', side );
 
 				if ( price ) {
 					buyEl.appendChild( price.cloneNode( true ) );
@@ -3806,15 +3911,15 @@
 
 			var cardSelect = qs( '[data-ysf-size]', card );
 			var cardAdd = qs( '.ysf-add', card );
+			var select = null;
 
 			if ( cardAdd && info.orderable ) {
-				var select = null;
-
 				if ( cardSelect ) {
 					select = cardSelect.cloneNode( true );
 					select.removeAttribute( 'id' );
 					select.value = cardSelect.value;
 					select.setAttribute( 'aria-label', t( 'size_pick', 'Boy seçin' ) );
+					select.hidden = hasOptions;
 					buyEl.appendChild( select );
 				}
 
@@ -3833,6 +3938,7 @@
 				buyEl.appendChild( add );
 			}
 
+			fillOptions( card, select );
 			pairList.textContent = '';
 			var pairs = pairsFor( info );
 

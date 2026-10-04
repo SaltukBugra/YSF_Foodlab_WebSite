@@ -313,6 +313,12 @@ function ysf_ajax_kitchen_save() {
 	}
 
 	update_post_meta( $post_id, '_ysf_price', $price );
+
+	if ( isset( $_POST['ingredients'] ) ) {
+		$ingredients = ysf_clip( sanitize_textarea_field( wp_unslash( $_POST['ingredients'] ) ), 600 );
+		update_post_meta( $post_id, '_ysf_ingredients', $ingredients );
+	}
+
 	$raw_sizes = isset( $_POST['sizes'] ) ? wp_unslash( $_POST['sizes'] ) : '[]'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$decoded   = is_string( $raw_sizes ) ? json_decode( $raw_sizes, true ) : $raw_sizes;
 	update_post_meta( $post_id, '_ysf_sizes', ysf_sanitize_sizes( is_array( $decoded ) ? $decoded : array() ) );
