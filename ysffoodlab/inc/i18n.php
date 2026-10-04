@@ -406,6 +406,7 @@ function ysf_dictionary() {
 		'call_table_label'  => array( 'Masadasınız:', 'Your table:' ),
 		'call_pick_table'   => array( 'Masa seçin', 'Pick table' ),
 		'call_pick_first'   => array( 'Önce masa numaranızı seçin.', 'Please pick your table number first.' ),
+		'categories'        => array( 'Kategoriler', 'Categories' ),
 		'menu_categories'   => array( 'Menü kategorileri', 'Menu categories' ),
 		'diet_filters'      => array( 'Beslenme tercihleri', 'Dietary preferences' ),
 		'diet_nospicy'      => array( 'Acısız', 'Not spicy' ),

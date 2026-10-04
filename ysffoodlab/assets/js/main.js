@@ -3138,25 +3138,28 @@
 	}
 
 	/* ------------------------------------------------------------------ *
-	 * Menü filtresi ve arama
+	 * Menü kategorileri (Scrollspy), filtreler ve arama
 	 * ------------------------------------------------------------------ */
 
 	function initMenuFilters() {
+		var catLinks = qsa( '[data-ysf-cat-link]' );
 		var filters = qsa( '[data-ysf-filter]' );
 		var search = qs( '[data-ysf-menu-search]' );
 		var groups = qsa( '[data-ysf-group]' );
 		var items = qsa( '[data-ysf-item]' );
 		var emptyBox = qs( '[data-ysf-menu-empty]' );
 
-		if ( ! filters.length && ! search && ! qsa( '[data-ysf-diet]' ).length ) {
+		if ( ! catLinks.length && ! filters.length && ! search && ! qsa( '[data-ysf-diet]' ).length ) {
 			return;
 		}
 
-		var active = 'all';
+		var activeFilter = 'all';
 		var diets = [];
 		var favOnly = false;
 		var dietButtons = qsa( '[data-ysf-diet]' );
 		var favButton = qs( '[data-ysf-fav-filter]' );
+		var isProgrammaticScroll = false;
+		var scrollTimer = null;
 
 		function matchesExtras( item ) {
 			var tags = ( item.getAttribute( 'data-diet' ) || '' ).split( ' ' );
@@ -3176,16 +3179,11 @@
 
 		/**
 		 * Ürünü/grubu yumuşak geçişle gösterir veya gizler.
-		 *
-		 * @param {HTMLElement} el      Öğe.
-		 * @param {boolean}     visible Görünür olacak mı.
-		 * @param {number}      delay   Görünürken beklenecek süre (ms).
 		 */
 		function toggle( el, visible, delay ) {
 			if ( ! motionAllowed() ) {
 				el.classList.remove( 'is-hiding' );
 				el.hidden = ! visible;
-
 				return;
 			}
 
@@ -3199,12 +3197,10 @@
 							el.classList.remove( 'is-hiding' );
 						}, delay || 0 );
 					} );
-
 					return;
 				}
 
 				el.classList.remove( 'is-hiding' );
-
 				return;
 			}
 
@@ -3215,11 +3211,121 @@
 			el.classList.add( 'is-hiding' );
 
 			window.setTimeout( function () {
-				// Bu arada yeniden görünür olduysa dokunma.
 				if ( el.classList.contains( 'is-hiding' ) ) {
 					el.hidden = true;
 				}
 			}, 320 );
+		}
+
+		function getNavOffset() {
+			var header = qs( '.ysf-header' );
+			var headerHeight = header ? header.offsetHeight : 72;
+			var catNav = qs( '[data-ysf-cat-nav]' );
+			var navHeight = 0;
+
+			if ( catNav ) {
+				var comp = window.getComputedStyle( catNav );
+				if ( 'sticky' === comp.position && catNav.offsetHeight < 120 ) {
+					navHeight = catNav.offsetHeight;
+				}
+			}
+
+			return headerHeight + navHeight + 16;
+		}
+
+		function setActiveCategory( slug ) {
+			var activeLink = null;
+
+			catLinks.forEach( function ( link ) {
+				var isCurrent = link.getAttribute( 'data-ysf-cat-link' ) === slug;
+				link.classList.toggle( 'is-active', isCurrent );
+				link.setAttribute( 'aria-selected', isCurrent ? 'true' : 'false' );
+
+				if ( isCurrent ) {
+					activeLink = link;
+				}
+			} );
+
+			// Mobilde yatay kayan çubukta aktif kategoriyi ortala
+			if ( activeLink && activeLink.parentElement ) {
+				var list = activeLink.parentElement;
+				if ( list.scrollWidth > list.clientWidth ) {
+					var left = activeLink.offsetLeft;
+					var width = activeLink.offsetWidth;
+					var containerWidth = list.clientWidth;
+					var scrollLeft = left - ( containerWidth / 2 ) + ( width / 2 );
+
+					if ( 'scrollTo' in list ) {
+						list.scrollTo( {
+							left: Math.max( 0, scrollLeft ),
+							behavior: 'smooth'
+						} );
+					} else {
+						list.scrollLeft = Math.max( 0, scrollLeft );
+					}
+				}
+			}
+		}
+
+		function scrollToCategory( target ) {
+			var offset = getNavOffset();
+			var rect = target.getBoundingClientRect();
+			var targetY = rect.top + window.pageYOffset - offset;
+
+			isProgrammaticScroll = true;
+
+			if ( 'scrollBehavior' in document.documentElement.style ) {
+				window.scrollTo( {
+					top: Math.max( 0, targetY ),
+					behavior: 'smooth'
+				} );
+			} else {
+				window.scrollTo( 0, Math.max( 0, targetY ) );
+			}
+
+			window.clearTimeout( scrollTimer );
+			scrollTimer = window.setTimeout( function () {
+				isProgrammaticScroll = false;
+				updateScrollspy();
+			}, 750 );
+		}
+
+		function updateScrollspy() {
+			if ( isProgrammaticScroll ) {
+				return;
+			}
+
+			var visibleGroups = groups.filter( function ( g ) {
+				return ! g.hidden && g.offsetHeight > 0;
+			} );
+
+			if ( ! visibleGroups.length ) {
+				return;
+			}
+
+			var offset = getNavOffset() + 32;
+			var activeSlug = null;
+
+			var atBottom = ( window.innerHeight + window.pageYOffset ) >= ( document.documentElement.scrollHeight - 70 );
+			if ( atBottom ) {
+				activeSlug = visibleGroups[ visibleGroups.length - 1 ].getAttribute( 'data-ysf-group' );
+			} else {
+				for ( var i = 0; i < visibleGroups.length; i++ ) {
+					var rect = visibleGroups[ i ].getBoundingClientRect();
+					if ( rect.top <= offset ) {
+						activeSlug = visibleGroups[ i ].getAttribute( 'data-ysf-group' );
+					} else {
+						break;
+					}
+				}
+				if ( ! activeSlug && visibleGroups.length ) {
+					activeSlug = visibleGroups[ 0 ].getAttribute( 'data-ysf-group' );
+				}
+			}
+
+			if ( activeSlug ) {
+				setActiveCategory( activeSlug );
+			}
 		}
 
 		function apply() {
@@ -3232,11 +3338,10 @@
 				var groupVisible = 0;
 
 				qsa( '[data-ysf-item]', group ).forEach( function ( item ) {
-					var matchesCat = 'all' === active || ( item.getAttribute( 'data-cats' ) || '' ).split( ' ' ).indexOf( active ) > -1 || slug === active;
+					var matchesCat = 'all' === activeFilter || ( item.getAttribute( 'data-cats' ) || '' ).split( ' ' ).indexOf( activeFilter ) > -1 || slug === activeFilter;
 					var matchesTerm = ! term || ( item.getAttribute( 'data-search' ) || '' ).indexOf( term ) > -1;
 					var visible = matchesCat && matchesTerm && matchesExtras( item );
 
-					// Görünen ürünler sırayla belirsin.
 					toggle( item, visible, visible ? Math.min( shown * 40, 320 ) : 0 );
 
 					if ( visible ) {
@@ -3246,10 +3351,17 @@
 				} );
 
 				toggle( group, groupVisible > 0, 0 );
+
+				// İlgili kategori bağlantısının görünürlüğünü güncelle
+				var navLink = qs( '[data-ysf-cat-link="' + slug + '"]' );
+				if ( navLink ) {
+					navLink.hidden = groupVisible === 0;
+				}
+
 				visibleTotal += groupVisible;
 			} );
 
-			// Grup dışında duran ürünler (ana sayfa kartları vb.).
+			// Grup dışında duran ürünler
 			if ( ! groups.length ) {
 				items.forEach( function ( item ) {
 					var matchesTerm = ( ! term || ( item.getAttribute( 'data-search' ) || '' ).indexOf( term ) > -1 ) && matchesExtras( item );
@@ -3266,8 +3378,31 @@
 			if ( emptyBox ) {
 				emptyBox.hidden = visibleTotal > 0;
 			}
+
+			window.setTimeout( updateScrollspy, 350 );
 		}
 
+		// Kategori bağlantılarına tıklama (Smooth Scroll)
+		catLinks.forEach( function ( link ) {
+			link.addEventListener( 'click', function ( e ) {
+				e.preventDefault();
+				var slug = link.getAttribute( 'data-ysf-cat-link' );
+				var target = qs( '[data-ysf-group="' + slug + '"]' );
+
+				if ( ! target ) {
+					return;
+				}
+
+				setActiveCategory( slug );
+				scrollToCategory( target );
+
+				if ( window.history && window.history.replaceState ) {
+					window.history.replaceState( null, '', '#kategori-' + slug );
+				}
+			} );
+		} );
+
+		// Eski tip filtre butonları desteği
 		filters.forEach( function ( button ) {
 			button.addEventListener( 'click', function () {
 				filters.forEach( function ( other ) {
@@ -3277,7 +3412,7 @@
 
 				button.classList.add( 'is-active' );
 				button.setAttribute( 'aria-pressed', 'true' );
-				active = button.getAttribute( 'data-ysf-filter' );
+				activeFilter = button.getAttribute( 'data-ysf-filter' );
 				apply();
 			} );
 		} );
@@ -3333,6 +3468,38 @@
 				window.clearTimeout( timer );
 				timer = window.setTimeout( apply, 160 );
 			} );
+		}
+
+		// Scrollspy olayları
+		var scrollRaf = null;
+		function onWindowScroll() {
+			if ( isProgrammaticScroll ) {
+				return;
+			}
+			if ( scrollRaf ) {
+				return;
+			}
+			scrollRaf = window.requestAnimationFrame( function () {
+				scrollRaf = null;
+				updateScrollspy();
+			} );
+		}
+
+		window.addEventListener( 'scroll', onWindowScroll, { passive: true } );
+		window.addEventListener( 'resize', onWindowScroll, { passive: true } );
+
+		// Sayfa hash ile yüklendiyse ilgili kategoriye kay
+		if ( window.location.hash && window.location.hash.indexOf( '#kategori-' ) === 0 ) {
+			var initSlug = window.location.hash.replace( '#kategori-', '' );
+			var initTarget = qs( '[data-ysf-group="' + initSlug + '"]' );
+			if ( initTarget ) {
+				window.setTimeout( function () {
+					setActiveCategory( initSlug );
+					scrollToCategory( initTarget );
+				}, 220 );
+			}
+		} else {
+			updateScrollspy();
 		}
 	}
 
