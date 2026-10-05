@@ -573,7 +573,7 @@ function ysf_dictionary() {
 		'kit_name'            => array( 'Ürün adı', 'Item name' ),
 		'kit_price'           => array( 'Fiyat', 'Price' ),
 		'kit_sizes'           => array( 'Ebatlar', 'Sizes' ),
-		'kit_sizes_hint'      => array( 'İsteğe bağlı. Menüde bilgi, online siparişte seçim olur.', 'Optional. Shown as info on the menu and as a choice when ordering.' ),
+		'kit_sizes_hint'      => array( 'İsteğe bağlı. Menüde bilgi, online siparişte seçim olur. En fazla 10 ebat.', 'Optional. Shown as info on the menu and as a choice when ordering. Up to 10 sizes.' ),
 		'kit_size_add'        => array( 'Ebat ekle', 'Add size' ),
 		'kit_size_name'       => array( 'Ebat', 'Size' ),
 		'kit_size_note'       => array( 'İçerik / ekstra (ör. haşlanmış yumurta ile)', 'Extras (e.g. with boiled egg)' ),

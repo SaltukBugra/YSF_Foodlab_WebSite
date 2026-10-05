@@ -3030,7 +3030,7 @@
 
 			if ( add ) {
 				add.addEventListener( 'click', function () {
-					if ( ! rows ) {
+					if ( ! rows || qsa( '[data-ysf-size-row]', form ).length >= 10 ) {
 						return;
 					}
 

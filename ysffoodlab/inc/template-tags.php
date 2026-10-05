@@ -1103,7 +1103,7 @@ function ysf_sanitize_sizes( $rows ) {
 			'note_en'  => $note_en,
 		);
 
-		if ( count( $clean ) >= 6 ) {
+		if ( count( $clean ) >= 10 ) {
 			break;
 		}
 	}

@@ -62,6 +62,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.12 =
+* Bir urune en fazla 10 ebat eklenebiliyor.
+
 = 1.5.11 =
 * Secenekler pencereye sigmazsa sayfalara bolunuyor. Alttaki noktalara basinca diger sayfa aciliyor.
 

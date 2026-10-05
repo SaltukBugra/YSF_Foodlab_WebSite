@@ -1144,7 +1144,7 @@ function ysf_render_sizes_fields( $post ) {
 
 	echo '<input type="hidden" name="ysf_sizes_ready" value="1">';
 	echo '<p><strong>' . esc_html__( 'Ebatlar', 'ysffoodlab' ) . '</strong><br>';
-	echo esc_html__( 'Küçük, orta, büyük gibi seçenekler. Menüde bilgi, online siparişte seçim olur. Tek fiyat yeterliyse bu satırı boş bırakın.', 'ysffoodlab' ) . '<br>';
+	echo esc_html__( 'Küçük, orta, büyük gibi seçenekler. Menüde bilgi, online siparişte seçim olur. Tek fiyat yeterliyse bu satırı boş bırakın. En fazla 10 ebat.', 'ysffoodlab' ) . '<br>';
 	echo esc_html__( '"İçerik / ekstra" alanına o seçenekle gelen eklemeleri yazın (ör. 2 haşlanmış yumurta, ekstra peynir). Ürün detayında "Seçenekler" altında görünür.', 'ysffoodlab' ) . '</p>';
 	echo '<table class="widefat striped" id="ysf-sizes-table"><thead><tr>';
 	echo '<th>' . esc_html__( 'Ebat', 'ysffoodlab' ) . '</th>';
@@ -1177,6 +1177,7 @@ function ysf_render_sizes_fields( $post ) {
 		var tpl = document.getElementById('ysf-size-row-tpl');
 		if (!add || !table || !tpl) return;
 		add.addEventListener('click', function () {
+			if (table.querySelectorAll('tbody tr').length >= 10) return;
 			table.querySelector('tbody').insertAdjacentHTML('beforeend', tpl.innerHTML);
 		});
 		table.addEventListener('click', function (event) {

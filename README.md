@@ -2,7 +2,7 @@
 
 **Canlı site:** [ysffoodlab.com.tr](https://www.ysffoodlab.com.tr)  
 **GitHub:** [github.com/SaltukBugra/YSF_Foodlab_WebSite](https://github.com/SaltukBugra/YSF_Foodlab_WebSite)  
-**Güncel tema sürümü:** `1.5.11`  
+**Güncel tema sürümü:** `1.5.12`  
 **WordPress teması:** `ysffoodlab/`
 
 YSF Food Lab restoranının resmi web sitesi, online sipariş, rezervasyon, masa servisi (garson / kasiyer / mutfak), üye hesapları, kampanya ve duyuru yönetimi ile birlikte tek bir WordPress temasında toplanmıştır. Ek eklenti gerektirmez; Türkçe ve İngilizce çift dilli çalışır.
@@ -366,6 +366,7 @@ Tam liste `ysffoodlab/readme.txt` içindedir. Son sürümler:
 
 | Sürüm | Öne çıkanlar |
 |-------|--------------|
+| **1.5.12** | Bir ürüne en fazla 10 ebat eklenebiliyor |
 | **1.5.11** | Seçenekler sığmazsa alttaki noktalarla sonraki sayfaya geçiliyor |
 | **1.5.10** | Ürünlere olumlu, olumsuz ve bilgi notu; kartta ve detayda görünür |
 | **1.5.9** | Telefon ikonuna basınca arama +90 ile açılıyor |
@@ -402,4 +403,4 @@ WordPress teması **GPLv2 or later** lisansı altındadır (`ysffoodlab/readme.t
 
 ---
 
-*Son güncelleme: Ekim 2026 — tema sürümü 1.5.11*
+*Son güncelleme: Ekim 2026 — tema sürümü 1.5.12*
