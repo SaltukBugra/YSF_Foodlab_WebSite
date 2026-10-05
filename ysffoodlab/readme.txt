@@ -62,6 +62,9 @@ siparis ozeti ile acilir. Odeme alt yapisi icermez; onay telefonla yapilir.
 
 == Degisiklik gecmisi ==
 
+= 1.5.11 =
+* Secenekler pencereye sigmazsa sayfalara bolunuyor. Alttaki noktalara basinca diger sayfa aciliyor.
+
 = 1.5.10 =
 * Urunlere olumlu, olumsuz ve bilgi notu eklenebiliyor. Kartta ilk iki not, urun detayinda hepsi gorunuyor.
 

@@ -29,6 +29,7 @@ $ysf_track_tables = function_exists( 'ysf_show_table_service' ) && ysf_show_tabl
 		<section class="ysf-detail__section" data-ysf-detail-options hidden>
 			<h3><?php ysf_e( 'detail_options' ); ?></h3>
 			<ul class="ysf-detail__options" data-ysf-detail-option-list></ul>
+			<div class="ysf-detail__dots" data-ysf-detail-option-dots hidden></div>
 		</section>
 		<div class="ysf-detail__buy" data-ysf-detail-buy></div>
 		<section class="ysf-detail__pairs" data-ysf-detail-pairs hidden>

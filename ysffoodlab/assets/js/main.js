@@ -3950,6 +3950,8 @@
 		var ingrList = qs( '[data-ysf-detail-ingredient-list]', dialog );
 		var optBox = qs( '[data-ysf-detail-options]', dialog );
 		var optList = qs( '[data-ysf-detail-option-list]', dialog );
+		var optionDots = qs( '[data-ysf-detail-option-dots]', dialog );
+		var optionPages = [];
 
 		function readList( card, name ) {
 			try {
@@ -4037,6 +4039,117 @@
 
 			mark();
 			optBox.hidden = ! list.length;
+
+			if ( optionDots ) {
+				optionDots.hidden = true;
+				optionDots.textContent = '';
+			}
+
+			optionPages = [];
+		}
+
+		function showOptionPage( index ) {
+			if ( ! optionPages.length ) {
+				return;
+			}
+
+			var page = Math.max( 0, Math.min( index, optionPages.length - 1 ) );
+			var visible = optionPages[ page ];
+
+			qsa( 'li', optList ).forEach( function ( item ) {
+				item.hidden = visible.indexOf( item ) === -1;
+			} );
+
+			qsa( '[data-ysf-option-page]', optionDots ).forEach( function ( dot, dotIndex ) {
+				var on = dotIndex === page;
+				dot.classList.toggle( 'is-active', on );
+				dot.setAttribute( 'aria-current', on ? 'true' : 'false' );
+			} );
+		}
+
+		function layoutOptionPages() {
+			var items = qsa( 'li', optList );
+			var gap = 8;
+
+			optionPages = [];
+
+			if ( ! optionDots || ! dialog.open ) {
+				return;
+			}
+
+			optionDots.hidden = true;
+			optionDots.textContent = '';
+			items.forEach( function ( item ) {
+				item.hidden = false;
+			} );
+
+			if ( items.length < 2 ) {
+				return;
+			}
+
+			var listRect = optList.getBoundingClientRect();
+			var dialogRect = dialog.getBoundingClientRect();
+			var buyH = buyEl ? buyEl.offsetHeight + 16 : 0;
+			var room = dialog.clientHeight - ( listRect.top - dialogRect.top ) - buyH - 44;
+			var row = items[0].offsetHeight || 48;
+			var budget = Math.max( room, row * 2 + gap );
+			var pages = [];
+			var page = [];
+			var used = 0;
+
+			items.forEach( function ( item ) {
+				var height = item.offsetHeight || 48;
+				var next = used + ( page.length ? gap : 0 ) + height;
+				var tooTall = page.length >= 2 && next > budget;
+
+				if ( tooTall ) {
+					pages.push( page );
+					page = [];
+					used = 0;
+					next = height;
+				}
+
+				page.push( item );
+				used = next;
+			} );
+
+			if ( page.length ) {
+				pages.push( page );
+			}
+
+			if ( pages.length < 2 ) {
+				return;
+			}
+
+			optionPages = pages;
+			pages.forEach( function ( group, index ) {
+				var dot = document.createElement( 'button' );
+				dot.type = 'button';
+				dot.className = 'ysf-detail__dot';
+				dot.setAttribute( 'data-ysf-option-page', String( index ) );
+				dot.setAttribute( 'aria-label', t( 'detail_page', 'Sayfa %s' ).replace( '%s', String( index + 1 ) ) );
+				dot.addEventListener( 'click', function () {
+					showOptionPage( index );
+				} );
+				optionDots.appendChild( dot );
+			} );
+			optionDots.hidden = false;
+
+			var start = 0;
+
+			items.forEach( function ( item ) {
+				if ( ! qs( '.is-active', item ) ) {
+					return;
+				}
+
+				pages.forEach( function ( group, pageIndex ) {
+					if ( group.indexOf( item ) !== -1 ) {
+						start = pageIndex;
+					}
+				} );
+			} );
+
+			showOptionPage( start );
 		}
 
 		function fill( card ) {
@@ -4158,6 +4271,7 @@
 				open.addEventListener( 'click', function () {
 					fill( pair.card );
 					dialog.scrollTop = 0;
+					layoutOptionPages();
 				} );
 
 				li.appendChild( open );
@@ -4183,6 +4297,20 @@
 			event.preventDefault();
 			fill( card );
 			dialog.showModal();
+			dialog.scrollTop = 0;
+			layoutOptionPages();
+
+			var photo = qs( 'img', media );
+
+			if ( photo && ! photo.complete ) {
+				photo.addEventListener( 'load', layoutOptionPages, { once: true } );
+			}
+		} );
+
+		window.addEventListener( 'resize', function () {
+			if ( dialog.open ) {
+				layoutOptionPages();
+			}
 		} );
 
 		dialog.addEventListener( 'click', function ( event ) {
